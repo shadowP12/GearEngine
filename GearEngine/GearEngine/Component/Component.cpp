@@ -34,6 +34,26 @@ bool Component::getDestroyed()
 	return mDestroyed;
 }
 
+int Component::getID()
+{
+	return mID;
+}
+
+void Component::setID(int id)
+{
+	mID = id;
+}
+
+std::shared_ptr<Node> Component::getNode()
+{
+	return mNode;
+}
+
+void Component::setNode(std::shared_ptr<Node> node)
+{
+	mNode = node;
+}
+
 std::string Component::getType()
 {
 	return mType;

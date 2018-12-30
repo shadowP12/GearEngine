@@ -4,7 +4,6 @@
 int main() {
 	std::shared_ptr<Entity> e1 = std::shared_ptr<Entity>(new Entity());
 	std::shared_ptr<Entity> e2 = std::shared_ptr<Entity>(new Entity());
-	e1->appendChildren(e2);
-	e1->destroy();
+	std::shared_ptr<Node> n1 = std::shared_ptr<Node>(new Node());
 	return 0;
 }

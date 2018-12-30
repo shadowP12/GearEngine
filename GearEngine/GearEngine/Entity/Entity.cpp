@@ -46,6 +46,8 @@ void Entity::destroy()
 	{
 		if (iter == mComponents.end())
 			break;
+		mComponents.erase(iter);
+		iter->second->setNode(NULL);
 		iter->second->destroy();
 	}
 
@@ -107,14 +109,16 @@ void Entity::addComponent(std::shared_ptr<Component> newComponent)
 	result = mComponents.insert(ComponentMap::value_type(newComponent->getType(), newComponent));
 	//todo:more Imformation
 	if (result.second) 
-	{	
+	{
+		newComponent->setNode(shared_from_this());
 	}
 }
 
 void Entity::removeComponent(std::string type)
 {
 	ComponentMap::iterator nameIt = mComponents.find(type);
-	if (nameIt != mComponents.end()) {
+	if (nameIt != mComponents.end()) 
+	{
 		mComponents.erase(nameIt);
 	}
 }
