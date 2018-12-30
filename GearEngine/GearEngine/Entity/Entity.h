@@ -12,9 +12,16 @@ public:
 	Entity();
 	~Entity();
 	void activate();
-	void destroyed();
+	void deactivate();
+	void destroy();
+	bool getDestroyed();
 	bool getActive();
 	bool getActiveInHierarchy();
+	std::string getName();
+	void setName(std::string name);
+	std::shared_ptr<Component> getComponent(std::string type);
+	void addComponent(std::shared_ptr<Component> newComponent);
+	void removeComponent(std::string type);
 private:
 	void notifyChildren(bool active);
 public:

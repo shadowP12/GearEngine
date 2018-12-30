@@ -1,21 +1,21 @@
 #ifndef COMPONENT_H
 #define COMPONENT_H
 #include <string>
-class Entity;
-class Component
+
+class Component : public std::enable_shared_from_this<Component>
 {
 public:
 	Component();
 	~Component();
+	void destroy();
 	bool getEnabled();
-	void setEnabled();
-	
+	void setEnabled(bool enable);
+	bool getDestroyed();
+	std::string getType();
 private:
 	std::string mType;
-	std::shared_ptr<Entity> mEntity;
 	bool mEnabled;
 	bool mDestroyed;
 };
-
 
 #endif

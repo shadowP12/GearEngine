@@ -5,9 +5,6 @@ int main() {
 	std::shared_ptr<Entity> e1 = std::shared_ptr<Entity>(new Entity());
 	std::shared_ptr<Entity> e2 = std::shared_ptr<Entity>(new Entity());
 	e1->appendChildren(e2);
-	std::cout << e2->getActive() << std::endl;
-	e1->destroyed();
-	std::cout << e2->getActive() << std::endl;
-	getchar();
+	e1->destroy();
 	return 0;
 }
