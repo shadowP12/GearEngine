@@ -1,13 +1,5 @@
 #include "Node.h"
 
-Node::Node()
-{
-}
-
-Node::~Node()
-{
-}
-
 void Node::setParent(std::shared_ptr<Node> newParent)
 {
 	std::shared_ptr<Node> oldParent = mParent;
@@ -45,7 +37,7 @@ void Node::appendChildren(std::shared_ptr<Node> newChildren)
 	if (!newChildren)
 		return;
 
-	std::shared_ptr<Node> curNode = shared_from_this();
+	std::shared_ptr<Node> curNode = std::dynamic_pointer_cast<Node>(shared_from_this());
 	while (curNode)
 	{
 		if (curNode == newChildren)

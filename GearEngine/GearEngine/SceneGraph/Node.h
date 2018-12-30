@@ -4,11 +4,15 @@
 #include <vector>
 #include "../Math/GMath.h"
 
-class Node : std::enable_shared_from_this<Node>
+class Node : public std::enable_shared_from_this<Node>
 {
 public:
-	Node();
-	~Node();
+	Node() 
+	{
+	}
+	virtual ~Node() 
+	{
+	}
 	std::shared_ptr<Node> getParent() 
 	{
 		return mParent;
