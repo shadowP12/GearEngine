@@ -27,7 +27,7 @@ void BaseApplication::addSystem(std::string type,std::shared_ptr<System> sys)
 	result = mSystems.insert(SystemMap::value_type(type, sys));
 	if (result.second)
 	{
-		//toso
+		//todo
 	}
 }
 
