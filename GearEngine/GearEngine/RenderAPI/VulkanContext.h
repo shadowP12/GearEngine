@@ -3,6 +3,7 @@
 #include "VulkanPrerequisites.h"
 #include "../Utility/Module.h"
 #include <vector>
+#include <glfw3.h>
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
@@ -12,13 +13,16 @@ const bool enableValidationLayers = true;
 class VulkanContext : public Module<VulkanContext>
 {
 public:
-	VulkanContext();
+	VulkanContext(GLFWwindow* window);
 	~VulkanContext();
-	void createInstance();
+
 private:
+	void createInstance();
+	void createSurface(GLFWwindow* window);
+	void pickPhysicalDevice();
+	void createLogicalDevice();
 	bool checkValidationLayerSupport();
 	std::vector<const char*> getRequiredExtensions();
-	void pickPhysicalDevice();
 	bool isDeviceSuitable(VkPhysicalDevice device);
 	bool findQueueFamilies(VkPhysicalDevice device);
 private:

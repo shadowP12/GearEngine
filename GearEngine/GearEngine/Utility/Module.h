@@ -7,24 +7,30 @@
 template <class T>
 class Module {
 public:
-	static T& instance() {
-		if (!isStartedUp()) {
+	static T& instance() 
+	{
+		if (!isStartedUp()) 
+		{
 			ERROR("Trying to access a module but it hasn't been started up yet.");
 		}
 
-		if (isDestroyed()) {
+		if (isDestroyed()) 
+		{
 			ERROR("Trying to access a destroyed module.");
 		}
 
 		return *_instance();
 	}
 
-	static T* instancePtr() {
-		if (!isStartedUp()) {
+	static T* instancePtr() 
+	{
+		if (!isStartedUp()) 
+		{
 			ERROR("Trying to access a module but it hasn't been started up yet.");
 		}
 
-		if (isDestroyed()) {
+		if (isDestroyed()) 
+		{
 			ERROR("Trying to access a destroyed module.");
 		}
 
@@ -32,7 +38,8 @@ public:
 	}
 
 	template<class ...Args>
-	static void startUp(Args &&...args) {
+	static void startUp(Args &&...args) 
+	{
 		if (isStartedUp()) ERROR("Trying to start an already started module.");
 
 		_instance() = new T(std::forward<Args>(args)...);
@@ -41,12 +48,15 @@ public:
 		((Module*)_instance())->onStartUp();
 	}
 
-	static void shutDown() {
-		if (isDestroyed()) {
+	static void shutDown() 
+	{
+		if (isDestroyed()) 
+		{
 			ERROR("Trying to shut down an already shut down module.");
 		}
 
-		if (!isStartedUp()) {
+		if (!isStartedUp()) 
+		{
 			ERROR("Trying to shut down a module which was never started.");
 		}
 
@@ -56,7 +66,8 @@ public:
 		isDestroyed() = true;
 	}
 
-	static bool isStarted() {
+	static bool isStarted() 
+	{
 		return isStartedUp() && !isDestroyed();
 	}
 
@@ -76,18 +87,21 @@ protected:
 
 	virtual void onShutDown() {}
 
-	static T*& _instance() {
+	static T*& _instance() 
+	{
 		static T* inst = nullptr;
 		return inst;
 	}
 
 
-	static bool& isDestroyed() {
+	static bool& isDestroyed() 
+	{
 		static bool inst = false;
 		return inst;
 	}
 
-	static bool& isStartedUp() {
+	static bool& isStartedUp() 
+	{
 		static bool inst = false;
 		return inst;
 	}

@@ -1,10 +1,14 @@
 #include "VulkanContext.h"
-#include <glfw3.h>
 
-VulkanContext::VulkanContext()
+VulkanContext::VulkanContext(GLFWwindow* window)
 {
 	mValidationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 	mDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+
+	createInstance();
+	createSurface(window);
+	pickPhysicalDevice();
+	createLogicalDevice();
 }
 
 VulkanContext::~VulkanContext()
@@ -46,6 +50,15 @@ void VulkanContext::createInstance()
 	if (vkCreateInstance(&createInfo, nullptr, &mInstance) != VK_SUCCESS) 
 	{
 		throw std::runtime_error("failed to create instance!");
+	}
+}
+
+void VulkanContext::createSurface(GLFWwindow* window)
+{
+	auto res = glfwCreateWindowSurface(mInstance, window, nullptr, &mSurface);
+	if (res != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create window surface!");
 	}
 }
 
@@ -128,6 +141,87 @@ void VulkanContext::pickPhysicalDevice()
 	}
 }
 
+void VulkanContext::createLogicalDevice()
+{
+	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
+	float queuePriorities[] = { 0.0f };
+
+	if (mSupportedQueues & VK_QUEUE_GRAPHICS_BIT)
+	{
+		VkDeviceQueueCreateInfo graphicsQueueCreateInfo = {};
+		graphicsQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		graphicsQueueCreateInfo.queueFamilyIndex = mGraphicsFamily;
+		graphicsQueueCreateInfo.queueCount = 1;
+		graphicsQueueCreateInfo.pQueuePriorities = queuePriorities;
+		queueCreateInfos.emplace_back(graphicsQueueCreateInfo);
+	}
+	else
+	{
+		mGraphicsFamily = VK_NULL_HANDLE;
+	}
+
+	if (mSupportedQueues & VK_QUEUE_COMPUTE_BIT && mComputeFamily != mGraphicsFamily)
+	{
+		VkDeviceQueueCreateInfo computeQueueCreateInfo = {};
+		computeQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		computeQueueCreateInfo.queueFamilyIndex = mComputeFamily;
+		computeQueueCreateInfo.queueCount = 1;
+		computeQueueCreateInfo.pQueuePriorities = queuePriorities;
+		queueCreateInfos.emplace_back(computeQueueCreateInfo);
+	}
+	else
+	{
+		mComputeFamily = mGraphicsFamily;
+	}
+
+	if (mSupportedQueues & VK_QUEUE_TRANSFER_BIT && mTransferFamily != mGraphicsFamily && mTransferFamily != mComputeFamily)
+	{
+		VkDeviceQueueCreateInfo transferQueueCreateInfo = {};
+		transferQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		transferQueueCreateInfo.queueFamilyIndex = mTransferFamily;
+		transferQueueCreateInfo.queueCount = 1;
+		transferQueueCreateInfo.pQueuePriorities = queuePriorities;
+		queueCreateInfos.emplace_back(transferQueueCreateInfo);
+	}
+	else
+	{
+		mTransferFamily = mGraphicsFamily;
+	}
+
+	//todo
+	VkPhysicalDeviceFeatures deviceFeatures = {};
+	deviceFeatures.sampleRateShading = VK_TRUE;
+	deviceFeatures.fillModeNonSolid = VK_TRUE;
+	deviceFeatures.wideLines = VK_TRUE;
+	deviceFeatures.samplerAnisotropy = VK_TRUE;
+	deviceFeatures.vertexPipelineStoresAndAtomics = VK_TRUE;
+	deviceFeatures.fragmentStoresAndAtomics = VK_TRUE;
+	deviceFeatures.shaderStorageImageExtendedFormats = VK_TRUE;
+	deviceFeatures.shaderStorageImageWriteWithoutFormat = VK_TRUE;
+	deviceFeatures.shaderClipDistance = VK_TRUE;
+	deviceFeatures.shaderCullDistance = VK_TRUE;
+
+	VkDeviceCreateInfo deviceCreateInfo = {};
+	deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+	deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
+	deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
+	deviceCreateInfo.ppEnabledLayerNames = mValidationLayers.data();
+	deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(mDeviceExtensions.size());
+	deviceCreateInfo.ppEnabledExtensionNames = mDeviceExtensions.data();
+	deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+
+	if (vkCreateDevice(mPhysicalDevice, &deviceCreateInfo, nullptr, &mDevice) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create logical device!");
+	}
+
+	vkGetDeviceQueue(mDevice, mGraphicsFamily, 0, &mGraphicsQueue);
+	vkGetDeviceQueue(mDevice, mPresentFamily, 0, &mPresentQueue);
+	vkGetDeviceQueue(mDevice, mComputeFamily, 0, &mComputeQueue);
+	vkGetDeviceQueue(mDevice, mTransferFamily, 0, &mTransferQueue);
+}
+
 bool VulkanContext::isDeviceSuitable(VkPhysicalDevice device)
 {
 	return findQueueFamilies(device);
@@ -140,12 +234,12 @@ bool VulkanContext::findQueueFamilies(VkPhysicalDevice device)
 	std::vector<VkQueueFamilyProperties> deviceQueueFamilyProperties(deviceQueueFamilyPropertyCount);
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &deviceQueueFamilyPropertyCount, deviceQueueFamilyProperties.data());
 
-	int32_t graphicsFamily = -1;
-	int32_t presentFamily = -1;
-	int32_t computeFamily = -1;
-	int32_t transferFamily = -1;
+	uint32_t graphicsFamily = -1;
+	uint32_t presentFamily = -1;
+	uint32_t computeFamily = -1;
+	uint32_t transferFamily = -1;
 
-	for (uint32_t i = 0; i < deviceQueueFamilyPropertyCount; i++)
+	for (auto i = 0; i < deviceQueueFamilyPropertyCount; i++)
 	{
 		// Check for graphics support.
 		if (deviceQueueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
@@ -157,7 +251,7 @@ bool VulkanContext::findQueueFamilies(VkPhysicalDevice device)
 
 		// Check for presentation support.
 		VkBool32 presentSupport = VK_FALSE;
-		vkGetPhysicalDeviceSurfaceSupportKHR(mPhysicalDevice, i, mSurface, &presentSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, mSurface, &presentSupport);
 
 		if (deviceQueueFamilyProperties[i].queueCount > 0 && presentSupport)
 		{

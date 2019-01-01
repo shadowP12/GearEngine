@@ -8,6 +8,7 @@ Window::Window(int w, int h)
 
 Window::~Window()
 {
+	glfwDestroyWindow(mWindow);
 }
 
 void Window::initWindow()
