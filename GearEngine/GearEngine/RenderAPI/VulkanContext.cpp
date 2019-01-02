@@ -1,5 +1,5 @@
 #include "VulkanContext.h"
-
+#include <assert.h>
 VulkanContext::VulkanContext(GLFWwindow* window)
 {
 	mValidationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
@@ -9,10 +9,30 @@ VulkanContext::VulkanContext(GLFWwindow* window)
 	createSurface(window);
 	pickPhysicalDevice();
 	createLogicalDevice();
+	mManager = new VulkanResourceManager();
 }
 
 VulkanContext::~VulkanContext()
 {
+	delete mManager;
+}
+
+uint32_t VulkanContext::findMemoryType(const uint32_t & typeFilter, const VkMemoryPropertyFlags & properties)
+{
+	VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &physicalDeviceMemoryProperties);
+
+	for (uint32_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; i++) 
+	{
+		if ((typeFilter & (1 << i)) &&
+			(physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties) 
+		{
+			return i;
+		}
+	}
+
+	assert(false && "Failed to find a valid memory type for buffer!");
+	return 0;
 }
 
 void VulkanContext::createInstance()

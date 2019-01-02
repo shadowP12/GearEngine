@@ -1,6 +1,7 @@
 #ifndef VULKAN_CONTEXT_H
 #define VULKAN_CONTEXT_H
 #include "VulkanPrerequisites.h"
+#include "VulkanResource.h"
 #include "../Utility/Module.h"
 #include <vector>
 #include <glfw3.h>
@@ -15,7 +16,11 @@ class VulkanContext : public Module<VulkanContext>
 public:
 	VulkanContext(GLFWwindow* window);
 	~VulkanContext();
-
+	VkDevice getDevice() { return mDevice; }
+	VkPhysicalDevice getPhyDevice() { return mPhysicalDevice; }
+	VkSurfaceKHR getSurface() { return mSurface; }
+	VulkanResourceManager* getResourceManager() { return mManager; }
+	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
 private:
 	void createInstance();
 	void createSurface(GLFWwindow* window);
@@ -26,6 +31,7 @@ private:
 	bool isDeviceSuitable(VkPhysicalDevice device);
 	bool findQueueFamilies(VkPhysicalDevice device);
 private:
+	VulkanResourceManager* mManager;
 	std::vector<const char*> mValidationLayers;
 	std::vector<const char*> mDeviceExtensions;
 	VkInstance mInstance;
