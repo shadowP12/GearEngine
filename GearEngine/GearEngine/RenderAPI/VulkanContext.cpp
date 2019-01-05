@@ -9,6 +9,7 @@ VulkanContext::VulkanContext(GLFWwindow* window)
 	createSurface(window);
 	pickPhysicalDevice();
 	createLogicalDevice();
+	createCommandPool();
 	mManager = new VulkanResourceManager();
 }
 
@@ -240,6 +241,19 @@ void VulkanContext::createLogicalDevice()
 	vkGetDeviceQueue(mDevice, mPresentFamily, 0, &mPresentQueue);
 	vkGetDeviceQueue(mDevice, mComputeFamily, 0, &mComputeQueue);
 	vkGetDeviceQueue(mDevice, mTransferFamily, 0, &mTransferQueue);
+}
+
+void VulkanContext::createCommandPool()
+{
+	VkCommandPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.queueFamilyIndex = mGraphicsFamily;
+	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+	if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create command pool!");
+	}
 }
 
 bool VulkanContext::isDeviceSuitable(VkPhysicalDevice device)

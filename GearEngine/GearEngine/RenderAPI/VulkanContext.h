@@ -20,12 +20,16 @@ public:
 	VkPhysicalDevice getPhyDevice() { return mPhysicalDevice; }
 	VkSurfaceKHR getSurface() { return mSurface; }
 	VulkanResourceManager* getResourceManager() { return mManager; }
+	VkCommandPool getCommandPool() { return mCommandPool; }
+	VkQueue getGraphicsQueue() { return mGraphicsQueue; }
+	VkQueue getComputeQueue() { return mComputeQueue; }
 	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
 private:
 	void createInstance();
 	void createSurface(GLFWwindow* window);
 	void pickPhysicalDevice();
 	void createLogicalDevice();
+	void createCommandPool();
 	bool checkValidationLayerSupport();
 	std::vector<const char*> getRequiredExtensions();
 	bool isDeviceSuitable(VkPhysicalDevice device);
@@ -38,6 +42,7 @@ private:
 	VkSurfaceKHR mSurface;
 	VkDevice mDevice;
 	VkPhysicalDevice mPhysicalDevice;
+	VkCommandPool mCommandPool;
 	VkQueueFlags mSupportedQueues;
 	uint32_t mGraphicsFamily;
 	uint32_t mPresentFamily;

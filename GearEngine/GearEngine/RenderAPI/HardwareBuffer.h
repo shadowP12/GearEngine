@@ -9,9 +9,7 @@ public:
 	{
 		VERTEX,
 		INDEX,
-		UNIFORM,
-		GENERIC,
-		STRUCTURED
+		UNIFORM
 	};
 	HardWareBuffer(BufferType type, GpuBufferUsage usage, uint32_t size);
 	~HardWareBuffer();

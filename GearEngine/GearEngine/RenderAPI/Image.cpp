@@ -1,7 +1,7 @@
 #include "Image.h"
 #include "VulkanContext.h"
 
-Image::Image(VulkanResourceManager * manager, VULKAN_IMAGE_DESC desc)
+Image::Image(VulkanResourceManager * manager, VULKAN_IMAGE_DESC desc, VkDeviceMemory memory)
 	:VulkanResource(manager), mImage(desc.image), mNumFaces(desc.numFaces), mNumMipLevels(desc.numMipLevels)
 {
 	mImageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -29,7 +29,9 @@ Image::Image(VulkanResourceManager * manager, VULKAN_IMAGE_DESC desc)
 
 Image::~Image()
 {
-
+	vkDestroyImageView(VulkanContext::instance().getDevice(), mImageView, nullptr);
+	vkDestroyImage(VulkanContext::instance().getDevice(), mImage, nullptr);
+	vkFreeMemory(VulkanContext::instance().getDevice(), mBufferMemory, nullptr);
 }
 
 void Image::createView(VkImageAspectFlags aspectMask)

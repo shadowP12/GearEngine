@@ -20,16 +20,6 @@ HardWareBuffer::HardWareBuffer(BufferType type, GpuBufferUsage usage, uint32_t s
 	case UNIFORM:
 		usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
 		break;
-	case GENERIC:
-		usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
-
-		if ((usage & GBU_LOADSTORE) == GBU_LOADSTORE)
-			usageFlags |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-
-		break;
-	case STRUCTURED:
-		usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-		break;
 	}
 
 	mBufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -99,5 +89,4 @@ void HardWareBuffer::createBuffer(uint32_t size)
 	vkBindBufferMemory(VulkanContext::instance().getDevice(), buffer, memory, 0);
 
 	mBuffer = VulkanContext::instance().getResourceManager()->create<Buffer>(buffer, memory, size);
-	mBufferCI.usage = usage;
 }

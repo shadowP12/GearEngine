@@ -21,7 +21,7 @@ struct VULKAN_IMAGE_DESC
 class Image : public VulkanResource
 {
 public:
-	Image(VulkanResourceManager* manager, VULKAN_IMAGE_DESC desc);
+	Image(VulkanResourceManager* manager, VULKAN_IMAGE_DESC desc, VkDeviceMemory memory);
 	~Image();
 private:
 	void createView(VkImageAspectFlags aspectMask);
@@ -31,6 +31,7 @@ private:
 	uint32_t mNumFaces;
 	uint32_t mNumMipLevels;
 	VkImageViewCreateInfo mImageViewCI;
+	VkDeviceMemory mBufferMemory;
 };
 
 #endif
