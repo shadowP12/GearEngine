@@ -8,7 +8,7 @@ class BaseApplication
 public:
 	BaseApplication();
 	~BaseApplication();
-	void baseUpdata();
+	void baseUpdate();
 	template<class ComponentType>
 	std::shared_ptr<ComponentType> createComponent();
 private:

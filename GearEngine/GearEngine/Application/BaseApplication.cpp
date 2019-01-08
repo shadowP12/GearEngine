@@ -8,17 +8,17 @@ BaseApplication::~BaseApplication()
 {
 }
 
-void BaseApplication::baseUpdata()
+void BaseApplication::baseUpdate()
 {
 	//updata systems
 	for (SystemMap::iterator iter = mSystems.begin(); iter != mSystems.end(); )
 	{
 		if (iter == mSystems.end())
 			break;
-		iter->second->updata();
+		iter->second->update();
 	}
 	//updata entities
-	mEntityManager->updata();
+	mEntityManager->update();
 }
 
 void BaseApplication::addSystem(std::string type,std::shared_ptr<System> sys)
