@@ -9,7 +9,7 @@ class EntityManager
 public:
 	EntityManager();
 	virtual ~EntityManager();
-	void updata();
+	void update();
 	std::shared_ptr<Entity> createEntity(std::string name);
 private:
 	EntityMap mEntities;

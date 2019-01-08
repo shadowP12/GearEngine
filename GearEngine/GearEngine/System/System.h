@@ -11,7 +11,7 @@ public:
 	virtual ~System();
 	virtual void initSystem() = 0;
 	virtual void addComponent(std::shared_ptr<Component> com) = 0;
-	virtual void updata() = 0;
+	virtual void update() = 0;
 private:
 	void updataComponentState();
 public:

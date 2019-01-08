@@ -8,7 +8,7 @@ EntityManager::~EntityManager()
 {
 }
 
-void EntityManager::updata()
+void EntityManager::update()
 {
 	for (EntityMap::iterator iter = mEntities.begin(); iter != mEntities.end(); )
 	{
