@@ -7,4 +7,5 @@ Buffer::Buffer(VulkanResourceManager* manager, VkBuffer buffer, VkDeviceMemory m
 
 Buffer::~Buffer()
 {
+
 }

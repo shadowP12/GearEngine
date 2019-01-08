@@ -1,6 +1,7 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
 #include <string>
+class ResourceManager;
 class Resource
 {
 public:
@@ -10,6 +11,7 @@ public:
 	std::string getName() { return mName; }
 private:
 	//todo:uuid
+	friend ResourceManager;
 	std::string mName;
 };
 

@@ -169,7 +169,7 @@ ProgramInfo * getProgramInfo(std::vector<uint32_t>& bin)
 	//parseUniformBuffers
 	for (auto &resource : resources.uniform_buffers)
 	{
-		UniformBuffer ub;
+		BlockBuffer ub;
 		ub.name = glsl.get_name(resource.id);;
 		spirv_cross::SPIRType type = glsl.get_type(resource.base_type_id);
 
@@ -177,7 +177,7 @@ ProgramInfo * getProgramInfo(std::vector<uint32_t>& bin)
 		uint32_t member_count = type.member_types.size();
 		for (int i = 0; i < member_count; i++)
 		{
-			UniformBufferMember ubm;
+			BlockBufferMember ubm;
 			ubm.name = glsl.get_member_name(resource.base_type_id, i);
 			auto &member_type = glsl.get_type(type.member_types[i]);
 			ubm.type = parseType(type);
@@ -193,7 +193,7 @@ ProgramInfo * getProgramInfo(std::vector<uint32_t>& bin)
 		{
 			setCount = ub.set;
 		}
-		info->uniformBuffers.push_back(ub);
+		info->blockBuffers.push_back(ub);
 	}
 
 	//parseSampler2Ds

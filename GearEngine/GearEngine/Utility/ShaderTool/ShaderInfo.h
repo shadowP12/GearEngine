@@ -25,7 +25,7 @@ struct SingleData
 	uint32_t size;
 };
 
-struct UniformBufferMember
+struct BlockBufferMember
 {
 	BaseDataType type;
 	std::string name;
@@ -33,10 +33,10 @@ struct UniformBufferMember
 	uint32_t offset;
 };
 
-struct UniformBuffer
+struct BlockBuffer
 {
 	std::string name;
-	std::vector<UniformBufferMember> members;
+	std::vector<BlockBufferMember> members;
 	uint32_t size;
 	uint32_t set;
 	uint32_t binding;
@@ -58,7 +58,7 @@ struct StageInput
 
 struct ProgramInfo
 {
-	std::vector<UniformBuffer> uniformBuffers;
+	std::vector<BlockBuffer> blockBuffers;
 	std::vector<StageInput> stageInputs;
 	std::vector<Sampler2D> sampler2Ds;
 	uint32_t stageInputsSize;

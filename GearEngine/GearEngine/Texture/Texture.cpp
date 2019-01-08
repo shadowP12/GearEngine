@@ -9,6 +9,7 @@ Texture::Texture()
 Texture::~Texture()
 {
 	mImage->destroy();
+	vkDestroySampler(VulkanContext::instance().getDevice(),mSampler,nullptr);
 }
 
 void Texture::init(VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits samples, VkImageAspectFlags imageAspect)
@@ -218,4 +219,29 @@ Buffer * Texture::createStaging()
 	vkBindBufferMemory(VulkanContext::instance().getDevice(), buffer, memory, 0);
 
 	return VulkanContext::instance().getResourceManager()->create<Buffer>(buffer, memory, mWidth * mHeight * 4);
+}
+
+void Texture::createSampler(const VkFilter &filter, const VkSamplerAddressMode &addressMode)
+{
+	VkSamplerCreateInfo samplerCI = {};
+	samplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerCI.magFilter = filter;
+	samplerCI.minFilter = filter;
+	samplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerCI.addressModeU = addressMode;
+	samplerCI.addressModeV = addressMode;
+	samplerCI.addressModeW = addressMode;
+	samplerCI.mipLodBias = 0.0f;
+	samplerCI.anisotropyEnable = static_cast<VkBool32>(false);//todo:add anisotropy control
+	samplerCI.maxAnisotropy = 1;
+	samplerCI.compareEnable = VK_FALSE;
+	samplerCI.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerCI.minLod = 0.0f;
+	samplerCI.maxLod = static_cast<float>(mNumMipLevels);
+	samplerCI.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerCI.unnormalizedCoordinates = VK_FALSE;
+	if (vkCreateSampler(VulkanContext::instance().getDevice(), &samplerCI, nullptr, &mSampler) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create texture sampler !");
+	}
 }
