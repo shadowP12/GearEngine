@@ -1,7 +1,7 @@
 #include "Image.h"
 #include "VulkanContext.h"
 
-Image::Image(VulkanResourceManager * manager, VULKAN_IMAGE_DESC desc, VkDeviceMemory memory)
+Image::Image(VulkanResourceManager * manager, IMAGE_DESC desc, VkDeviceMemory memory)
 	:VulkanResource(manager), mImage(desc.image), mNumFaces(desc.numFaces), mNumMipLevels(desc.numMipLevels)
 {
 	mImageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

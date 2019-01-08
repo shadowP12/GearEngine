@@ -18,7 +18,7 @@ private:
 private:
 	Image* mImage;
 	VkImageCreateInfo mImageCI;
-	VULKAN_IMAGE_DESC mDesc;
+	IMAGE_DESC mDesc;
 	uint32_t mWidth, mHeight;
 	uint32_t mNumMipLevels;
 	uint32_t mNumFaces;

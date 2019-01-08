@@ -8,7 +8,7 @@ enum class TextureType
 	TEX_TYPE_3D,
 	TEX_TYPE_CUBE_MAP
 };
-struct VULKAN_IMAGE_DESC
+struct IMAGE_DESC
 {
 	VkImage image;
 	VkImageLayout layout;
@@ -21,8 +21,10 @@ struct VULKAN_IMAGE_DESC
 class Image : public VulkanResource
 {
 public:
-	Image(VulkanResourceManager* manager, VULKAN_IMAGE_DESC desc, VkDeviceMemory memory);
+	Image(VulkanResourceManager* manager, IMAGE_DESC desc, VkDeviceMemory memory);
 	~Image();
+	VkImage getImage() { return mImage; }
+	VkImageView getView() { return mImageView; }
 private:
 	void createView(VkImageAspectFlags aspectMask);
 private:
