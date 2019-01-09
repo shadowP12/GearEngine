@@ -1,0 +1,11 @@
+{
+  "Textures": [
+    {
+      "diffuseMap": "Drone_diff.jpeg"
+    }
+  ],
+  "Shader": {
+    "vert": "defaultVert.spv",
+    "frag": "defaultFrag.spv"
+  }
+}

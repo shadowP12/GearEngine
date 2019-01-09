@@ -15,6 +15,7 @@ public:
 	~HardWareBuffer();
 	void readData(uint32_t offset, uint32_t size, void* dest);
 	void writeData(uint32_t offset, uint32_t size, void* source);
+	Buffer* getBuffer() { return mBuffer; }
 private:
 	void createBuffer(uint32_t size);
 private:

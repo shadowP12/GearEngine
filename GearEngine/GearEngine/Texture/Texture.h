@@ -3,7 +3,7 @@
 #include "../RenderAPI/Image.h"
 #include "../Resource/Resource.h"
 #include "../RenderAPI/Buffer.h"
-class Texture
+class Texture : public Resource
 {
 public:
 	Texture();

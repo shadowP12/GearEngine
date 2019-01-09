@@ -13,15 +13,13 @@ public:
 	~ShaderModule()
 	{
 		vkDestroyShaderModule(VulkanContext::instance().getDevice(),mShaderModule,nullptr);
-		if (mInfo)
-			delete mInfo;
 	}
 	void load(const char* path);
 	VkShaderModule getShaderModule() { return mShaderModule; }
-	ProgramInfo* getInfo() { return mInfo; }
+	std::shared_ptr<ProgramInfo> getInfo() { return mInfo; }
 private:
 	VkShaderModule mShaderModule;
-	ProgramInfo* mInfo;
+	std::shared_ptr<ProgramInfo> mInfo;
 };
 
 #endif

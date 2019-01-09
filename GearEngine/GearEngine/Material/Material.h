@@ -6,6 +6,8 @@
 #include "../Utility/ShaderTool/ShaderInfo.h"
 #include <map>
 
+class MaterialImporter;
+
 class Material : public Resource
 {
 public:
@@ -35,8 +37,7 @@ public:
 		if (nameIt != mTexture.end())
 		{
 			nameIt->second = tex;
-			uint32_t set = mTextureSet[name].first;
-			uint32_t binding = mTextureSet[name].second;
+			uint32_t binding = mTextureBinding[name];
 
 			VkDescriptorImageInfo textureDescriptor;
 			textureDescriptor.imageView = tex->getView();			
@@ -45,7 +46,7 @@ public:
 
 			VkWriteDescriptorSet writeDescriptorSet{};
 			writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptorSet.dstSet = mDescriptorSet[set];
+			writeDescriptorSet.dstSet = mDescriptorSet;
 			writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			writeDescriptorSet.dstBinding = binding;
 			writeDescriptorSet.pImageInfo = &textureDescriptor;
@@ -54,11 +55,16 @@ public:
 			vkUpdateDescriptorSets(VulkanContext::instance().getDevice(), 1, &writeDescriptorSet, 0, nullptr);
 		}
 	}
+
+	void setDescriptorSet(VkDescriptorSet desc) { mDescriptorSet = desc; }
+
 private:
+	friend MaterialImporter;
+	VkDescriptorSet mDescriptorSet;
+	VkPipeline mPipeline;
 	std::map<std::string, std::shared_ptr<UniformBuffer>> mUniforms;
 	std::map<std::string, std::shared_ptr<Texture>> mTexture;
-	std::map<std::string, std::pair<uint32_t, uint32_t>> mTextureSet;
-	std::vector<VkDescriptorSet> mDescriptorSet;
+	std::map<std::string, uint32_t> mTextureBinding;
 	std::vector<BlockBuffer> mBlockBuffers;
 };
 

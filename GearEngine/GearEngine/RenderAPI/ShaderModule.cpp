@@ -4,7 +4,7 @@ void ShaderModule::load(const char * path)
 {
 	std::vector<uint32_t> spirv_binary = read_spirv_file(path);
 
-	mInfo = getProgramInfo(spirv_binary);
+	mInfo = std::shared_ptr<ProgramInfo>(getProgramInfo(spirv_binary));
 
 	VkShaderModuleCreateInfo moduleCreateInfo{};
 	moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
