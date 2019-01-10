@@ -10,18 +10,23 @@ class Renderer : public Module<Renderer>
 public:
 	Renderer()
 	{
-		std::vector<VkFormat> colors;
-		colors.push_back(VK_FORMAT_B8G8R8A8_UNORM);
-		mMainRenderPass = std::shared_ptr<RenderPass>(new RenderPass(colors, true, true));
-		
-		VkExtent2D extent;
-		extent.width = mWidth;
-		extent.height = mHeight;
-		mSwapChain = std::shared_ptr<SwapChain>(new SwapChain(extent,mMainRenderPass));
 	}
 	~Renderer()
 	{
 
+	}
+	void init(uint32_t w, uint32_t h)
+	{
+		mWidth = w;
+		mHeight = h;
+		std::vector<VkFormat> colors;
+		colors.push_back(VK_FORMAT_B8G8R8A8_UNORM);
+		mMainRenderPass = std::shared_ptr<RenderPass>(new RenderPass(colors, true, true));
+
+		VkExtent2D extent;
+		extent.width = mWidth;
+		extent.height = mHeight;
+		mSwapChain = std::shared_ptr<SwapChain>(new SwapChain(extent, mMainRenderPass));
 	}
 	void reSize(uint32_t w, uint32_t h)
 	{

@@ -13,8 +13,16 @@ struct SwapChainSupportDetails
 class SwapChain
 {
 public:
-	SwapChain(const VkExtent2D& extent, std::shared_ptr<RenderPass> renderPass);
-	~SwapChain();
+	SwapChain(const VkExtent2D& extent, std::shared_ptr<RenderPass> renderPass)
+	{
+		createSwapChain(extent);
+		createDepthMap();
+		createFrameBuffer(renderPass);
+	}
+	~SwapChain()
+	{
+		cleanupSwapChain();
+	}
 	void reCreateSwapChain(const VkExtent2D& extent, std::shared_ptr<RenderPass> renderPass)
 	{
 		cleanupSwapChain();
@@ -57,15 +65,4 @@ private:
 	Image* mDepth;
 };
 
-SwapChain::SwapChain(const VkExtent2D& extent, std::shared_ptr<RenderPass> renderPass)
-{
-	createSwapChain(extent);
-	createDepthMap();
-	createFrameBuffer(renderPass);
-}
-
-SwapChain::~SwapChain()
-{
-	cleanupSwapChain();
-}
 #endif

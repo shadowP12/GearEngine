@@ -6,15 +6,21 @@ VulkanContext::VulkanContext(GLFWwindow* window)
 	mDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
 	createInstance();
+	setupDebugCallback();
 	createSurface(window);
 	pickPhysicalDevice();
 	createLogicalDevice();
 	createCommandPool();
+
 	mManager = new VulkanResourceManager();
 }
 
 VulkanContext::~VulkanContext()
 {
+	if (enableValidationLayers) 
+	{
+		DestroyDebugUtilsMessengerEXT(mInstance, mCallback, nullptr);
+	}
 	delete mManager;
 }
 
@@ -53,7 +59,7 @@ void VulkanContext::createInstance()
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
-
+	
 	auto extensions = getRequiredExtensions();
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
 	createInfo.ppEnabledExtensionNames = extensions.data();
@@ -91,13 +97,13 @@ bool VulkanContext::checkValidationLayerSupport()
 	std::vector<VkLayerProperties> availableLayers(layerCount);
 	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-	for (const char* layerName : mValidationLayers) 
+	for (const char* layerName : mValidationLayers)
 	{
 		bool layerFound = false;
 
-		for (const auto& layerProperties : availableLayers) 
+		for (const auto& layerProperties : availableLayers)
 		{
-			if (strcmp(layerName, layerProperties.layerName) == 0) 
+			if (strcmp(layerName, layerProperties.layerName) == 0)
 			{
 				layerFound = true;
 				break;
@@ -128,7 +134,8 @@ std::vector<const char*> VulkanContext::getRequiredExtensions()
 
 	if (enableValidationLayers) 
 	{
-		extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+		//extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
 
 	return extensions;
@@ -320,5 +327,21 @@ bool VulkanContext::findQueueFamilies(VkPhysicalDevice device)
 		return false;
 	}
 	return true;
+}
+
+void VulkanContext::setupDebugCallback()
+{
+	if (!enableValidationLayers) return;
+
+	VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	createInfo.pfnUserCallback = debugCallback;
+
+	if (CreateDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mCallback) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to set up debug callback!");
+	}
 }
 

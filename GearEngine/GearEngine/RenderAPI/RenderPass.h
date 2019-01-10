@@ -12,6 +12,7 @@ public:
 		mHasDepth = hasDepth;
 		std::vector<VkAttachmentReference> colorReferences;
 		std::vector<VkAttachmentDescription> attachments;
+		attachments.resize(mNumColor);
 		VkSubpassDescription subpass = {};
 		for (uint32_t i = 0; i < mNumColor; ++i)
 		{
@@ -87,6 +88,7 @@ public:
 		}
 
 		std::vector<VkSubpassDependency> dependencies;
+		dependencies.resize(2);
 		dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
 		dependencies[0].dstSubpass = 0;
 		dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;

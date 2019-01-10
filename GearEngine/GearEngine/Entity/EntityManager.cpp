@@ -10,7 +10,9 @@ EntityManager::~EntityManager()
 
 void EntityManager::update()
 {
-	for (EntityMap::iterator iter = mEntities.begin(); iter != mEntities.end(); )
+	if (mEntities.size() == 0)
+		return;
+	for (EntityMap::iterator iter = mEntities.begin(); iter != mEntities.end(); ++iter)
 	{
 		if (iter == mEntities.end())
 			break;

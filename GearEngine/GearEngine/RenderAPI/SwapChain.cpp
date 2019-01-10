@@ -44,12 +44,10 @@ void SwapChain::createSwapChain(const VkExtent2D &extent)
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
 
-	VkSwapchainKHR newSwapChain;
-	if (vkCreateSwapchainKHR(VulkanContext::instance().getDevice(), &createInfo, nullptr, &newSwapChain) != VK_SUCCESS) 
+	if (vkCreateSwapchainKHR(VulkanContext::instance().getDevice(), &createInfo, nullptr, &mSwapChain) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create swap chain!");
 	}
-	mSwapChain = newSwapChain;
 
 	vkGetSwapchainImagesKHR(VulkanContext::instance().getDevice(), mSwapChain, &imageCount, nullptr);
 	mSwapChainImages.resize(imageCount);
@@ -110,6 +108,7 @@ void SwapChain::createDepthMap()
 	depthImageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	depthImageCI.pNext = nullptr;
 	depthImageCI.flags = 0;
+	depthImageCI.format = VK_FORMAT_D32_SFLOAT;
 	depthImageCI.imageType = VK_IMAGE_TYPE_2D;
 	depthImageCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	depthImageCI.extent = { mSwapChainExtent.width, mSwapChainExtent.height, 1 };
@@ -117,18 +116,17 @@ void SwapChain::createDepthMap()
 	depthImageCI.arrayLayers = 1;
 	depthImageCI.samples = VK_SAMPLE_COUNT_1_BIT;
 	depthImageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
-	depthImageCI.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthImageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	depthImageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	depthImageCI.queueFamilyIndexCount = 0;
 	depthImageCI.pQueueFamilyIndices = nullptr;
 
 	IMAGE_DESC depthDesc;
-	depthDesc.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+	depthDesc.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT ;
 	depthDesc.numFaces = 1;
 	depthDesc.type = TextureType::TEX_TYPE_2D;
-	depthDesc.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	depthDesc.numFaces = 1;
-	depthDesc.numMipLevels = 0;
+	depthDesc.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	depthDesc.numMipLevels = 1;
 	depthDesc.format = VK_FORMAT_D32_SFLOAT;
 
 	VkImage depthImage;

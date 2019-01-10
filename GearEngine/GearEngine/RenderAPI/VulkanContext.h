@@ -4,12 +4,36 @@
 #include "VulkanResource.h"
 #include "../Utility/Module.h"
 #include <vector>
+#define GLFW_INCLUDE_VULKAN
 #include <glfw3.h>
+
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
 const bool enableValidationLayers = true;
 #endif
+
+inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pCallback) 
+{
+	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+	if (func != nullptr) 
+	{
+		return func(instance, pCreateInfo, pAllocator, pCallback);
+	}
+	else 
+	{
+		return VK_ERROR_EXTENSION_NOT_PRESENT;
+	}
+}
+
+inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback, const VkAllocationCallbacks* pAllocator)
+{
+	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+	if (func != nullptr) 
+	{
+		func(instance, callback, pAllocator);
+	}
+}
 
 class VulkanContext : public Module<VulkanContext>
 {
@@ -36,10 +60,17 @@ private:
 	std::vector<const char*> getRequiredExtensions();
 	bool isDeviceSuitable(VkPhysicalDevice device);
 	bool findQueueFamilies(VkPhysicalDevice device);
+	void setupDebugCallback();
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) 
+	{
+		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+		return VK_FALSE;
+	}
 private:
 	VulkanResourceManager* mManager;
 	std::vector<const char*> mValidationLayers;
 	std::vector<const char*> mDeviceExtensions;
+	VkDebugUtilsMessengerEXT mCallback;
 	VkInstance mInstance;
 	VkSurfaceKHR mSurface;
 	VkDevice mDevice;

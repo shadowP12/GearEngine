@@ -10,6 +10,8 @@ class Input :public Module<Input>
 public:
 	Input() 
 	{
+		memset(mMouseButtonHeld, 0, sizeof(mMouseButtonHeld));
+		memset(mKey, 0, sizeof(mKey));
 	}
 
 	void update() 

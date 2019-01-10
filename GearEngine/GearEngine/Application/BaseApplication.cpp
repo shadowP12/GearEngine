@@ -2,6 +2,7 @@
 
 BaseApplication::BaseApplication()
 {
+	mEntityManager = std::shared_ptr<EntityManager>(new EntityManager());
 }
 
 BaseApplication::~BaseApplication()

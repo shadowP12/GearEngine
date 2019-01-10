@@ -4,11 +4,6 @@ Window::Window(int w, int h)
 {
 	mWidth = w;
 	mHeight = h;
-	glfwSetFramebufferSizeCallback(mWindow, resizeCallback);
-	glfwSetKeyCallback(mWindow, keyCallback);
-	glfwSetMouseButtonCallback(mWindow, mouseButtonCallback);
-	glfwSetCursorPosCallback(mWindow, cursorPosCallback);
-	glfwSetScrollCallback(mWindow, mouseScrollCallback);
 }
 
 Window::~Window()
@@ -22,6 +17,11 @@ void Window::initWindow()
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	mWindow = glfwCreateWindow(mWidth, mHeight, "Gear", nullptr, nullptr);
 	glfwSetWindowUserPointer(mWindow, this);
+	glfwSetFramebufferSizeCallback(mWindow, resizeCallback);
+	glfwSetKeyCallback(mWindow, keyCallback);
+	glfwSetMouseButtonCallback(mWindow, mouseButtonCallback);
+	glfwSetCursorPosCallback(mWindow, cursorPosCallback);
+	glfwSetScrollCallback(mWindow, mouseScrollCallback);
 }
 
 GLFWwindow * Window::getWindowPtr()

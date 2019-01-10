@@ -32,6 +32,7 @@ void Texture::init(VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBi
 	mImageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	mImageCI.queueFamilyIndexCount = 0;
 	mImageCI.pQueueFamilyIndices = nullptr;
+	mImageCI.format = format;
 
 	mDesc.layout = layout;
 	mDesc.format = format;
