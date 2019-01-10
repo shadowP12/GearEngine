@@ -8,16 +8,16 @@ BaseApplication::~BaseApplication()
 {
 }
 
-void BaseApplication::baseUpdate()
+void BaseApplication::EcsUpdate()
 {
-	//updata systems
+	//update systems
 	for (SystemMap::iterator iter = mSystems.begin(); iter != mSystems.end(); )
 	{
 		if (iter == mSystems.end())
 			break;
 		iter->second->update();
 	}
-	//updata entities
+	//update entities
 	mEntityManager->update();
 }
 

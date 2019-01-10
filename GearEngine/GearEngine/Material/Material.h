@@ -14,6 +14,18 @@ public:
 	Material();
 	~Material();
 
+	void setUniform(std::string uniformName, void* data)
+	{
+		for (uint32_t i = 0; i < mBlockBuffers.size(); i++)
+		{
+			if (uniformName == mBlockBuffers[i].name)
+			{
+				mUniforms[uniformName]->writeData(0, mBlockBuffers[i].size, data);
+				return;
+			}
+		}
+	}
+
 	void setUniform(std::string uniformName, std::string memberName, void* data)
 	{
 		for (uint32_t i = 0; i < mBlockBuffers.size(); i++)
@@ -57,11 +69,16 @@ public:
 	}
 
 	void setDescriptorSet(VkDescriptorSet desc) { mDescriptorSet = desc; }
-
+	VkPipeline getPipeline() { return mPipeline; }
+	VkDescriptorSet getDescriptorSet() { return mDescriptorSet; };
+	VkPipelineLayout getPipelineLayout() { return mPipelineLayout; }
 private:
 	friend MaterialImporter;
+	VkDescriptorPool mPool;
+	VkDescriptorSetLayout mDescriptorSetLayout;
 	VkDescriptorSet mDescriptorSet;
 	VkPipeline mPipeline;
+	VkPipelineLayout mPipelineLayout;
 	std::map<std::string, std::shared_ptr<UniformBuffer>> mUniforms;
 	std::map<std::string, std::shared_ptr<Texture>> mTexture;
 	std::map<std::string, uint32_t> mTextureBinding;
@@ -74,5 +91,9 @@ Material::Material()
 
 Material::~Material()
 {
+	vkDestroyPipelineLayout(VulkanContext::instance().getDevice(), mPipelineLayout, nullptr);
+	vkDestroyPipeline(VulkanContext::instance().getDevice(), mPipeline, nullptr);
+	vkDestroyDescriptorPool(VulkanContext::instance().getDevice(), mPool, nullptr);
+	vkDestroyDescriptorSetLayout(VulkanContext::instance().getDevice(), mDescriptorSetLayout, nullptr);
 }
 #endif

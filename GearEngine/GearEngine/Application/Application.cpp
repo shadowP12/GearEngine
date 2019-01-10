@@ -17,6 +17,7 @@ void Application::runMainLoop()
 {
 	while (!glfwWindowShouldClose(mWindow->getWindowPtr())) 
 	{
+		EcsUpdate();
 		glfwPollEvents();
 	}
 }

@@ -8,7 +8,7 @@ class BaseApplication
 public:
 	BaseApplication();
 	~BaseApplication();
-	void baseUpdate();
+	void EcsUpdate();
 	template<class ComponentType>
 	std::shared_ptr<ComponentType> createComponent();
 private:

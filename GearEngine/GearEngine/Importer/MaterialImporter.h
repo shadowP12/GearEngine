@@ -42,7 +42,7 @@ public:
 
 		VkDescriptorPoolSize samplerPoolSize = {};
 		uniformPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		uniformPoolSize.descriptorCount = vInfo->sampler2Ds.size() + fInfo->sampler2Ds.size();;
+		uniformPoolSize.descriptorCount = vInfo->sampler2Ds.size() + fInfo->sampler2Ds.size();
 		poolSizes.push_back(samplerPoolSize);
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
@@ -55,6 +55,7 @@ public:
 		{
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
+		mat->mPool = pool;
 
 		//set up DescriptorSetLayout
 		VkDescriptorSetLayout descriptorSetLayout;
@@ -110,6 +111,7 @@ public:
 		{
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
+		mat->mDescriptorSetLayout = descriptorSetLayout;
 
 		//DescriptorSet
 		VkDescriptorSet set;
@@ -344,6 +346,7 @@ public:
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
+		mat->mPipelineLayout = pipelineLayout;
 
 		VkPipeline pipeline;
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -369,10 +372,6 @@ public:
 		}
 		mat->mPipeline = pipeline;
 		MaterialManager::instance().addRes(mat);
-		//clear
-		vkDestroyPipelineLayout(VulkanContext::instance().getDevice(), pipelineLayout,nullptr);
-		vkDestroyDescriptorPool(VulkanContext::instance().getDevice(),pool,nullptr);
-		vkDestroyDescriptorSetLayout(VulkanContext::instance().getDevice(),descriptorSetLayout,nullptr);
 	}
 private:
 

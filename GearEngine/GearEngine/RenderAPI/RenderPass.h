@@ -7,6 +7,7 @@ class RenderPass
 public:
 	RenderPass(std::vector<VkFormat> colors, bool present, bool hasDepth) 
 	{
+		mFormats = colors;
 		mNumColor = colors.size();
 		mHasDepth = hasDepth;
 		std::vector<VkAttachmentReference> colorReferences;
@@ -120,12 +121,14 @@ public:
 	{
 		vkDestroyRenderPass(VulkanContext::instance().getDevice(),mRenderPass,nullptr);
 	}
+	std::vector<VkFormat> getFormats() { return mFormats; }
 	uint32_t getNumColor() { return mNumColor; }
 	bool getHasDepth() { return mHasDepth; }
 	VkRenderPass getRenderPass() { return mRenderPass; }
 private:
 	uint32_t mNumColor;
 	bool mHasDepth;
+	std::vector<VkFormat> mFormats;
 	VkRenderPass mRenderPass;
 };
 #endif
