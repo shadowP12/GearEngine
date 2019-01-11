@@ -30,8 +30,10 @@ public:
 		createDepthMap();
 		createFrameBuffer(renderPass);
 	}
+	VkSwapchainKHR getSwapchain() { return mSwapChain; }
 	VkFramebuffer getFrameBuffer(uint32_t idx) { return mFrameBuffers[idx]; }
 	VkFormat getFormat() { return mSwapChainImageFormat; }
+	uint32_t getFrameBufferSize() { return mFrameBuffers.size(); }
 private:
 	void createSwapChain(const VkExtent2D &extent);
 	void createFrameBuffer(std::shared_ptr<RenderPass> renderPass);

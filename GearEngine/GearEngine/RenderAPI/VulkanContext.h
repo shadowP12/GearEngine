@@ -47,6 +47,7 @@ public:
 	VkCommandPool getCommandPool() { return mCommandPool; }
 	VkQueue getGraphicsQueue() { return mGraphicsQueue; }
 	VkQueue getComputeQueue() { return mComputeQueue; }
+	VkQueue getPresentQueue() { return mPresentQueue; }
 	uint32_t getGraphicsFamily() { return mGraphicsFamily; }
 	uint32_t getPresentFamily() { return mPresentFamily; }
 	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);

@@ -25,9 +25,9 @@ Application::Application()
 
 	//Importer
 	ImporterManager::startUp();
-	ImporterManager::instance().loadTexture("Drone_diff.jpeg");
+	//ImporterManager::instance().loadTexture("Drone_diff.jpeg");
 	//ImporterManager::instance().loadMesh("s.gltf");
-	ImporterManager::instance().loadMaterial("default.json");
+	//ImporterManager::instance().loadMaterial("default.json");
 }
 
 Application::~Application()
@@ -52,6 +52,7 @@ void Application::runMainLoop()
 			mWindow->setReSize(false);
 		}
 		EcsUpdate();
+		Renderer::instance().draw();
 		glfwPollEvents();
 		
 	}
