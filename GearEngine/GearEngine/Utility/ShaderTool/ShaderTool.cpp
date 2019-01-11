@@ -21,7 +21,7 @@ std::vector<uint32_t> read_spirv_file(const char *path)
 	return spirv;
 }
 
-BaseDataType parseType(spirv_cross::SPIRType & row_type)
+BaseDataType parseType(const spirv_cross::SPIRType & row_type)
 {
 	BaseDataType type;
 	switch (row_type.basetype)
@@ -42,7 +42,7 @@ BaseDataType parseType(spirv_cross::SPIRType & row_type)
 		type = Double;
 		break;
 	default:
-		type = Unknown;
+		type = None;
 		break;
 	}
 	if (type == Int)
@@ -82,7 +82,7 @@ BaseDataType parseType(spirv_cross::SPIRType & row_type)
 	return type;
 }
 
-uint32_t parseTypeSize(spirv_cross::SPIRType & row_type)
+uint32_t parseTypeSize(const spirv_cross::SPIRType & row_type)
 {
 	uint32_t size = 0;
 	switch (row_type.basetype)
@@ -180,8 +180,8 @@ ProgramInfo * getProgramInfo(std::vector<uint32_t>& bin)
 			BlockBufferMember ubm;
 			ubm.name = glsl.get_member_name(resource.base_type_id, i);
 			auto &member_type = glsl.get_type(type.member_types[i]);
-			ubm.type = parseType(type);
-			ubm.size = parseTypeSize(type);
+			ubm.type = parseType(member_type);
+			ubm.size = parseTypeSize(member_type);
 			ubm.offset = ub_size;
 			ub_size += ubm.size;
 			ub.members.push_back(ubm);

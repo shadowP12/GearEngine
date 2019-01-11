@@ -5,7 +5,7 @@
 #include <string>
 enum BaseDataType
 {
-	Unknown,
+	None,
 	Boolean,
 	Int,
 	Half,

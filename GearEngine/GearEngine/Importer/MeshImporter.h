@@ -1,8 +1,9 @@
 #ifndef MESH_IMPORTER_H
 #define MESH_IMPORTER_H
+
 #include "../Resource/MeshManager.h"
 #include "../Mesh/Mesh.h"
-#include "../ThirdParty/tiny_gltf.h"
+#include "ImporterPrerequisites.h"
 
 class MeshImporter
 {
@@ -16,7 +17,7 @@ public:
 		tinygltf::TinyGLTF gltfContext;
 		std::string error;
 
-		bool fileLoaded = gltfContext.LoadASCIIFromFile(&gltfModel, &error, name.c_str());
+		bool fileLoaded = gltfContext.LoadASCIIFromFile(&gltfModel, &error, path.c_str());
 
 		if (!fileLoaded) 
 		{

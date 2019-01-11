@@ -6,14 +6,16 @@
 class Buffer : public VulkanResource
 {
 public:
-	Buffer(VulkanResourceManager* manager, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize size);
+	Buffer(VulkanResourceManager* manager, VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 	~Buffer();
+	void readData(uint32_t offset, uint32_t size, void* dest);
+	void writeData(uint32_t offset, uint32_t size, void* source);
 	VkBuffer getBuffer() { return mBuffer; }
-	VkDeviceMemory getMemory() { return mBufferMemory; }
+	VkDeviceMemory getMemory() { return mMemory; }
 	VkDeviceSize getSize() { return mSize; }
 private:
 	VkBuffer mBuffer;
-	VkDeviceMemory mBufferMemory;
+	VkDeviceMemory mMemory;
 	VkDeviceSize mSize;
 };
 #endif

@@ -2,7 +2,7 @@
 #define TEXTURE_IMPORTER_H
 #include "../Texture/Texture.h"
 #include "../Resource/TextureManager.h"
-#include "../ThirdParty/stb_image.h"
+#include "ImporterPrerequisites.h"
 
 class TextureImporter
 {
@@ -18,9 +18,10 @@ public:
 		stbi_uc* pixels = stbi_load(path.data(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
 		std::shared_ptr<Texture> tex = std::shared_ptr<Texture>(new Texture());
-		tex->init(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+		tex->init(texWidth, texHeight,VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_FORMAT_R8G8B8A8_UNORM, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
 		tex->createSampler();
-		tex->setName(path);
+		tex->setName(name);
+		tex->writeData(pixels,imageSize);
 		TextureManager::instance().addRes(tex);
 		//todo:add default texture
 	}

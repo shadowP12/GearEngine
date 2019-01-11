@@ -16,12 +16,20 @@ public:
 	{
 		std::shared_ptr<Material> mat = std::shared_ptr<Material>(new Material());
 		mat->setName(name);
-		std::string path = "D:/GearEngine/GearEngine/Resource/Materials/" + name;
+		std::string path = "D:/GearEngine/GearEngine/Resource/Materials/" + name;//
 		nlohmann::json json;
+		std::ifstream file(path.c_str());
+		if (!file.is_open()) 
+		{
+			throw std::runtime_error("Can't load file");
+		}
+		file >> json;
 		auto& Textures = json["Textures"];
 		auto& Shaders = json["Shader"];
-		std::string vPath = "D:/GearEngine/GearEngine/Resource/Shaders/" + Shaders["vert"];
-		std::string fPath = "D:/GearEngine/GearEngine/Resource/Shaders/" + Shaders["frag"];
+		std::string vName = Shaders["vert"];
+		std::string fName = Shaders["frag"];
+		std::string vPath = "D:/GearEngine/GearEngine/Resource/Shaders/" + vName;
+		std::string fPath = "D:/GearEngine/GearEngine/Resource/Shaders/" + fName;
 
 		ShaderModule vertShader;
 		ShaderModule fragShader;
@@ -41,15 +49,15 @@ public:
 		poolSizes.push_back(uniformPoolSize);
 
 		VkDescriptorPoolSize samplerPoolSize = {};
-		uniformPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		uniformPoolSize.descriptorCount = vInfo->sampler2Ds.size() + fInfo->sampler2Ds.size();
+		samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		samplerPoolSize.descriptorCount = vInfo->sampler2Ds.size() + fInfo->sampler2Ds.size();
 		poolSizes.push_back(samplerPoolSize);
 
 		VkDescriptorPoolCreateInfo poolInfo = {};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = poolSizes.size();
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = vInfo->setCount + fInfo->setCount;
+		poolInfo.maxSets = 1;//hard code : only one set
 
 		if (vkCreateDescriptorPool(VulkanContext::instance().getDevice(), &poolInfo, nullptr, &pool) != VK_SUCCESS)
 		{
@@ -94,7 +102,7 @@ public:
 		for (uint32_t i = 0; i < fInfo->sampler2Ds.size(); i++)
 		{
 			VkDescriptorSetLayoutBinding layoutBinding = {};
-			layoutBinding.binding = fInfo->blockBuffers[i].binding;
+			layoutBinding.binding = fInfo->sampler2Ds[i].binding;
 			layoutBinding.descriptorCount = 1;
 			layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			layoutBinding.pImmutableSamplers = nullptr;

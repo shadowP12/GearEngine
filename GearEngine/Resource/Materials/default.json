@@ -5,7 +5,7 @@
     }
   ],
   "Shader": {
-    "vert": "defaultVert.spv",
-    "frag": "defaultFrag.spv"
+    "vert": "vert.spv",
+    "frag": "frag.spv"
   }
 }

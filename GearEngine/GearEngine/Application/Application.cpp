@@ -5,6 +5,7 @@
 #include "../Resource/TextureManager.h"
 #include "../Resource/MaterialManager.h"
 #include "../Renderer/Renderer.h"
+#include "../Importer/ImporterManager.h"
 
 Application::Application()
 {
@@ -21,10 +22,17 @@ Application::Application()
 	MeshManager::startUp();
 	TextureManager::startUp();
 	MaterialManager::startUp();
+
+	//Importer
+	ImporterManager::startUp();
+	ImporterManager::instance().loadTexture("Drone_diff.jpeg");
+	//ImporterManager::instance().loadMesh("s.gltf");
+	ImporterManager::instance().loadMaterial("default.json");
 }
 
 Application::~Application()
 {
+	ImporterManager::shutDown();
 	MaterialManager::shutDown();
 	TextureManager::shutDown();
 	MeshManager::shutDown();
