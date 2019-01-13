@@ -1,10 +1,8 @@
 # GearEngine
 GearEngine is a simple GameEngine for Vulkan
 ## Screenshots
-[Image text](https://github.com/hipiPan/GearEngine/blob/master/Screenshots/N.PNG)
-
-[Image text](https://github.com/hipiPan/GearEngine/blob/master/Screenshots/lucy.png)
-
+![image](https://github.com/hipiPan/GearEngine/blob/master/Screenshots/N.PNG)
+![image](https://github.com/hipiPan/GearEngine/blob/master/Screenshots/lucy.png)
 ## Dependencies
  * [Vulkan](https://www.khronos.org/vulkan)
  * [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross)
