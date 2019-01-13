@@ -1,5 +1,5 @@
 # GearEngine
-GearEngine is a simple GameEngine for Vulkan
+GearEngine is a simple RenderEngine for Vulkan
 ## Screenshots
 ![image](https://github.com/hipiPan/GearEngine/blob/master/Screenshots/N.PNG)
 ## Dependencies
