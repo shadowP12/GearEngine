@@ -2,22 +2,20 @@
 #define MESH_MANAGER_H
 #include "ResourceManager.h"
 #include "../Utility/Module.h"
+#include "../Mesh/Mesh.h"
 
 class MeshManager : public ResourceManager, public Module<MeshManager>
 {
 public:
-	MeshManager();
-	~MeshManager();
-
+	MeshManager()
+	{}
+	virtual ~MeshManager()
+	{}
+	std::shared_ptr<Mesh> getRes(std::string name)
+	{
+		return std::dynamic_pointer_cast<Mesh>(getResImp(name));
+	}
 private:
 
 };
-
-MeshManager::MeshManager()
-{
-}
-
-MeshManager::~MeshManager()
-{
-}
 #endif

@@ -47,7 +47,6 @@ void Entity::destroy()
 		if (iter == mComponents.end())
 			break;
 		mComponents.erase(iter);
-		iter->second->setNode(NULL);
 		iter->second->destroy();
 	}
 
@@ -110,7 +109,6 @@ void Entity::addComponent(std::shared_ptr<Component> newComponent)
 	//todo:more Imformation
 	if (result.second) 
 	{
-		newComponent->setNode(shared_from_this());
 	}
 }
 

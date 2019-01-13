@@ -7,7 +7,7 @@ class VulkanResource
 {
 public:
 	VulkanResource(VulkanResourceManager* manager);
-	~VulkanResource();
+	virtual ~VulkanResource();
 	void destroy();
 	//todo
 private:

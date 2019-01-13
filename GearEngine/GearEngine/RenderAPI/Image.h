@@ -22,7 +22,7 @@ class Image : public VulkanResource
 {
 public:
 	Image(VulkanResourceManager* manager, IMAGE_DESC desc, VkDeviceMemory memory);
-	~Image();
+	virtual~Image();
 	VkImage getImage() { return mImage; }
 	VkImageView getView() { return mImageView; }
 private:

@@ -6,6 +6,7 @@
 #include "../Resource/MaterialManager.h"
 #include "../Renderer/Renderer.h"
 #include "../Importer/ImporterManager.h"
+#include "../Component/StaticModelComponent.h"//todo:...
 
 Application::Application()
 {
@@ -25,9 +26,15 @@ Application::Application()
 
 	//Importer
 	ImporterManager::startUp();
-	//ImporterManager::instance().loadTexture("Drone_diff.jpeg");
-	//ImporterManager::instance().loadMesh("s.gltf");
-	//ImporterManager::instance().loadMaterial("default.json");
+	ImporterManager::instance().loadTexture("Drone_diff.jpeg");
+	ImporterManager::instance().loadMesh("scene.gltf");
+	ImporterManager::instance().loadMaterial("default.json");
+
+	//test
+	std::shared_ptr<Entity> ent = mEntityManager->createEntity("test");
+
+	std::shared_ptr<StaticModelComponent> smc = std::shared_ptr<StaticModelComponent>(new StaticModelComponent(MeshManager::instance().getRes("Suzanne"), MaterialManager::instance().getRes("default.json"), ent));
+	ent->addComponent(smc);
 }
 
 Application::~Application()
@@ -45,14 +52,24 @@ void Application::runMainLoop()
 {
 	while (!glfwWindowShouldClose(mWindow->getWindowPtr())) 
 	{
-		Input::instance().update();
 		if (mWindow->getReSize())
 		{
-			Renderer::instance().reSize(mWindow->getWidth(), mWindow->getHeight());
-			mWindow->setReSize(false);
+			if (mWindow->getWidth() == 0)
+			{
+				//stop
+			}
+			else
+			{
+				Renderer::instance().reSize(mWindow->getWidth(), mWindow->getHeight());
+				mWindow->setReSize(false);
+			}
+		}
+		else
+		{
+			Renderer::instance().draw();
 		}
 		EcsUpdate();
-		Renderer::instance().draw();
+		Input::instance().update();
 		glfwPollEvents();
 		
 	}

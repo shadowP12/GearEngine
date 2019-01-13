@@ -80,8 +80,8 @@ glm::mat4 Node::getLocalMatrix()
 	//RTS
 	glm::mat4 R, T, S;
 	R = glm::toMat4(mLRot);
-	T = glm::translate(T,mLPos);
-	S = glm::scale(S,mLScale);
+	T = glm::translate(glm::mat4(1.0),mLPos);
+	S = glm::scale(glm::mat4(1.0),mLScale);
 	return R*T*S;
 }
 

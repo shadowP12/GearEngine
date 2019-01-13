@@ -15,7 +15,8 @@ void Component::destroy()
 	if (!mDestroyed)
 		return;
 	mDestroyed = true;
-	
+	//may be more ...
+	destroyImp();
 }
 
 bool Component::getEnabled()
@@ -27,6 +28,8 @@ void Component::setEnabled(bool enable)
 {
 	if (mEnabled != enable)
 		mEnabled = enable;
+	//may be more
+	setEnabledImp(enable);
 }
 
 bool Component::getDestroyed()
@@ -42,16 +45,6 @@ int Component::getID()
 void Component::setID(int id)
 {
 	mID = id;
-}
-
-std::shared_ptr<Node> Component::getNode()
-{
-	return mNode;
-}
-
-void Component::setNode(std::shared_ptr<Node> node)
-{
-	mNode = node;
 }
 
 std::string Component::getType()

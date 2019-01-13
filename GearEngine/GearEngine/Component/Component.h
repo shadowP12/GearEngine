@@ -7,20 +7,19 @@ class Component : public std::enable_shared_from_this<Component>
 {
 public:
 	Component();
-	~Component();
+	virtual ~Component();
 	void destroy();
+	virtual void destroyImp() = 0;
+	virtual void setEnabledImp(bool enable) = 0;
 	bool getEnabled();
 	void setEnabled(bool enable);
 	bool getDestroyed();
 	int getID();
 	void setID(int id);
-	std::shared_ptr<Node> getNode();
-	void setNode(std::shared_ptr<Node> node);
 	std::string getType();
-private:
+protected:
 	int mID;
 	std::string mType;
-	std::shared_ptr<Node> mNode;
 	bool mEnabled;
 	bool mDestroyed;
 };

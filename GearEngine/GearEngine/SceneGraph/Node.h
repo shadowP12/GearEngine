@@ -9,6 +9,10 @@ class Node : public std::enable_shared_from_this<Node>
 public:
 	Node() 
 	{
+		mParent = nullptr;
+		mLPos = glm::vec3(0,0,0);
+		mLScale = glm::vec3(1,1,1);
+		mLRot = glm::quat(1,0,0,0);
 	}
 	virtual ~Node() 
 	{

@@ -13,7 +13,7 @@ public:
 	std::shared_ptr<ComponentType> createComponent();
 private:
 	void addSystem(std::string type, std::shared_ptr<System> sys);
-private:
+protected:
 	std::shared_ptr<EntityManager> mEntityManager;
 	SystemMap mSystems;
 };

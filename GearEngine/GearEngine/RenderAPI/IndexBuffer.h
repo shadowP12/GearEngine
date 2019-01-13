@@ -6,7 +6,7 @@ class IndexBuffer : public HardWareBuffer
 {
 public:
 	IndexBuffer(uint32_t elementSize, uint32_t indexCount)
-		: HardWareBuffer(INDEX, GBU_DYNAMIC, elementSize*indexCount), mIndexCount(indexCount)
+		: HardWareBuffer(INDEX, GBU_DYNAMIC, elementSize*indexCount), mIndexCount(static_cast<uint32_t>(indexCount))
 	{
 	}
 	~IndexBuffer()

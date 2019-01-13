@@ -181,8 +181,12 @@ ProgramInfo * getProgramInfo(std::vector<uint32_t>& bin)
 			ubm.name = glsl.get_member_name(resource.base_type_id, i);
 			auto &member_type = glsl.get_type(type.member_types[i]);
 			ubm.type = parseType(member_type);
-			ubm.size = parseTypeSize(member_type);
-			ubm.offset = ub_size;
+
+			ubm.size = glsl.get_declared_struct_member_size(type, i);
+			ubm.offset = glsl.type_struct_member_offset(type, i);
+
+			//ubm.size = parseTypeSize(member_type);
+			//ubm.offset = ub_size;
 			ub_size += ubm.size;
 			ub.members.push_back(ubm);
 		}

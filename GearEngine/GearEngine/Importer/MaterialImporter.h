@@ -16,7 +16,7 @@ public:
 	{
 		std::shared_ptr<Material> mat = std::shared_ptr<Material>(new Material());
 		mat->setName(name);
-		std::string path = "D:/GearEngine/GearEngine/Resource/Materials/" + name;//
+		std::string path = "D:/GearEngine/GearEngine/Resource/Materials/" + name;
 		nlohmann::json json;
 		std::ifstream file(path.c_str());
 		if (!file.is_open()) 
@@ -166,7 +166,7 @@ public:
 				if (Textures[j].find(vInfo->sampler2Ds[i].name) != Textures[i].end())
 				{
 					std::string texName = Textures[i][vInfo->sampler2Ds[i].name];
-					std::shared_ptr<Texture> tex = std::dynamic_pointer_cast<Texture>(TextureManager::instance().getRes(texName));
+					std::shared_ptr<Texture> tex = TextureManager::instance().getRes(texName);
 
 					VkDescriptorImageInfo textureInfo;
 					textureInfo.imageView = tex->getView();
@@ -205,6 +205,8 @@ public:
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			descriptorWrite.descriptorCount = 1;
 			descriptorWrite.pBufferInfo = &bufferInfo;
+
+			descriptorWrites.push_back(descriptorWrite);
 			//set up material
 			mat->mBlockBuffers.push_back(fInfo->blockBuffers[i]);
 			mat->mUniforms[fInfo->blockBuffers[i].name] = ub;

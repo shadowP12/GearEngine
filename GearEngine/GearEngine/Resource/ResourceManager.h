@@ -8,7 +8,7 @@ class ResourceManager
 public:
 	ResourceManager();
 	virtual ~ResourceManager();
-	virtual std::shared_ptr<Resource> getRes(std::string name)
+	virtual std::shared_ptr<Resource> getResImp(std::string name)
 	{
 		std::shared_ptr<Resource> res;
 		std::map<std::string, std::shared_ptr<Resource>>::iterator nameIt = mResources.find(name);
@@ -37,7 +37,7 @@ public:
 			mResources.erase(nameIt);
 		}
 	}
-private:
+protected:
 	std::map<std::string, std::shared_ptr<Resource>> mResources;
 };
 

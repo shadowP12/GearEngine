@@ -9,7 +9,10 @@ class TextureManager : public ResourceManager, public Module<TextureManager>
 public:
 	TextureManager();
 	~TextureManager();
-
+	std::shared_ptr<Texture> getRes(std::string name)
+	{
+		return std::dynamic_pointer_cast<Texture>(getResImp(name));
+	}
 private:
 
 };

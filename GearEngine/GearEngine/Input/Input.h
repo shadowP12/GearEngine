@@ -10,6 +10,11 @@ class Input :public Module<Input>
 public:
 	Input() 
 	{
+		memset(mKeyDown, 0, sizeof(mKeyDown));
+		memset(mKeyUp, 0, sizeof(mKeyUp));
+		memset(mMouseButtonDown, 0, sizeof(mMouseButtonDown));
+		memset(mMouseButtonUp, 0, sizeof(mMouseButtonUp));
+		mMouseScrollWheel = 0;
 		memset(mMouseButtonHeld, 0, sizeof(mMouseButtonHeld));
 		memset(mKey, 0, sizeof(mKey));
 	}

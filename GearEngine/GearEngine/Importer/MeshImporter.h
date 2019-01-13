@@ -135,11 +135,11 @@ public:
 				}//primitives
 
 				std::shared_ptr<VertexBuffer> vb = std::shared_ptr<VertexBuffer>(new VertexBuffer(sizeof(Vertex),vertexData.size()));
-				vb->writeData(0, vertexData.size(), vertexData.data());
+				vb->writeData(0, vertexData.size()* sizeof(Vertex), vertexData.data());
 				meshPtr->setVertexBuffer(vb);
 
-				std::shared_ptr<IndexBuffer> ib = std::shared_ptr<IndexBuffer>(new IndexBuffer(sizeof(sizeof(uint32_t)), indexData.size()));
-				ib->writeData(0,indexData.size(),indexData.data());
+				std::shared_ptr<IndexBuffer> ib = std::shared_ptr<IndexBuffer>(new IndexBuffer(sizeof(uint32_t), indexData.size()));
+				ib->writeData(0,indexData.size()*sizeof(uint32_t),indexData.data());
 				meshPtr->setIndexBuffer(ib);
 
 				MeshManager::instance().addRes(meshPtr);

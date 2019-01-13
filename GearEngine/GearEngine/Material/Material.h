@@ -11,8 +11,16 @@ class MaterialImporter;
 class Material : public Resource
 {
 public:
-	Material();
-	~Material();
+	Material()
+	{
+	}
+	virtual ~Material()
+	{
+		vkDestroyPipelineLayout(VulkanContext::instance().getDevice(), mPipelineLayout, nullptr);
+		vkDestroyPipeline(VulkanContext::instance().getDevice(), mPipeline, nullptr);
+		vkDestroyDescriptorPool(VulkanContext::instance().getDevice(), mPool, nullptr);
+		vkDestroyDescriptorSetLayout(VulkanContext::instance().getDevice(), mDescriptorSetLayout, nullptr);
+	}
 
 	void setUniform(std::string uniformName, void* data)
 	{
@@ -84,16 +92,4 @@ private:
 	std::map<std::string, uint32_t> mTextureBinding;
 	std::vector<BlockBuffer> mBlockBuffers;
 };
-
-Material::Material()
-{
-}
-
-Material::~Material()
-{
-	vkDestroyPipelineLayout(VulkanContext::instance().getDevice(), mPipelineLayout, nullptr);
-	vkDestroyPipeline(VulkanContext::instance().getDevice(), mPipeline, nullptr);
-	vkDestroyDescriptorPool(VulkanContext::instance().getDevice(), mPool, nullptr);
-	vkDestroyDescriptorSetLayout(VulkanContext::instance().getDevice(), mDescriptorSetLayout, nullptr);
-}
 #endif

@@ -2,6 +2,7 @@
 
 void Renderer::draw()
 {
+	mMainCamera->tick();
 	VkResult result = vkAcquireNextImageKHR(VulkanContext::instance().getDevice(), mSwapChain->getSwapchain(), std::numeric_limits<uint64_t>::max(), mImageAvailableSemaphore, VK_NULL_HANDLE, &mCurFrameIndex);
 
 	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -70,7 +71,7 @@ void Renderer::buildCommandBuffer(CommandBuffer& commandBuffer)
 	//remove
 	std::vector<VkClearValue> clearValues;
 	VkClearValue clear1;
-	clear1.color = { 1.0f, 0.0f, 0.0f, 1.0f };
+	clear1.color = { 0.7f, 0.7f, 0.7f, 1.0f };
 	clearValues.push_back(clear1);
 
 	VkClearValue clear2;
@@ -95,6 +96,13 @@ void Renderer::buildCommandBuffer(CommandBuffer& commandBuffer)
 	scissor.offset = { 0, 0 };
 	scissor.extent = { mWidth,mHeight };
 	vkCmdSetScissor(commandBuffer.getCommandBuffer(), 0, 1, &scissor);
+
+	glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)mWidth / (float)mHeight, 0.1f, 100.0f);//hard code;
+	for (uint32_t i = 0; i < mScene->getSceneInfo().staticModels.size(); i++)
+	{
+		mScene->getSceneInfo().staticModels[i]->setSceneData(mMainCamera->getViewMatrix(), proj,glm::vec3(0, -1, 0),glm::vec3(0.7, 0.7, 0.7));
+		mScene->getSceneInfo().staticModels[i]->render(commandBuffer);
+	}
 
 	vkCmdEndRenderPass(commandBuffer.getCommandBuffer());
 }

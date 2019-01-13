@@ -43,17 +43,18 @@ private:
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
 	void cleanupSwapChain() 
 	{
-		for (size_t i = 0; i < mFrameBuffers.size(); i++)
-		{
-			vkDestroyFramebuffer(VulkanContext::instance().getDevice(), mFrameBuffers[i], nullptr);
-		}
+		if (mDepth)
+			mDepth->destroy();
 
 		for (size_t i = 0; i < mSwapChainImageViews.size(); i++)
 		{
 			vkDestroyImageView(VulkanContext::instance().getDevice(), mSwapChainImageViews[i], nullptr);
 		}
-		if(mDepth)
-			mDepth->destroy();
+
+		for (size_t i = 0; i < mFrameBuffers.size(); i++)
+		{
+			vkDestroyFramebuffer(VulkanContext::instance().getDevice(), mFrameBuffers[i], nullptr);
+		}
 
 		vkDestroySwapchainKHR(VulkanContext::instance().getDevice(), mSwapChain, nullptr);
 	}
