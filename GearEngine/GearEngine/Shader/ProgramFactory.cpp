@@ -143,74 +143,73 @@ EShLanguage GetShaderStage(const std::string& stage)
 		return EShLangCount;
 	}
 }
-ShaderDataType parseType(const spirv_cross::SPIRType & row_type)
+ReflectionDataType parseType(const spirv_cross::SPIRType & row_type)
 {
-	ShaderDataType type;
+	ReflectionDataType type;
 	switch (row_type.basetype)
 	{
 	case spirv_cross::SPIRType::BaseType::Boolean:
-		type = Boolean;
+		type = B;
 		break;
 	case spirv_cross::SPIRType::BaseType::Int:
-		type = Int;
+		type = I;
 		break;
 	case spirv_cross::SPIRType::BaseType::Half:
-		type = Half;
+		type = H;
 		break;
 	case spirv_cross::SPIRType::BaseType::Float:
-		type = Float;
+		type = F;
 		break;
 	case spirv_cross::SPIRType::BaseType::Double:
-		type = Double;
+		type = D;
 		break;
 	default:
-		type = None;
+		type = NONE;
 		break;
 	}
-	if (type == Int)
+	if (type == I)
 	{
 		if (row_type.array.size() > 0)
 		{
-			type = IntArray;
+			type = IA;
 		}
 	}
-	if (type == Float)
+	if (type == F)
 	{
 		if (row_type.array.size() > 0)
 		{
-			type = FloatArray;
+			type = FA;
 		}
 		if (row_type.vecsize == 2 && row_type.columns == 1)
 		{
-			type = Vector2;
+			type = VEC2;
 		}
 		if (row_type.vecsize == 3 && row_type.columns == 1)
 		{
-			type = Vector3;
+			type = VEC3;
 		}
 		if (row_type.vecsize == 4 && row_type.columns == 1)
 		{
-			type = Vector4;
+			type = VEC4;
 		}
 		if (row_type.vecsize == 3 && row_type.columns == 3)
 		{
-			type = Matrix3;
+			type = MAT3;
 		}
 		if (row_type.vecsize == 4 && row_type.columns == 4)
 		{
-			type = Matrix4;
+			type = MAT4;
 		}
 	}
 	return type;
 }
 //parse shader
-std::shared_ptr<ProgramReflection> createReflection(std::vector<uint32_t> &spirv)
+void createReflection(std::vector<uint32_t> &spirv, std::vector<UniformBufferBlock>& blocks, std::vector<UniformSampler2D>& sampler2Ds)
 {
 	spirv_cross::CompilerGLSL  glsl(spirv);
 	spirv_cross::ShaderResources resources = glsl.get_shader_resources();
 
 	//parse uniformBuffers
-	std::vector<UniformBufferBlock> blocks;
 	for (auto &resource : resources.uniform_buffers)
 	{
 		UniformBufferBlock ub;
@@ -239,7 +238,6 @@ std::shared_ptr<ProgramReflection> createReflection(std::vector<uint32_t> &spirv
 		blocks.push_back(ub);
 	}
 	//parse sampler2Ds
-	std::vector<UniformSampler2D> sampler2Ds;
 	for (auto &resource : resources.sampled_images)
 	{
 		UniformSampler2D s;
@@ -249,9 +247,6 @@ std::shared_ptr<ProgramReflection> createReflection(std::vector<uint32_t> &spirv
 
 		sampler2Ds.push_back(s);
 	}
-
-	std::shared_ptr<ProgramReflection> res = std::shared_ptr<ProgramReflection>(new ProgramReflection());
-	return res;
 }
 
 ProgramFactory::ProgramFactory()
@@ -264,7 +259,7 @@ ProgramFactory::~ProgramFactory()
 	glslang::FinalizeProcess();
 }
 
-std::shared_ptr<Shader> ProgramFactory::createShader(const std::string & stage, const std::string & source, std::shared_ptr<ProgramReflection>& reflection)
+std::shared_ptr<Shader> ProgramFactory::createShader(const std::string & stage, const std::string & source, std::vector<UniformBufferBlock>& blocks, std::vector<UniformSampler2D>& sampler2Ds)
 {
 	EShLanguage shaderType = GetShaderStage(stage);
 	glslang::TShader shader(shaderType);
@@ -292,6 +287,7 @@ std::shared_ptr<Shader> ProgramFactory::createShader(const std::string & stage, 
 
 	GlslangToSpv(*program.getIntermediate(shaderType), spirv, &logger);
 
+	createReflection(spirv,blocks,sampler2Ds);
 	std::shared_ptr<Shader> res = std::shared_ptr<Shader>(new Shader(spirv));
 	return res;
 }

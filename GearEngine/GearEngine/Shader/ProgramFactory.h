@@ -8,7 +8,7 @@ class ProgramFactory : public Module<ProgramFactory>
 public:
 	ProgramFactory();
 	~ProgramFactory();
-	std::shared_ptr<Shader> createShader(const std::string& stage, const std::string& source, std::shared_ptr<ProgramReflection>& reflection);
+	std::shared_ptr<Shader> createShader(const std::string & stage, const std::string & source, std::vector<UniformBufferBlock>& blocks, std::vector<UniformSampler2D>& sampler2Ds);
 private:
 
 };

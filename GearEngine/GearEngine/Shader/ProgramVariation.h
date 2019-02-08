@@ -15,11 +15,10 @@ public:
 class ProgramVariation
 {
 public:
-	ProgramVariation(std::shared_ptr<Shader> vs, std::shared_ptr<Shader> ps, std::shared_ptr<ProgramReflection> reflector)
+	ProgramVariation(std::shared_ptr<Shader> vs, std::shared_ptr<Shader> ps)
 	{
 		mVS = vs;
 		mPS = ps;
-		mReflector = reflector;
 	}
 	~ProgramVariation() {}
 
@@ -27,6 +26,5 @@ private:
 	std::shared_ptr<Shader> mVS;
 	std::shared_ptr<Shader> mPS;
 	//todo: more
-	std::shared_ptr<ProgramReflection> mReflector;
 };
 #endif

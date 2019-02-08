@@ -1,27 +1,26 @@
 #ifndef PROGRAM_REFLECTION_H
 #define PROGRAM_REFLECTION_H
 //SPIRV-Cross
-//set only one!
-
-enum ShaderDataType
+#include <vector>
+enum ReflectionDataType
 {
-	None,
-	Boolean,
-	Int,
-	Half,
-	Float,
-	Double,
-	IntArray,
-	FloatArray,
-	Vector2,
-	Vector3,
-	Vector4,
-	Matrix3,
-	Matrix4
+	NONE = 1,
+	B,
+	I,
+	H,
+	F,
+	D,
+	IA,
+	FA,
+	VEC2,
+	VEC3,
+	VEC4,
+	MAT3,
+	MAT4
 };
 struct UniformBufferBlockMember
 {
-	ShaderDataType type;
+	ReflectionDataType type;
 	std::string name;
 	uint32_t size;
 	uint32_t offset;
@@ -64,7 +63,18 @@ public:
 
 	void addBlocks(std::vector<UniformBufferBlock> blocks)
 	{
-		
+		for (uint32_t i = 0; i < blocks.size(); i++)
+		{
+			mBlocks.push_back(blocks[i]);
+		}
+	}
+
+	void addSampler2Ds(std::vector<UniformSampler2D> sampler2Ds)
+	{
+		for (uint32_t i = 0; i < sampler2Ds.size(); i++)
+		{
+			mSampler2Ds.push_back(sampler2Ds[i]);
+		}
 	}
 public:
 	std::vector<UniformBufferBlock> mBlocks;

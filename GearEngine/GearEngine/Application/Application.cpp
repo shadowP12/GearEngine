@@ -7,6 +7,8 @@
 #include "../Renderer/Renderer.h"
 #include "../Importer/ImporterManager.h"
 #include "../Component/StaticModelComponent.h"//todo:...
+#include "../Shader/ProgramFactory.h"
+#include "../Shader/Program.h"
 
 Application::Application()
 {
@@ -24,21 +26,31 @@ Application::Application()
 	TextureManager::startUp();
 	MaterialManager::startUp();
 
+	//Shader manager
+	ProgramFactory::startUp();
+
 	//Importer
 	ImporterManager::startUp();
 	ImporterManager::instance().loadTexture("Drone_diff.jpeg");
 	ImporterManager::instance().loadMesh("scene.gltf");
 	ImporterManager::instance().loadMaterial("default.json");
-
+	
+	//program test
+	std::shared_ptr<Program> program = std::shared_ptr<Program>(new Program());
+	program->addSource("vert","D:/GearEngine/GearEngine/Resource/Shaders/default.vert");
+	program->addSource("frag", "D:/GearEngine/GearEngine/Resource/Shaders/default.frag");
+	DefineList dl;
+	bool hasProgram;
+	program->getProgram(dl, hasProgram);
 	//test
 	std::shared_ptr<Entity> ent = mEntityManager->createEntity("test");
-
 	std::shared_ptr<StaticModelComponent> smc = std::shared_ptr<StaticModelComponent>(new StaticModelComponent(MeshManager::instance().getRes("Suzanne"), MaterialManager::instance().getRes("default.json"), ent));
 	ent->addComponent(smc);
 }
 
 Application::~Application()
 {
+	ProgramFactory::shutDown();
 	ImporterManager::shutDown();
 	MaterialManager::shutDown();
 	TextureManager::shutDown();
