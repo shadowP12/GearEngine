@@ -64,7 +64,7 @@ void Renderer::buildCommandBuffer(CommandBuffer& commandBuffer)
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = mMainRenderPass->getRenderPass();
-	renderPassInfo.framebuffer = mSwapChain->getFrameBuffer(mCurFrameIndex);
+	renderPassInfo.framebuffer = mSwapChain->getFrameBuffer(mCurFrameIndex)->getFrameBuffer();
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = { mWidth,mHeight };
 

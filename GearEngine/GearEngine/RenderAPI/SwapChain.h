@@ -31,7 +31,7 @@ public:
 		createFrameBuffer(renderPass);
 	}
 	VkSwapchainKHR getSwapchain() { return mSwapChain; }
-	VkFramebuffer getFrameBuffer(uint32_t idx) { return mFrameBuffers[idx]; }
+	Framebuffer* getFrameBuffer(uint32_t idx) { return mFrameBuffers[idx]; }
 	VkFormat getFormat() { return mSwapChainImageFormat; }
 	uint32_t getFrameBufferSize() { return mFrameBuffers.size(); }
 private:
@@ -53,7 +53,7 @@ private:
 
 		for (size_t i = 0; i < mFrameBuffers.size(); i++)
 		{
-			vkDestroyFramebuffer(VulkanContext::instance().getDevice(), mFrameBuffers[i], nullptr);
+			delete mFrameBuffers[i];
 		}
 
 		vkDestroySwapchainKHR(VulkanContext::instance().getDevice(), mSwapChain, nullptr);
@@ -62,7 +62,7 @@ private:
 	VkSwapchainKHR mSwapChain;
 	std::vector<VkImage> mSwapChainImages;
 	std::vector<VkImageView> mSwapChainImageViews;
-	std::vector<VkFramebuffer> mFrameBuffers;
+	std::vector<Framebuffer*> mFrameBuffers;
 	VkFormat mSwapChainImageFormat;
 	VkExtent2D mSwapChainExtent;
 	Image* mDepth;

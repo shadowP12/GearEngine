@@ -80,25 +80,25 @@ void SwapChain::createSwapChain(const VkExtent2D &extent)
 
 void SwapChain::createFrameBuffer(std::shared_ptr<RenderPass> renderPass)
 {
+
 	mFrameBuffers.resize(mSwapChainImages.size());
 
 	for (size_t i = 0; i < mSwapChainImages.size(); i++)
 	{
-		VkImageView attachments[] = { mSwapChainImageViews[i], mDepth->getView() };
+		FramebufferDesc desc;
+		desc.width = mSwapChainExtent.width;
+		desc.height = mSwapChainExtent.height;
+		desc.layers = 1;
+		desc.numSamples = 1;
+		desc.offscreen = false;
+		desc.color[0].format = mSwapChainImageFormat;
+		desc.color[0].imageView = mSwapChainImageViews[i];
+		desc.color[0].init = true;
+		desc.depth.format = VK_FORMAT_D32_SFLOAT;
+		desc.depth.imageView = mDepth->getView();
+		desc.depth.init = true;
 
-		VkFramebufferCreateInfo framebufferInfo = {};
-		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = renderPass->getRenderPass();
-		framebufferInfo.attachmentCount = 2;
-		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = mSwapChainExtent.width;
-		framebufferInfo.height = mSwapChainExtent.height;
-		framebufferInfo.layers = 1;
-
-		if (vkCreateFramebuffer(VulkanContext::instance().getDevice(), &framebufferInfo, nullptr, &mFrameBuffers[i]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create framebuffer!");
-		}
+		mFrameBuffers[i] = new Framebuffer(desc);
 	}
 }
 
