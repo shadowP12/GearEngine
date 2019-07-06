@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+/GearEngine/.vs
+/GearEngine/Debug
+/GearEngine/GearEngine/Debug
+/GearEngine/Release
+*.tlog
+*.lnk
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
