@@ -26,11 +26,13 @@ public:
 	bool getReSize() { return reSize; }
 	void setReSize(bool is) { reSize = is; }
 	std::vector<const char*> getRequiredExtensions(bool enableValidationLayers);
+	
 private:
 	int mWidth;
 	int mHeight;
 	bool reSize;
 	GLFWwindow* mWindow;
+	VkSurfaceKHR mSurface;
 };
 
 #endif
