@@ -6,7 +6,6 @@
 #include "../RenderAPI/SwapChain.h"
 #include "../RenderAPI/CommandBuffer.h"
 #include "../Debugger/DebugCamera.h"
-#include "RenderScene.h"
 
 class Renderer : public Module<Renderer>
 {
@@ -32,8 +31,6 @@ public:
 
 		mMainCamera = std::shared_ptr<DebugCamera>(new DebugCamera(glm::vec3(0,0,0),-90,0));
 
-		mScene = std::shared_ptr<RenderScene>(new RenderScene());
-
 		createSemaphores();
 	}
 	void reSize(uint32_t w, uint32_t h)
@@ -49,15 +46,13 @@ public:
 	void draw();
 
 	std::shared_ptr<RenderPass> getRenderPass() { return mMainRenderPass; }
-	std::shared_ptr<RenderScene> getRenderScene() { return mScene; }
 private:
 	void buildCommandBuffer(CommandBuffer& commandBuffer);
 	void createSemaphores();
 private:
 	std::shared_ptr<RenderPass> mMainRenderPass;
 	std::shared_ptr<SwapChain> mSwapChain;
-	std::shared_ptr<DebugCamera> mMainCamera;//hard code:camera should be an component
-	std::shared_ptr<RenderScene> mScene;
+	std::shared_ptr<DebugCamera> mMainCamera;
 	VkSemaphore mImageAvailableSemaphore;
 	VkSemaphore mRenderFinishedSemaphore;
 	uint32_t mCurFrameIndex;

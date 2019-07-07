@@ -1,9 +1,8 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 #include "../Window/Window.h"
-#include "BaseApplication.h"
 
-class Application : public BaseApplication
+class Application
 {
 public:
 	Application();

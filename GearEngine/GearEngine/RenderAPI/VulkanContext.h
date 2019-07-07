@@ -5,7 +5,7 @@
 #include "../Utility/Module.h"
 #include <vector>
 #define GLFW_INCLUDE_VULKAN
-#include <glfw3.h>
+#include <GLFW/glfw3.h>
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
