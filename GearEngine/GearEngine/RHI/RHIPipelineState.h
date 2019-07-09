@@ -1,0 +1,4 @@
+#ifndef RHI_PIPELINE_STATE_H
+#define RHI_PIPELINE_STATE_H
+
+#endif
