@@ -1,17 +1,8 @@
 #include "Window.h"
+#include "RHI/RHI.h"
 
-Window::Window(int w, int h)
-{
-	mWidth = w;
-	mHeight = h;
-}
-
-Window::~Window()
-{
-	glfwDestroyWindow(mWindow);
-}
-
-void Window::initWindow()
+Window::Window(int width, int height)
+	:mWidth(width),mHeight(height)
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -22,6 +13,33 @@ void Window::initWindow()
 	glfwSetMouseButtonCallback(mWindow, mouseButtonCallback);
 	glfwSetCursorPosCallback(mWindow, cursorPosCallback);
 	glfwSetScrollCallback(mWindow, mouseScrollCallback);
+
+	//初始化交换链
+
+	auto res = glfwCreateWindowSurface(RHI::instance().getInstance(), mWindow, nullptr, &mSurface);
+	if (res != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create window surface!");
+	}
+
+	//缺少检查会崩溃
+	VkBool32 supportsPresent;
+	uint32_t graphicsFamily = RHI::instance().getDevice()->getGraphicsFamily();
+	vkGetPhysicalDeviceSurfaceSupportKHR(RHI::instance().getDevice()->getPhyDevice(), graphicsFamily, mSurface, &supportsPresent);
+
+	if (!supportsPresent)
+	{
+		throw std::runtime_error("Cannot find a graphics queue that also supports present operations.");
+	}
+
+	mSwapChain = new RHISwapChain(RHI::instance().getDevice(), mSurface, width, height);
+}
+
+Window::~Window()
+{
+	glfwDestroyWindow(mWindow);
+	if (mSwapChain)
+		delete mSwapChain;
 }
 
 GLFWwindow * Window::getWindowPtr()
@@ -56,27 +74,25 @@ int Window::getWidth()
 	return mWidth;
 }
 
-void Window::setWidth(int w)
-{
-	mWidth = w;
-}
-
 int Window::getHeight()
 {
 	return mHeight;
 }
 
-void Window::setHeight(int h)
+void Window::reset(uint32_t width, uint32_t height)
 {
-	mHeight = h;
+	mWidth = width;
+	mHeight = height;
+	if (mSwapChain)
+		delete mSwapChain;
+	mSwapChain = new RHISwapChain(RHI::instance().getDevice(), mSurface, width, height);
 }
 
 void resizeCallback(GLFWwindow * window, int width, int height)
 {
 	Window * win = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-	win->setWidth(width);
-	win->setHeight(height);
-	win->setReSize(true);
+	win->reset(width, height);
+	
 }
 
 void cursorPosCallback(GLFWwindow * window, double xPos, double yPos)

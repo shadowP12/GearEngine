@@ -53,9 +53,6 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 
 	VkDeviceQueueCreateInfo queueInfo[3] = {};
 
-	VkDeviceCreateInfo deviceInfo = { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
-	deviceInfo.pQueueCreateInfos = queueInfo;
-
 	queueInfo[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	queueInfo[0].queueFamilyIndex = mGraphicsFamily;
 	queueInfo[0].queueCount = queueFamilyProperties[mGraphicsFamily].queueCount;
@@ -104,7 +101,7 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 		}
 	}
 
-	VkDeviceCreateInfo deviceInfo;
+	VkDeviceCreateInfo deviceInfo ;
 	deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	deviceInfo.pNext = nullptr;
 	deviceInfo.flags = 0;

@@ -3,8 +3,11 @@
 #include <sstream>
 #include "Utility/Log.h"
 //自定义扩展函数
-PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT = nullptr;
-PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT = nullptr;
+namespace rhi 
+{
+	PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT = nullptr;
+	PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT = nullptr;
+}
 
 //debug信息的回调函数
 VkBool32 debugMsgCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
@@ -49,6 +52,8 @@ RHI::RHI()
 
 RHI::~RHI()
 {
+	if (mActiceDevice)
+		delete mActiceDevice;
 }
 
 uint32_t RHI::findMemoryType(const uint32_t & typeFilter, const VkMemoryPropertyFlags & properties)
@@ -167,15 +172,14 @@ void RHI::pickPhysicalDevice()
 
 void RHI::createLogicalDevice()
 {
-	
+	mActiceDevice = new RHIDevice(mGPU);
 }
 
 void RHI::setupDebugCallback()
 {
 #if ENABLE_VALIDATION_LAYERS
 
-	GET_INSTANCE_PROC_ADDR(mInstance, CreateDebugReportCallbackEXT);
-	GET_INSTANCE_PROC_ADDR(mInstance, DestroyDebugReportCallbackEXT);
+	auto vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(mInstance, "vkCreateDebugReportCallbackEXT");
 
 	VkDebugReportFlagsEXT debugFlags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT |
 		VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;

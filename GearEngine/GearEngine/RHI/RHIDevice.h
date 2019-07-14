@@ -9,6 +9,7 @@ public:
 	~RHIDevice();
 	VkDevice getDevice() { return mDevice; }
 	VkPhysicalDevice getPhyDevice() { return mGPU; }
+	uint32_t getGraphicsFamily() { return mGraphicsFamily; }
 private:
 	void createCommandPool();
 private:

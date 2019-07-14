@@ -11,6 +11,8 @@ public:
 	RHI();
 	~RHI();
 	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
+	VkInstance getInstance() { return mInstance; }
+	RHIDevice* getDevice() { return mActiceDevice; }
 private:
 	void createInstance();
 	void pickPhysicalDevice();
@@ -19,6 +21,7 @@ private:
 private:
 	VkInstance mInstance;
 	VkPhysicalDevice mGPU;
+	RHIDevice* mActiceDevice;
 	VkDebugReportCallbackEXT mDebugCallback;
 };
 #endif

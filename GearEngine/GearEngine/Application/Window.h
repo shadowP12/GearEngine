@@ -4,7 +4,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vector>
-#include "../Input/Input.h"
+#include "Input/Input.h"
+#include "RHI/RHISwapChain.h"
 
 static void resizeCallback(GLFWwindow *window, int width, int height);
 static void cursorPosCallback(GLFWwindow * window, double xPos, double yPos);
@@ -15,24 +16,20 @@ static void mouseScrollCallback(GLFWwindow * window, double xOffset, double yOff
 class Window
 {
 public:
-	Window(int w = 800, int h = 600);
+	Window(int width = 800, int height = 600);
 	~Window();
-	void initWindow();
 	GLFWwindow* getWindowPtr();
 	int getWidth();
-	void setWidth(int w);
 	int getHeight();
-	void setHeight(int h);
-	bool getReSize() { return reSize; }
-	void setReSize(bool is) { reSize = is; }
+	void reset(uint32_t width, uint32_t height);
 	std::vector<const char*> getRequiredExtensions(bool enableValidationLayers);
 	
 private:
 	int mWidth;
 	int mHeight;
-	bool reSize;
 	GLFWwindow* mWindow;
 	VkSurfaceKHR mSurface;
+	RHISwapChain* mSwapChain;
 };
 
 #endif

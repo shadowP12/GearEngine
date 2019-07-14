@@ -1,6 +1,6 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
-#include "../Window/Window.h"
+#include "Window.h"
 
 class Application
 {
@@ -9,6 +9,6 @@ public:
 	~Application();
 	void runMainLoop();
 private:
-	std::shared_ptr<Window> mWindow;
+	Window* mWindow;
 };
 #endif

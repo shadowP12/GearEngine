@@ -87,7 +87,7 @@ SwapChainSupportDetails RHISwapChain::querySwapChainSupport()
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mDevice->getPhyDevice(), mSurface, &details.capabilities);
 
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice->getPhyDevice, mSurface, &formatCount, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice->getPhyDevice(), mSurface, &formatCount, nullptr);
 
 	if (formatCount != 0)
 	{
@@ -136,10 +136,5 @@ VkPresentModeKHR RHISwapChain::chooseSwapPresentMode(const std::vector<VkPresent
 	}
 
 	return VK_PRESENT_MODE_FIFO_KHR;
-}
-
-void RHISwapChain::createSwapChain(const VkExtent2D & extent)
-{
-
 }
 
