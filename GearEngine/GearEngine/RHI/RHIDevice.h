@@ -9,7 +9,8 @@ public:
 	~RHIDevice();
 	VkDevice getDevice() { return mDevice; }
 	VkPhysicalDevice getPhyDevice() { return mGPU; }
-
+private:
+	void createCommandPool();
 private:
 	friend class RHI;
 	VkPhysicalDevice mGPU;
@@ -17,6 +18,9 @@ private:
 	VkPhysicalDeviceProperties mDeviceProperties;
 	VkPhysicalDeviceFeatures mDeviceFeatures;
 	VkPhysicalDeviceMemoryProperties mMemoryProperties;
+	VkCommandPool mGraphicsCommandPool;
+	VkCommandPool mComputeCommandPool;
+	VkCommandPool mTransferCommandPool;
 	uint32_t mGraphicsFamily;
 	uint32_t mComputeFamily;
 	uint32_t mTransferFamily;

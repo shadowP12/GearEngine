@@ -131,3 +131,36 @@ RHIDevice::~RHIDevice()
 {
 	vkDestroyDevice(mDevice, nullptr);
 }
+
+void RHIDevice::createCommandPool()
+{
+	//图形命令池和计算命令池是可重复使用
+	VkCommandPoolCreateInfo graphicsPoolInfo = {};
+	graphicsPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	graphicsPoolInfo.queueFamilyIndex = mGraphicsFamily;
+	graphicsPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+	if (vkCreateCommandPool(mDevice, &graphicsPoolInfo, nullptr, &mGraphicsCommandPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create graphics command pool!");
+	}
+
+	VkCommandPoolCreateInfo computePoolInfo = {};
+	computePoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	computePoolInfo.queueFamilyIndex = mComputeFamily;
+	computePoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+	if (vkCreateCommandPool(mDevice, &computePoolInfo, nullptr, &mComputeCommandPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create compute command pool!");
+	}
+	VkCommandPoolCreateInfo transferPoolInfo = {};
+	transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	transferPoolInfo.queueFamilyIndex = mTransferFamily;
+	transferPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+
+	if (vkCreateCommandPool(mDevice, &transferPoolInfo, nullptr, &mTransferCommandPool) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create transfer command pool!");
+	}
+}

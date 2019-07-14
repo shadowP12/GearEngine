@@ -15,7 +15,6 @@ private:
 	void createInstance();
 	void pickPhysicalDevice();
 	void createLogicalDevice();
-	void createCommandPool();
 	void setupDebugCallback();
 private:
 	VkInstance mInstance;

@@ -41,14 +41,10 @@ VkBool32 debugMsgCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEX
 
 RHI::RHI()
 {
-	mValidationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
-	mDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-
 	createInstance();
 	setupDebugCallback();
 	pickPhysicalDevice();
 	createLogicalDevice();
-	createCommandPool();
 }
 
 RHI::~RHI()
@@ -58,7 +54,7 @@ RHI::~RHI()
 uint32_t RHI::findMemoryType(const uint32_t & typeFilter, const VkMemoryPropertyFlags & properties)
 {
 	VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
-	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &physicalDeviceMemoryProperties);
+	vkGetPhysicalDeviceMemoryProperties(mGPU, &physicalDeviceMemoryProperties);
 
 	for (uint32_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; i++) 
 	{
