@@ -5,6 +5,7 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 {
 	vkGetPhysicalDeviceProperties(mGPU, &mDeviceProperties);
 	vkGetPhysicalDeviceFeatures(mGPU, &mDeviceFeatures);
+	//预储存gpu内存属性
 	vkGetPhysicalDeviceMemoryProperties(mGPU, &mMemoryProperties);
 
 	//Note:这里有可能会出现三个queue的Family相同的情况
@@ -160,4 +161,18 @@ void RHIDevice::createCommandPool()
 	{
 		throw std::runtime_error("failed to create transfer command pool!");
 	}
+}
+
+uint32_t RHIDevice::findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties)
+{
+	for (uint32_t i = 0; i < mMemoryProperties.memoryTypeCount; i++)
+	{
+		if ((typeFilter & (1 << i)) &&
+			(mMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+		{
+			return i;
+		}
+	}
+	//没有找到可用内存类型
+	return -1;
 }

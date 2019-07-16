@@ -10,6 +10,7 @@ public:
 	VkDevice getDevice() { return mDevice; }
 	VkPhysicalDevice getPhyDevice() { return mGPU; }
 	uint32_t getGraphicsFamily() { return mGraphicsFamily; }
+	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
 private:
 	void createCommandPool();
 private:

@@ -56,24 +56,6 @@ RHI::~RHI()
 		delete mActiceDevice;
 }
 
-uint32_t RHI::findMemoryType(const uint32_t & typeFilter, const VkMemoryPropertyFlags & properties)
-{
-	VkPhysicalDeviceMemoryProperties physicalDeviceMemoryProperties;
-	vkGetPhysicalDeviceMemoryProperties(mGPU, &physicalDeviceMemoryProperties);
-
-	for (uint32_t i = 0; i < physicalDeviceMemoryProperties.memoryTypeCount; i++) 
-	{
-		if ((typeFilter & (1 << i)) &&
-			(physicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties) 
-		{
-			return i;
-		}
-	}
-
-	assert(false && "Failed to find a valid memory type for buffer!");
-	return 0;
-}
-
 void RHI::createInstance()
 {
 	VkApplicationInfo appInfo = {};
