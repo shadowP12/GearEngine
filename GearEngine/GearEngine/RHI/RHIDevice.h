@@ -1,7 +1,11 @@
 #ifndef RHI_DEVICE_H
 #define RHI_DEVICE_H
 #include "RHIDefine.h"
+#include "RHIBuffer.h"
 #include <vector>
+/**
+  
+*/
 class RHIDevice
 {
 public:
@@ -11,6 +15,7 @@ public:
 	VkPhysicalDevice getPhyDevice() { return mGPU; }
 	uint32_t getGraphicsFamily() { return mGraphicsFamily; }
 	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
+	RHIBuffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 private:
 	void createCommandPool();
 private:

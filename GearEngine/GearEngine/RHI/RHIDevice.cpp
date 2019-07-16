@@ -176,3 +176,12 @@ uint32_t RHIDevice::findMemoryType(const uint32_t &typeFilter, const VkMemoryPro
 	//没有找到可用内存类型
 	return -1;
 }
+
+RHIBuffer * RHIDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags)
+{
+	/**
+	  考虑简化创建参数
+	*/
+	RHIBuffer* res = new RHIBuffer(this, size, usageFlags, memoryPropertyFlags);
+	return res;
+}

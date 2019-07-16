@@ -10,7 +10,6 @@ class RHI : public Module<RHI>
 public:
 	RHI();
 	~RHI();
-	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
 	VkInstance getInstance() { return mInstance; }
 	RHIDevice* getDevice() { return mActiceDevice; }
 private:
