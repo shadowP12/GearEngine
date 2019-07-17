@@ -1,22 +1,16 @@
 #ifndef RHI_TEXTURE_H
 #define RHI_TEXTURE_H
+#include "RHIDefine.h"
 
-enum class TextureType
+struct TextureDesc
 {
-	TEX_TYPE_1D,
-	TEX_TYPE_2D,
-	TEX_TYPE_3D,
-	TEX_TYPE_CUBE_MAP
-};
-struct IMAGE_DESC
-{
-	VkImage image;
-	VkImageLayout layout;
-	VkImageAspectFlags  aspectFlags;
-	TextureType type;
+	VkImageType type;
 	VkFormat format;
-	uint32_t numFaces;
-	uint32_t numMipLevels;
+	VkExtent3D extent;
+	uint32_t mipLevels; 
+	uint32_t arrayLayers;
+	VkSampleCountFlagBits samples;
+	VkImageUsageFlags usage;
 };
 
 class RHIDevice;
@@ -24,19 +18,14 @@ class RHIDevice;
 class RHITexture
 {
 public:
-	RHITexture(RHIDevice* device);
+	RHITexture(RHIDevice* device, const TextureDesc& textureDesc);
 	virtual~RHITexture();
 	VkImage getImage() { return mImage; }
-	VkImageView getView() { return mImageView; }
 private:
 private:
 	RHIDevice* mDevice;
 	VkImage mImage;
-	VkImageView mImageView;
-	uint32_t mNumFaces;
-	uint32_t mNumMipLevels;
-	VkImageViewCreateInfo mImageViewCI;
-	VkDeviceMemory mBufferMemory;
+	VkDeviceMemory mMemory;
 };
 
 #endif
