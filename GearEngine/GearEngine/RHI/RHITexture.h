@@ -1,6 +1,6 @@
-#ifndef IMAGE_H
-#define IMAGE_H
-#include "VulkanResource.h"
+#ifndef RHI_TEXTURE_H
+#define RHI_TEXTURE_H
+
 enum class TextureType
 {
 	TEX_TYPE_1D,
@@ -18,16 +18,19 @@ struct IMAGE_DESC
 	uint32_t numFaces;
 	uint32_t numMipLevels;
 };
-class Image : public VulkanResource
+
+class RHIDevice;
+
+class RHITexture
 {
 public:
-	Image(VulkanResourceManager* manager, IMAGE_DESC desc, VkDeviceMemory memory);
-	virtual~Image();
+	RHITexture(RHIDevice* device);
+	virtual~RHITexture();
 	VkImage getImage() { return mImage; }
 	VkImageView getView() { return mImageView; }
 private:
-	void createView(VkImageAspectFlags aspectMask);
 private:
+	RHIDevice* mDevice;
 	VkImage mImage;
 	VkImageView mImageView;
 	uint32_t mNumFaces;

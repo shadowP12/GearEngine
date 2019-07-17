@@ -1,5 +1,5 @@
-#ifndef BUFFER_H
-#define BUFFER_H
+#ifndef RHI_BUFFER_H
+#define RHI_BUFFER_H
 #include "RHIDefine.h"
 
 //只使用vulkan的话就不用单独再抽象一个RHIBufferUsageBit

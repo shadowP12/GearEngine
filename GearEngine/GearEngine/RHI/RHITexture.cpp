@@ -1,9 +1,18 @@
-#include "Image.h"
-#include "VulkanContext.h"
-
-Image::Image(VulkanResourceManager * manager, IMAGE_DESC desc, VkDeviceMemory memory)
-	:VulkanResource(manager), mImage(desc.image), mNumFaces(desc.numFaces), mNumMipLevels(desc.numMipLevels), mBufferMemory(memory)
+#include "RHITexture.h"
+#include "RHIDevice.h"
+RHITexture::RHITexture(RHIDevice* device)
+	:mDevice(device)
 {
+
+	VkImageCreateInfo imageInfo = {};
+	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imageInfo.pNext = nullptr;
+	//稀疏纹理会需要用到这个，但是目前以普通2d纹理为主故设为默认值0
+	imageInfo.flags = 0;
+	
+
+
+
 	mImageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	mImageViewCI.image = mImage;
 	mImageViewCI.format = desc.format;
@@ -27,7 +36,7 @@ Image::Image(VulkanResourceManager * manager, IMAGE_DESC desc, VkDeviceMemory me
 	createView(desc.aspectFlags);
 }
 
-Image::~Image()
+RHITexture::~RHITexture()
 {
 	vkDestroyImageView(VulkanContext::instance().getDevice(), mImageView, nullptr);
 	vkDestroyImage(VulkanContext::instance().getDevice(), mImage, nullptr);
