@@ -23,6 +23,7 @@ public:
 	VkImage getImage() { return mImage; }
 private:
 private:
+	friend class RHITextureView;
 	RHIDevice* mDevice;
 	VkImage mImage;
 	VkDeviceMemory mMemory;
