@@ -2,6 +2,7 @@
 #define RHI_DEVICE_H
 #include "RHIDefine.h"
 #include "RHIBuffer.h"
+#include "RHICommandBuffer.h"
 #include <vector>
 /**
   
@@ -16,6 +17,7 @@ public:
 	uint32_t getGraphicsFamily() { return mGraphicsFamily; }
 	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
 	RHIBuffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+	RHICommandBuffer* allocCommandBuffer(const CommandBufferType& type, const CommandBufferLevel& level);
 private:
 	void createCommandPool();
 private:

@@ -185,3 +185,47 @@ RHIBuffer * RHIDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usageF
 	RHIBuffer* res = new RHIBuffer(this, size, usageFlags, memoryPropertyFlags);
 	return res;
 }
+
+RHICommandBuffer * RHIDevice::allocCommandBuffer(const CommandBufferType& type, const CommandBufferLevel& level)
+{
+	RHICommandBuffer* commandBuffer = new RHICommandBuffer(this);
+
+	VkCommandBufferAllocateInfo allocateInfo = {};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	if (type == CommandBufferType::Graphics)
+	{
+		commandBuffer->mCommandPool = mGraphicsCommandPool;
+		allocateInfo.commandPool = mGraphicsCommandPool;
+	}
+	else if (type == CommandBufferType::Compute)
+	{
+		commandBuffer->mCommandPool = mComputeCommandPool;
+		allocateInfo.commandPool = mComputeCommandPool;
+	}
+	else
+	{
+		commandBuffer->mCommandPool = mTransferCommandPool;
+		allocateInfo.commandPool = mTransferCommandPool;
+	}
+
+	if (level == CommandBufferLevel::Primary)
+	{
+		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	}
+	else
+	{
+		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+	}
+
+	allocateInfo.commandBufferCount = 1;
+
+	//是否需要保存创建信息?
+	//commandBuffer->mType = type;
+	//commandBuffer->mLevel = level;
+
+	if (vkAllocateCommandBuffers(mDevice, &allocateInfo, &commandBuffer->mCommandBuffer) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to allocate command buffer!");
+	}
+	return commandBuffer;
+}
