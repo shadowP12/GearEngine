@@ -186,18 +186,18 @@ RHIBuffer * RHIDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usageF
 	return res;
 }
 
-RHICommandBuffer * RHIDevice::allocCommandBuffer(const CommandBufferType& type, const CommandBufferLevel& level)
+RHICommandBuffer * RHIDevice::allocCommandBuffer(const CommandBufferType& type, bool primary)
 {
 	RHICommandBuffer* commandBuffer = new RHICommandBuffer(this);
 
 	VkCommandBufferAllocateInfo allocateInfo = {};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	if (type == CommandBufferType::Graphics)
+	if (type == CommandBufferType::GRAPHICS)
 	{
 		commandBuffer->mCommandPool = mGraphicsCommandPool;
 		allocateInfo.commandPool = mGraphicsCommandPool;
 	}
-	else if (type == CommandBufferType::Compute)
+	else if (type == CommandBufferType::COMPUTE)
 	{
 		commandBuffer->mCommandPool = mComputeCommandPool;
 		allocateInfo.commandPool = mComputeCommandPool;
@@ -208,7 +208,7 @@ RHICommandBuffer * RHIDevice::allocCommandBuffer(const CommandBufferType& type, 
 		allocateInfo.commandPool = mTransferCommandPool;
 	}
 
-	if (level == CommandBufferLevel::Primary)
+	if (primary)
 	{
 		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	}

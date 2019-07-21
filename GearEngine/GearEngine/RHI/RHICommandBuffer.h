@@ -4,15 +4,9 @@
 
 enum class CommandBufferType
 {
-	Graphics,
-	Compute,
-	Transfer
-};
-
-enum class CommandBufferLevel
-{
-	Primary,
-	Secondary
+	GRAPHICS,
+	COMPUTE,
+	TRANSFER
 };
 
 class RHIDevice;
