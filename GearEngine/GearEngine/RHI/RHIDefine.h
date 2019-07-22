@@ -38,6 +38,16 @@ enum class ClearMaskBits
 	CLEAR_ALL = 0xFF
 };
 
+inline ClearMaskBits operator|(ClearMaskBits a, ClearMaskBits b)
+{
+	return static_cast<ClearMaskBits>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+inline ClearMaskBits operator&(ClearMaskBits a, ClearMaskBits b)
+{
+	return static_cast<ClearMaskBits>(static_cast<int>(a) & static_cast<int>(b));
+}
+
 enum class LoadMaskBits
 {
 	LOAD_NONE = 0,
@@ -54,6 +64,16 @@ enum class LoadMaskBits
 	LOAD_ALL = 0xFF
 };
 
+inline LoadMaskBits operator|(LoadMaskBits a, LoadMaskBits b)
+{
+	return static_cast<LoadMaskBits>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+inline LoadMaskBits operator&(LoadMaskBits a, LoadMaskBits b)
+{
+	return static_cast<LoadMaskBits>(static_cast<int>(a) & static_cast<int>(b));
+}
+
 enum class ReadMaskBits
 {
 	READ_NONE = 0,
@@ -69,5 +89,15 @@ enum class ReadMaskBits
 	READ_DEPTH = 1 << 31,
 	READ_ALL = 0xFF
 };
+
+inline ReadMaskBits operator|(ReadMaskBits a, ReadMaskBits b)
+{
+	return static_cast<ReadMaskBits>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+inline ReadMaskBits operator&(ReadMaskBits a, ReadMaskBits b)
+{
+	return static_cast<ReadMaskBits>(static_cast<int>(a) & static_cast<int>(b));
+}
 
 #endif

@@ -9,6 +9,14 @@
 
 class RHIDevice;
 
+struct RHIColorAttachment {
+
+};
+
+struct RHIDepthStencilAttachment {
+
+};
+
 class RHIRenderTargetLayout
 {
 public:
@@ -18,12 +26,34 @@ private:
 	RHIDevice* mDevice;
 };
 
-class RHIRenderPass 
+class RHIRenderPass
 {
 public:
 	RHIRenderPass(RHIDevice* device, const RHIRenderTargetLayout& layout);
 	virtual ~RHIRenderPass();
 private:
+	struct VariantKey
+	{
+		VariantKey(LoadMaskBits loadMask, ReadMaskBits readMask, ClearMaskBits clearMask);
+
+		class HashFunction
+		{
+		public:
+			size_t operator()(const VariantKey& key) const;
+		};
+
+		class EqualFunction
+		{
+		public:
+			bool operator()(const VariantKey& lhs, const VariantKey& rhs) const;
+		};
+
+		LoadMaskBits loadMask;
+		ReadMaskBits readMask;
+		ClearMaskBits clearMask;
+	};
+private:
 	VkRenderPass mRenderPass;
+	std::unordered_map<VariantKey, VkRenderPass, VariantKey::HashFunction, VariantKey::EqualFunction> mVariants;
 };
 #endif
