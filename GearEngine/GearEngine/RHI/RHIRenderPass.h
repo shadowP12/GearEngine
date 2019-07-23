@@ -4,17 +4,28 @@
 #include "Utility/Hash.h"
 #include <unordered_map>
 /**
-  使用hash为索引去缓存vkrenderpass对象
+  1.使用hash为索引去缓存vkrenderpass对象
+  2.向外暴露参数和结构尽量不使用vulkan原生结构(由于快速实现暂时使用vulkan原生结构)
 */
 
 class RHIDevice;
 
 struct RHIColorAttachment {
-
+	VkFormat format = VK_FORMAT_UNDEFINED;
+	VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	uint32_t numSample = 1;
+	VkImageLayout initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 };
 
 struct RHIDepthStencilAttachment {
-
+	VkFormat format = VK_FORMAT_UNDEFINED;
+	VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	uint32_t numSample = 1;
+	VkImageLayout initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	VkImageLayout finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 };
 
 class RHIRenderTargetLayout

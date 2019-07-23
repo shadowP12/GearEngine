@@ -3,7 +3,9 @@
 #include "VulkanContext.h"
 #include "RenderPass.h"
 #include "Image.h"
-
+/**
+  framebuffer的layers默认为0(足够应付大多情况)
+*/
 struct AttachmentDesc
 {
 	VkImageView imageView;
