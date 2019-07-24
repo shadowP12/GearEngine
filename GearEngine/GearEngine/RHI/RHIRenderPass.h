@@ -6,46 +6,33 @@
 /**
   1.使用hash为索引去缓存vkrenderpass对象
   2.向外暴露参数和结构尽量不使用vulkan原生结构(由于快速实现暂时使用vulkan原生结构)
+  3.暂不支持多个subpass
 */
 
 class RHIDevice;
 
-struct RHIColorAttachment {
+struct RHIRenderPassAttachmentDesc {
 	VkFormat format = VK_FORMAT_UNDEFINED;
-	VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	uint32_t numSample = 1;
-	VkImageLayout initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	VkImageLayout finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 };
 
-struct RHIDepthStencilAttachment {
-	VkFormat format = VK_FORMAT_UNDEFINED;
-	VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	uint32_t numSample = 1;
-	VkImageLayout initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	VkImageLayout finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-};
-
-class RHIRenderTargetLayout
-{
-public:
-	RHIRenderTargetLayout(RHIDevice* device);
-	virtual ~RHIRenderTargetLayout();
-private:
-	RHIDevice* mDevice;
+struct RHIRenderPassDesc {
+	RHIRenderPassAttachmentDesc color[8];
+	RHIRenderPassAttachmentDesc depthStencil;
+	uint32_t numColorAttachments;
+	bool hasDepth;
 };
 
 class RHIRenderPass
 {
 public:
-	RHIRenderPass(RHIDevice* device, const RHIRenderTargetLayout& layout);
+	RHIRenderPass(RHIDevice* device, const RHIRenderPassDesc& desc);
 	virtual ~RHIRenderPass();
+	VkRenderPass getVkRenderPass(LoadMaskBits load, StoreMaskBits store, ClearMaskBits clear);
 private:
 	struct VariantKey
 	{
-		VariantKey(LoadMaskBits loadMask, ReadMaskBits readMask, ClearMaskBits clearMask);
+		VariantKey(LoadMaskBits load, StoreMaskBits store, ClearMaskBits clear);
 
 		class HashFunction
 		{
@@ -60,11 +47,15 @@ private:
 		};
 
 		LoadMaskBits loadMask;
-		ReadMaskBits readMask;
+		StoreMaskBits storeMask;
 		ClearMaskBits clearMask;
 	};
+
+	VkRenderPass createVariant(LoadMaskBits load, StoreMaskBits store, ClearMaskBits clear);
 private:
+	RHIDevice* mDevice;
 	VkRenderPass mRenderPass;
+	RHIRenderPassDesc mDesc;
 	std::unordered_map<VariantKey, VkRenderPass, VariantKey::HashFunction, VariantKey::EqualFunction> mVariants;
 };
 #endif

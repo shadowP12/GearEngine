@@ -74,30 +74,30 @@ inline LoadMaskBits operator&(LoadMaskBits a, LoadMaskBits b)
 	return static_cast<LoadMaskBits>(static_cast<int>(a) & static_cast<int>(b));
 }
 
-enum class ReadMaskBits
+enum class StoreMaskBits
 {
-	READ_NONE = 0,
-	READ_COLOR0 = 1 << 0,
-	READ_COLOR1 = 1 << 1,
-	READ_COLOR2 = 1 << 2,
-	READ_COLOR3 = 1 << 3,
-	READ_COLOR4 = 1 << 4,
-	READ_COLOR5 = 1 << 5,
-	READ_COLOR6 = 1 << 6,
-	READ_COLOR7 = 1 << 7,
-	READ_STENCIL = 1 << 30,
-	READ_DEPTH = 1 << 31,
-	READ_ALL = 0xFF
+	STORE_NONE = 0,
+	STORE_COLOR0 = 1 << 0,
+	STORE_COLOR1 = 1 << 1,
+	STORE_COLOR2 = 1 << 2,
+	STORE_COLOR3 = 1 << 3,
+	STORE_COLOR4 = 1 << 4,
+	STORE_COLOR5 = 1 << 5,
+	STORE_COLOR6 = 1 << 6,
+	STORE_COLOR7 = 1 << 7,
+	STORE_STENCIL = 1 << 30,
+	STORE_DEPTH = 1 << 31,
+	STORE_ALL = 0xFF
 };
 
-inline ReadMaskBits operator|(ReadMaskBits a, ReadMaskBits b)
+inline StoreMaskBits operator|(StoreMaskBits a, StoreMaskBits b)
 {
-	return static_cast<ReadMaskBits>(static_cast<int>(a) | static_cast<int>(b));
+	return static_cast<StoreMaskBits>(static_cast<int>(a) | static_cast<int>(b));
 }
 
-inline ReadMaskBits operator&(ReadMaskBits a, ReadMaskBits b)
+inline StoreMaskBits operator&(StoreMaskBits a, StoreMaskBits b)
 {
-	return static_cast<ReadMaskBits>(static_cast<int>(a) & static_cast<int>(b));
+	return static_cast<StoreMaskBits>(static_cast<int>(a) & static_cast<int>(b));
 }
 
 #endif
