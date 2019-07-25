@@ -48,6 +48,11 @@ inline ClearMaskBits operator&(ClearMaskBits a, ClearMaskBits b)
 	return static_cast<ClearMaskBits>(static_cast<int>(a) & static_cast<int>(b));
 }
 
+inline bool isInc(ClearMaskBits a, ClearMaskBits b)
+{
+	return static_cast<int>(a) & static_cast<int>(b) == static_cast<int>(b);
+}
+
 enum class LoadMaskBits
 {
 	LOAD_NONE = 0,
@@ -74,6 +79,11 @@ inline LoadMaskBits operator&(LoadMaskBits a, LoadMaskBits b)
 	return static_cast<LoadMaskBits>(static_cast<int>(a) & static_cast<int>(b));
 }
 
+inline bool isInc(LoadMaskBits a, LoadMaskBits b)
+{
+	return static_cast<int>(a) & static_cast<int>(b) == static_cast<int>(b);
+}
+
 enum class StoreMaskBits
 {
 	STORE_NONE = 0,
@@ -98,6 +108,36 @@ inline StoreMaskBits operator|(StoreMaskBits a, StoreMaskBits b)
 inline StoreMaskBits operator&(StoreMaskBits a, StoreMaskBits b)
 {
 	return static_cast<StoreMaskBits>(static_cast<int>(a) & static_cast<int>(b));
+}
+
+inline bool isInc(StoreMaskBits a, StoreMaskBits b)
+{
+	return static_cast<int>(a) & static_cast<int>(b) == static_cast<int>(b);
+}
+
+//¹¤¾ßº¯Êý
+inline VkSampleCountFlagBits getSampleFlags(UINT32 numSamples)
+{
+	switch (numSamples)
+	{
+	case 0:
+	case 1:
+		return VK_SAMPLE_COUNT_1_BIT;
+	case 2:
+		return VK_SAMPLE_COUNT_2_BIT;
+	case 4:
+		return VK_SAMPLE_COUNT_4_BIT;
+	case 8:
+		return VK_SAMPLE_COUNT_8_BIT;
+	case 16:
+		return VK_SAMPLE_COUNT_16_BIT;
+	case 32:
+		return VK_SAMPLE_COUNT_32_BIT;
+	case 64:
+		return VK_SAMPLE_COUNT_64_BIT;
+	}
+
+	return VK_SAMPLE_COUNT_1_BIT;
 }
 
 #endif
