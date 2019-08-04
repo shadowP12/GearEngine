@@ -19,11 +19,21 @@ public:
 	VkCommandBuffer getHandle() { return mCommandBuffer; }
 	void begin();
 	void end();
+	enum class State
+	{
+		Ready,
+		Recording,
+		RecordingRenderPass,
+		RecordingDone,
+		Submitted
+	};
 private:
 	friend class RHIDevice;
 	RHIDevice* mDevice;
 	VkCommandPool mCommandPool;
 	VkCommandBuffer mCommandBuffer;
-	bool mRunning;
+	VkFence mFence;
+	std::vector<VkSemaphore> mWaitSemaphores;
+	State mState;
 };
 #endif
