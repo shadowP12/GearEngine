@@ -1,8 +1,8 @@
 #include "RHICommandBuffer.h"
 #include "RHIDevice.h"
-
-RHICommandBuffer::RHICommandBuffer(RHIDevice* device)
-	:mDevice(device)
+#include "RHIQueue.h"
+RHICommandBuffer::RHICommandBuffer(RHIDevice* device, RHIQueue* queue)
+	:mDevice(device), mQueue(queue)
 {
 	//分配fence
 	//todo:后续将创建fence步骤转移至device上
