@@ -3,6 +3,7 @@
 #include "RHIDefine.h"
 #include "RHIBuffer.h"
 #include "RHICommandBuffer.h"
+#include "RHIQueue.h"
 #include <vector>
 /**
   
@@ -14,7 +15,7 @@ public:
 	~RHIDevice();
 	VkDevice getDevice() { return mDevice; }
 	VkPhysicalDevice getPhyDevice() { return mGPU; }
-	uint32_t getGraphicsFamily() { return mGraphicsFamily; }
+	RHIQueue* getGraphicsQueue() { return mGraphicsQueue; }
 	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
 	RHIBuffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 	RHICommandBuffer* allocCommandBuffer(const CommandBufferType& type, bool primary);
@@ -27,15 +28,12 @@ private:
 	VkPhysicalDeviceProperties mDeviceProperties;
 	VkPhysicalDeviceFeatures mDeviceFeatures;
 	VkPhysicalDeviceMemoryProperties mMemoryProperties;
-	VkCommandPool mGraphicsCommandPool;
-	VkCommandPool mComputeCommandPool;
-	VkCommandPool mTransferCommandPool;
-	uint32_t mGraphicsFamily;
-	uint32_t mComputeFamily;
-	uint32_t mTransferFamily;
-	VkQueue mGraphicsQueue;
-	VkQueue mComputeQueue;
-	VkQueue mTransferQueue;
+	RHICommandBufferPool* mGraphicsCommandPool;
+	RHICommandBufferPool* mComputeCommandPool;
+	RHICommandBufferPool* mTransferCommandPool;
+	RHIQueue* mGraphicsQueue;
+	RHIQueue* mComputeQueue;
+	RHIQueue* mTransferQueue;
 };
 
 #endif

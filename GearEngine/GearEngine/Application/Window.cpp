@@ -24,7 +24,7 @@ Window::Window(int width, int height)
 
 	//È±ÉÙ¼ì²é»á±ÀÀ£
 	VkBool32 supportsPresent;
-	uint32_t graphicsFamily = RHI::instance().getDevice()->getGraphicsFamily();
+	uint32_t graphicsFamily = RHI::instance().getDevice()->getGraphicsQueue()->getFamilyIndex();
 	vkGetPhysicalDeviceSurfaceSupportKHR(RHI::instance().getDevice()->getPhyDevice(), graphicsFamily, mSurface, &supportsPresent);
 
 	if (!supportsPresent)

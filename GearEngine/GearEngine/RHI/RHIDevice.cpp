@@ -15,15 +15,15 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	std::vector<VkQueueFamilyProperties> queueFamilyProperties(numQueueFamilies);
 	vkGetPhysicalDeviceQueueFamilyProperties(mGPU, &numQueueFamilies, queueFamilyProperties.data());
 
-	mGraphicsFamily = -1;
-	mComputeFamily = -1;
-	mTransferFamily = -1;
+	uint32_t graphicsFamily = -1;
+	uint32_t computeFamily = -1;
+	uint32_t transferFamily = -1;
 
 	for (uint32_t i = 0; i < (uint32_t)queueFamilyProperties.size(); i++)
 	{
 		if ((queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) && (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0)
 		{
-			mComputeFamily = i;
+			computeFamily = i;
 			break;
 		}
 	}
@@ -34,7 +34,7 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 			((queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) == 0) &&
 			((queueFamilyProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) == 0))
 		{
-			mTransferFamily = i;
+			transferFamily = i;
 			break;
 		}
 	}
@@ -43,7 +43,7 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	{
 		if (queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
-			mGraphicsFamily = i;
+			graphicsFamily = i;
 			break;
 		}
 	}
@@ -55,18 +55,18 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	VkDeviceQueueCreateInfo queueInfo[3] = {};
 
 	queueInfo[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueInfo[0].queueFamilyIndex = mGraphicsFamily;
-	queueInfo[0].queueCount = queueFamilyProperties[mGraphicsFamily].queueCount;
+	queueInfo[0].queueFamilyIndex = graphicsFamily;
+	queueInfo[0].queueCount = queueFamilyProperties[graphicsFamily].queueCount;
 	queueInfo[0].pQueuePriorities = &graphicsQueuePrio;
 
 	queueInfo[1].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueInfo[1].queueFamilyIndex = mComputeFamily;
-	queueInfo[1].queueCount = queueFamilyProperties[mComputeFamily].queueCount;
+	queueInfo[1].queueFamilyIndex = computeFamily;
+	queueInfo[1].queueCount = queueFamilyProperties[computeFamily].queueCount;
 	queueInfo[1].pQueuePriorities = &computeQueuePrio;
 
 	queueInfo[2].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueInfo[2].queueFamilyIndex = mTransferFamily;
-	queueInfo[2].queueCount = queueFamilyProperties[mTransferFamily].queueCount;
+	queueInfo[2].queueFamilyIndex = transferFamily;
+	queueInfo[2].queueCount = queueFamilyProperties[transferFamily].queueCount;
 	queueInfo[2].pQueuePriorities = &transferQueuePrio;
 
 	const char* extensions[5];
@@ -119,48 +119,36 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 		throw std::runtime_error("failed to create logical device!");
 	}
 
-	vkGetDeviceQueue(mDevice, mGraphicsFamily, 0, &mGraphicsQueue);
-	vkGetDeviceQueue(mDevice, mComputeFamily, 0, &mComputeQueue);
-	vkGetDeviceQueue(mDevice, mTransferFamily, 0, &mTransferQueue);
+	VkQueue graphicsQueue;
+	VkQueue computeQueue;
+	VkQueue transferQueue;
+
+	vkGetDeviceQueue(mDevice, graphicsFamily, 0, &graphicsQueue);
+	vkGetDeviceQueue(mDevice, computeFamily, 0, &computeQueue);
+	vkGetDeviceQueue(mDevice, transferFamily, 0, &transferQueue);
+
+	mGraphicsQueue = new RHIQueue(this, graphicsQueue, graphicsFamily);
+	mComputeQueue = new RHIQueue(this, computeQueue, computeFamily);
+	mTransferQueue = new RHIQueue(this, transferQueue, transferFamily);
 }
 
 
 RHIDevice::~RHIDevice()
 {
+	SAFE_DELETE(mGraphicsCommandPool);
+	SAFE_DELETE(mComputeCommandPool);
+	SAFE_DELETE(mTransferCommandPool);
+	SAFE_DELETE(mGraphicsQueue);
+	SAFE_DELETE(mComputeQueue);
+	SAFE_DELETE(mTransferQueue);
 	vkDestroyDevice(mDevice, nullptr);
 }
 
 void RHIDevice::createCommandPool()
 {
-	//图形命令池和计算命令池是可重复使用
-	VkCommandPoolCreateInfo graphicsPoolInfo = {};
-	graphicsPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	graphicsPoolInfo.queueFamilyIndex = mGraphicsFamily;
-	graphicsPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-	if (vkCreateCommandPool(mDevice, &graphicsPoolInfo, nullptr, &mGraphicsCommandPool) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create graphics command pool!");
-	}
-
-	VkCommandPoolCreateInfo computePoolInfo = {};
-	computePoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	computePoolInfo.queueFamilyIndex = mComputeFamily;
-	computePoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-
-	if (vkCreateCommandPool(mDevice, &computePoolInfo, nullptr, &mComputeCommandPool) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create compute command pool!");
-	}
-	VkCommandPoolCreateInfo transferPoolInfo = {};
-	transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	transferPoolInfo.queueFamilyIndex = mTransferFamily;
-	transferPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-
-	if (vkCreateCommandPool(mDevice, &transferPoolInfo, nullptr, &mTransferCommandPool) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create transfer command pool!");
-	}
+	mGraphicsCommandPool = new RHICommandBufferPool(this, mGraphicsQueue, true);
+	mComputeCommandPool = new RHICommandBufferPool(this, mComputeQueue, true);
+	mTransferCommandPool = new RHICommandBufferPool(this, mTransferQueue, false);
 }
 
 uint32_t RHIDevice::findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties)
@@ -179,53 +167,24 @@ uint32_t RHIDevice::findMemoryType(const uint32_t &typeFilter, const VkMemoryPro
 
 RHIBuffer * RHIDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags)
 {
-	/**
-	  考虑简化创建参数
-	*/
 	RHIBuffer* res = new RHIBuffer(this, size, usageFlags, memoryPropertyFlags);
 	return res;
 }
 
 RHICommandBuffer * RHIDevice::allocCommandBuffer(const CommandBufferType& type, bool primary)
 {
-	RHICommandBuffer* commandBuffer = new RHICommandBuffer(this);
-
-	VkCommandBufferAllocateInfo allocateInfo = {};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	RHICommandBuffer* commandBuffer = nullptr;
 	if (type == CommandBufferType::GRAPHICS)
 	{
-		commandBuffer->mCommandPool = mGraphicsCommandPool;
-		allocateInfo.commandPool = mGraphicsCommandPool;
+		commandBuffer = mGraphicsCommandPool->allocCommandBuffer(primary);
 	}
 	else if (type == CommandBufferType::COMPUTE)
 	{
-		commandBuffer->mCommandPool = mComputeCommandPool;
-		allocateInfo.commandPool = mComputeCommandPool;
+		commandBuffer = mComputeCommandPool->allocCommandBuffer(primary);
 	}
 	else
 	{
-		commandBuffer->mCommandPool = mTransferCommandPool;
-		allocateInfo.commandPool = mTransferCommandPool;
-	}
-
-	if (primary)
-	{
-		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	}
-	else
-	{
-		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-	}
-
-	allocateInfo.commandBufferCount = 1;
-
-	//是否需要保存创建信息?
-	//commandBuffer->mType = type;
-	//commandBuffer->mLevel = level;
-
-	if (vkAllocateCommandBuffers(mDevice, &allocateInfo, &commandBuffer->mCommandBuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate command buffer!");
+		commandBuffer = mTransferCommandPool->allocCommandBuffer(primary);
 	}
 	return commandBuffer;
 }

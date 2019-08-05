@@ -20,6 +20,21 @@ namespace rhi
 }
 
 /**
+   方便使用的释放宏定义
+*/
+#define SAFE_DELETE(x) \
+    { \
+        delete x; \
+        x = NULL; \
+    }
+
+#define SAFE_DELETE_ARRAY(x) \
+    { \
+        delete[] x; \
+        x = NULL; \
+    }
+
+/**
   方便对RT进行操作
 */
 enum class ClearMaskBits
