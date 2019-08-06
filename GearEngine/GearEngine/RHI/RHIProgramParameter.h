@@ -1,5 +1,0 @@
-#ifndef RHI_PROGRAM_PARAMETER
-#define RHI_PROGRAM_PARAMETER
-
-
-#endif
