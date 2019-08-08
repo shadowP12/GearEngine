@@ -3,6 +3,7 @@
 
 #include "RHIDefine.h"
 #include <vector>
+#include <map>
 #include <string>
 
 enum class RHIParamDataType
@@ -82,4 +83,14 @@ struct RHIParamBlockInfo
 	//是否能让不同管线阶段共享
 	bool isShareable;
 };
+
+// note:以后需要与glslang对接,所以结构类型可能稍作变更
+struct RHIParamInfo
+{
+	std::map<std::string, RHIParamBlockInfo> paramBlocks;
+	std::map<std::string, RHIParamDataInfo> params;
+	std::map<std::string, RHIParamObjectInfo> samplers;
+};
+
+
 #endif
