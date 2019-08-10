@@ -4,7 +4,7 @@
 #include "RHIProgramParam.h"
 
 // note:目前只支持两种类型的着色器
-struct RHIPipelineParamsInfo
+struct RHIProgramParamsInfo
 {
 	RHIParamInfo vertexParams;
 	RHIParamInfo fragmentParams;
