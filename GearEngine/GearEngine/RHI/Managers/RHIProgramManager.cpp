@@ -121,8 +121,10 @@ const TBuiltInResource DefaultTBuiltInResource = {
 
 RHIProgramManager::RHIProgramManager()
 {
+	glslang::InitializeProcess();
 }
 
 RHIProgramManager::~RHIProgramManager()
 {
+	glslang::FinalizeProcess();
 }

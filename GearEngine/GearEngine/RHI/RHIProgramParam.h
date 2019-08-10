@@ -61,7 +61,7 @@ struct RHIParamDataInfo
 	UINT32 arrayElementStride;
 	UINT32 paramBlockSlot;
 	UINT32 paramBlockSet;
-	//shader里面的数据会自动优化成4的倍数,所以内存的偏移不能直接按照数据类型去进行计算
+	//shader里面的数据会自动对齐(除非显示表达),所以内存的偏移不能直接按照数据类型去进行计算
 	UINT32 memOffset;
 };
 
@@ -78,7 +78,6 @@ struct RHIParamBlockInfo
 	std::string name;
 	UINT32 slot;
 	UINT32 set;
-	//必须为4的倍数
 	UINT32 blockSize;
 	//是否能让不同管线阶段共享
 	bool isShareable;
@@ -92,5 +91,31 @@ struct RHIParamInfo
 	std::map<std::string, RHIParamObjectInfo> samplers;
 };
 
+// note:目前只支持两种类型的着色器
+struct RHIProgramParamListInfo
+{
+	RHIParamInfo vertexParams;
+	RHIParamInfo fragmentParams;
+};
+
+class RHIProgramParam
+{
+public:
+	RHIProgramParam();
+	~RHIProgramParam();
+
+private:
+
+};
+
+class RHIProgramParamList
+{
+public:
+	RHIProgramParamList();
+	~RHIProgramParamList();
+
+private:
+
+};
 
 #endif
