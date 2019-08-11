@@ -2,6 +2,7 @@
 #include "glslang/Include/ResourceLimits.h"
 #include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"
+#include "Utility/Log.h"
 
 const TBuiltInResource DefaultTBuiltInResource = {
 	/*.maxLights = */ 8,         // From OpenGL 3.0 table 6.46.
@@ -127,4 +128,103 @@ RHIProgramManager::RHIProgramManager()
 RHIProgramManager::~RHIProgramManager()
 {
 	glslang::FinalizeProcess();
+}
+
+void RHIProgramManager::compile(RHIProgram* rhiProgram)
+{
+	EShLanguage glslType = EShLangVertex;
+
+	EShLanguage glslType;
+	switch (rhiProgram->mType)
+	{
+	case RHIProgramType::Fragment:
+		glslType = EShLangFragment;
+		break;
+	case RHIProgramType::Vertex:
+		glslType = EShLangVertex;
+		break;
+	default:
+		break;
+	}
+
+	glslang::TShader shader(glslType);
+	shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_3);
+
+	const char* sourceBytes = rhiProgram->mSource.c_str();
+	shader.setStrings(&sourceBytes, 1);
+
+	//暂时设置为"main"
+	shader.setEntryPoint("main");
+	//预处理此版本不加入
+	//shader.setPreamble(preamble.c_str());
+
+	TBuiltInResource resources = DefaultTBuiltInResource;
+	EShMessages messages = (EShMessages)((int)EShMsgSpvRules | (int)EShMsgVulkanRules);
+	if (!shader.parse(&resources, 450, false, messages))
+	{
+		LOGE("%s\n", shader.getInfoLog());
+		return;
+	}
+
+	glslang::TProgram program;
+	program.addShader(&shader);
+
+	if (!program.link(messages))
+	{
+		LOGE("%s\n", program.getInfoLog());
+		return;
+	}
+
+	program.mapIO();
+	program.buildReflection(EShReflectionAllBlockVariables);
+
+	spv::SpvBuildLogger logger;
+	glslang::SpvOptions options;
+	options.disableOptimizer = true;
+	options.optimizeSize = false;
+	glslang::GlslangToSpv(*program.getIntermediate(glslType), rhiProgram->mBytecode, &options);
+	
+	//有反射信息去构建shader里面的参数布局
+	int numUniformBlocks = program.getNumUniformBlocks();
+	for (int i = 0; i < numUniformBlocks; i++)
+	{
+		const glslang::TObjectReflection& uniformBlock = program.getUniformBlock(i);
+		RHIParamBlockInfo blockInfo;;
+		blockInfo.name = uniformBlock.name;
+		blockInfo.blockSize = uniformBlock.size;
+		blockInfo.set = uniformBlock.getType()->getQualifier().layoutSet;
+		blockInfo.slot = uniformBlock.getType()->getQualifier().layoutBinding;
+
+		rhiProgram->mParamInfo.paramBlocks[uniformBlock.name] = blockInfo;
+	}
+
+	int numUniformVariables = program.getNumUniformVariables();
+	for (int i = 0; i < numUniformVariables; i++)
+	{
+		//暂时只支持几种基本类型
+		const glslang::TObjectReflection& uniformVar = program.getUniform(i);
+		const glslang::TType* ttype = program.getUniformTType(i);
+		const glslang::TQualifier& qualifier = ttype->getQualifier();
+		if (ttype->getBasicType() == glslang::EbtSampler)
+		{
+			RHIParamObjectInfo objInfo;
+			objInfo.name = uniformVar.name;
+			//需要添加各种采样器类型判断
+			objInfo.type = RHIParamObjectType::SAMPLER2D;
+			objInfo.set = qualifier.layoutSet;
+			objInfo.slot = qualifier.layoutBinding;
+			rhiProgram->mParamInfo.samplers[uniformVar.name] = objInfo;
+			continue;
+		}
+		if (ttype->getBasicType() == glslang::EbtStruct)
+		{
+			//暂时不支持结构体
+			continue;
+		}
+		if (ttype->getBasicType() == glslang::EbtBlock)
+		{
+			//暂时不支持数据块
+			continue;
+		}
+	}
 }

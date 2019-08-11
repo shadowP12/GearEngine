@@ -13,16 +13,27 @@ struct RHIProgramInfo
 	std::string source;
 	std::string entryPoint;
 	RHIProgramType type = RHIProgramType::Vertex;
-	//program define
+	//TODO: program define
+	//TODO: program include
 };
+
+class RHIDevice;
 
 class RHIProgram
 {
 public:
-	RHIProgram();
+	RHIProgram(RHIDevice* device, const RHIProgramInfo& info);
 	~RHIProgram();
-
+	void compile();
 private:
-
+	friend class RHIProgramManager;
+	RHIDevice* mDevice;
+	VkShaderModule mModule;
+	std::string mSource;
+	std::string mEntryPoint;
+	RHIProgramType mType;
+	//编译后的产物
+	std::vector<unsigned int> mBytecode;
+	RHIParamInfo mParamInfo;
 };
 #endif
