@@ -132,8 +132,6 @@ RHIProgramManager::~RHIProgramManager()
 
 void RHIProgramManager::compile(RHIProgram* rhiProgram)
 {
-	EShLanguage glslType = EShLangVertex;
-
 	EShLanguage glslType;
 	switch (rhiProgram->mType)
 	{
