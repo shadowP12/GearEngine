@@ -7,6 +7,7 @@ class Application
 public:
 	Application();
 	~Application();
+	void prepare();
 	void runMainLoop();
 private:
 	Window* mWindow;

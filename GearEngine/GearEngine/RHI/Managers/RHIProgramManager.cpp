@@ -226,5 +226,14 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 			//暂时不支持数据块
 			continue;
 		}
+		//暂时不支持数组以及类型判断(...大版本稳定后会加上)
+		RHIParamDataInfo dataInfo;
+		dataInfo.name = uniformVar.name;
+		dataInfo.memOffset = uniformVar.offset;
+		const glslang::TObjectReflection& uniformBlock = program.getUniformBlock(uniformVar.index);
+		dataInfo.paramBlockSet = uniformBlock.getType()->getQualifier().layoutSet;
+		dataInfo.paramBlockSlot = uniformBlock.getType()->getQualifier().layoutBinding;
+		
+		rhiProgram->mParamInfo.params[uniformVar.name] = dataInfo;
 	}
 }

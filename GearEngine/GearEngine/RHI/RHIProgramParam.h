@@ -80,7 +80,7 @@ struct RHIParamBlockInfo
 	UINT32 set;
 	UINT32 blockSize;
 	//是否能让不同管线阶段共享
-	bool isShareable;
+	bool isShareable = false;
 };
 
 // note:以后需要与glslang对接,所以结构类型可能稍作变更

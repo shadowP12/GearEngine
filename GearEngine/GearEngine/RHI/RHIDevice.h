@@ -4,6 +4,7 @@
 #include "RHIBuffer.h"
 #include "RHICommandBuffer.h"
 #include "RHIQueue.h"
+#include "RHIProgram.h"
 #include <vector>
 /**
   
@@ -19,6 +20,7 @@ public:
 	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
 	RHIBuffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 	RHICommandBuffer* allocCommandBuffer(const CommandBufferType& type, bool primary);
+	RHIProgram* createProgram(const RHIProgramInfo& programInfo);
 private:
 	void createCommandPool();
 private:

@@ -188,3 +188,9 @@ RHICommandBuffer * RHIDevice::allocCommandBuffer(const CommandBufferType& type, 
 	}
 	return commandBuffer;
 }
+
+RHIProgram * RHIDevice::createProgram(const RHIProgramInfo & programInfo)
+{
+	RHIProgram* ret = new RHIProgram(this, programInfo);
+	return ret;
+}
