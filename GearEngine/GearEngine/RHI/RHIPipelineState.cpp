@@ -32,7 +32,8 @@ RHIGraphicsPipelineState::~RHIGraphicsPipelineState()
 {
 }
 
-VkPipeline RHIGraphicsPipelineState::getPipeline()
+VkPipeline RHIGraphicsPipelineState::getPipeline(RHIRenderPass * renderPass)
 {
+
 	return VkPipeline();
 }

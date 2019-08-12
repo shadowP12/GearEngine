@@ -28,6 +28,7 @@ class RHIRenderPass
 public:
 	RHIRenderPass(RHIDevice* device, const RHIRenderPassDesc& desc);
 	virtual ~RHIRenderPass();
+	uint32_t getID() { return mID; }
 	VkRenderPass getVkRenderPass(LoadMaskBits load, StoreMaskBits store, ClearMaskBits clear);
 private:
 	struct VariantKey
@@ -56,6 +57,9 @@ private:
 	RHIDevice* mDevice;
 	VkRenderPass mRenderPass;
 	RHIRenderPassDesc mDesc;
+	uint32_t mID;
 	std::unordered_map<VariantKey, VkRenderPass, VariantKey::HashFunction, VariantKey::EqualFunction> mVariants;
+
+	static uint32_t sNextValidID;
 };
 #endif

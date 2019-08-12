@@ -1,6 +1,8 @@
 #include "RHIRenderPass.h"
 #include "RHIDevice.h"
 
+uint32_t RHIRenderPass::sNextValidID = 1;
+
 RHIRenderPass::VariantKey::VariantKey(LoadMaskBits load, StoreMaskBits store,
 	ClearMaskBits clear)
 	:loadMask(load), storeMask(store), clearMask(clear)
@@ -25,6 +27,7 @@ bool RHIRenderPass::VariantKey::EqualFunction::operator()(
 RHIRenderPass::RHIRenderPass(RHIDevice* device, const RHIRenderPassDesc& desc)
 	:mDevice(device), mDesc(desc)
 {
+	mID = sNextValidID++;
 }
 
 RHIRenderPass::~RHIRenderPass()

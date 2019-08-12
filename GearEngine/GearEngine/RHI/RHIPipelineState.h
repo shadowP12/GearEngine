@@ -3,7 +3,10 @@
 #include "RHIDefine.h"
 #include "RHIProgram.h"
 #include "RHIProgramParam.h"
+#include "RHIRenderPass.h"
 #include "Utility/Hash.h"
+
+#include <unordered_map>
 
 // note:暂不加入计算管线
 // note:使用智能指针来传参会好一点?
@@ -24,7 +27,7 @@ class RHIGraphicsPipelineState
 public:
 	RHIGraphicsPipelineState(RHIDevice* device, const RHIPipelineStateInfo& info);
 	~RHIGraphicsPipelineState();
-	VkPipeline getPipeline();
+	VkPipeline getPipeline(RHIRenderPass* renderPass);
 private:
 	struct VariantKey
 	{
@@ -52,7 +55,7 @@ private:
 	RHIProgram* mVertexProgram = nullptr;
 	RHIProgram* mFragmentProgram = nullptr;
 
-	VkPipeline mPipeline;
+	std::unordered_map<VariantKey, VkPipeline, VariantKey::HashFunction, VariantKey::EqualFunction> pipelines;
 };
 
 #endif
