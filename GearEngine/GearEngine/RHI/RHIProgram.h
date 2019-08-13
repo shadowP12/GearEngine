@@ -25,6 +25,7 @@ public:
 	RHIProgram(RHIDevice* device, const RHIProgramInfo& info);
 	~RHIProgram();
 	void compile();
+	VkShaderModule getHandle() const { return mModule; }
 private:
 	friend class RHIProgramManager;
 	RHIDevice* mDevice;

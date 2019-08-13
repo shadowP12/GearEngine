@@ -49,13 +49,14 @@ private:
 		uint32_t renderpassID;
 	};
 
+	VkPipeline createVariant(RHIRenderPass* renderPass);
 
 private:
 	RHIDevice* mDevice;
 	RHIProgram* mVertexProgram = nullptr;
 	RHIProgram* mFragmentProgram = nullptr;
 
-	std::unordered_map<VariantKey, VkPipeline, VariantKey::HashFunction, VariantKey::EqualFunction> pipelines;
+	std::unordered_map<VariantKey, VkPipeline, VariantKey::HashFunction, VariantKey::EqualFunction> mPipelines;
 };
 
 #endif

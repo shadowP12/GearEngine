@@ -34,6 +34,19 @@ RHIGraphicsPipelineState::~RHIGraphicsPipelineState()
 
 VkPipeline RHIGraphicsPipelineState::getPipeline(RHIRenderPass * renderPass)
 {
+	VariantKey key(renderPass->getID());
+	auto iterFind = mPipelines.find(key);
+	if (iterFind != mPipelines.end())
+		return iterFind->second;
 
+	VkRenderPass newVariant = createVariant(renderPass);
+	mPipelines[key] = newVariant;
+
+	return newVariant;
+}
+
+VkPipeline RHIGraphicsPipelineState::createVariant(RHIRenderPass * renderPass)
+{
 	return VkPipeline();
 }
+
