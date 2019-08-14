@@ -60,6 +60,7 @@ private:
 	// 现在方案为为每个RHIPipeline都拥有一个DescriptorPool
 	VkDescriptorPool mDescriptorPool;
 	VkDescriptorSetLayout mDescriptorSetLayout;
+	VkPipelineLayout mPipelineLayout;
 };
 
 #endif

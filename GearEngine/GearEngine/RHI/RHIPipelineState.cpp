@@ -34,6 +34,7 @@ bool RHIGraphicsPipelineState::VariantKey::EqualFunction::operator()(
 RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIPipelineStateInfo& info)
 	:mDevice(device), mVertexProgram(info.vertexProgram), mFragmentProgram(info.fragmentProgram)
 {
+	// 创建DescriptorPool
 	VkDescriptorPoolSize poolSizes[2];
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; 
 	poolSizes[0].descriptorCount = mVertexProgram->mParamInfo.samplers.size() + mFragmentProgram->mParamInfo.samplers.size();
@@ -44,7 +45,7 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = sizeof(poolSizes) / sizeof(poolSizes[0]);;
 	poolInfo.pPoolSizes = poolSizes;
-	// 临时做法
+	// 偷懒的做法方便快速开发,大版本稳定后修改
 	poolInfo.maxSets = 100;
 
 	if (vkCreateDescriptorPool(mDevice->getDevice(), &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) 
@@ -52,7 +53,74 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 		throw std::runtime_error("failed to create descriptor pool!");
 	}
 
-	
+	// 创建Descriptor Layout
+	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
+
+	for (auto& entry : mVertexProgram->mParamInfo.paramBlocks)
+	{
+		VkDescriptorSetLayoutBinding layoutBinding = {};
+		layoutBinding.binding = entry.second.slot;
+		layoutBinding.descriptorCount = 1;
+		layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		layoutBinding.pImmutableSamplers = nullptr;
+		layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		setLayoutBindings.push_back(layoutBinding);
+	}
+
+	for (auto& entry : mVertexProgram->mParamInfo.samplers)
+	{
+		VkDescriptorSetLayoutBinding layoutBinding = {};
+		layoutBinding.binding = entry.second.slot;
+		layoutBinding.descriptorCount = 1;
+		layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		layoutBinding.pImmutableSamplers = nullptr;
+		layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		setLayoutBindings.push_back(layoutBinding);
+	}
+
+	for (auto& entry : mFragmentProgram->mParamInfo.paramBlocks)
+	{
+		VkDescriptorSetLayoutBinding layoutBinding = {};
+		layoutBinding.binding = entry.second.slot;
+		layoutBinding.descriptorCount = 1;
+		layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		layoutBinding.pImmutableSamplers = nullptr;
+		layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings.push_back(layoutBinding);
+	}
+	for (auto& entry : mFragmentProgram->mParamInfo.paramBlocks)
+	{
+		VkDescriptorSetLayoutBinding layoutBinding = {};
+		layoutBinding.binding = entry.second.slot;
+		layoutBinding.descriptorCount = 1;
+		layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		layoutBinding.pImmutableSamplers = nullptr;
+		layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		setLayoutBindings.push_back(layoutBinding);
+	}
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = setLayoutBindings.size();
+	layoutInfo.pBindings = setLayoutBindings.data();
+
+	if (vkCreateDescriptorSetLayout(mDevice->getDevice(), &layoutInfo, nullptr, &mDescriptorSetLayout) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create descriptor set layout!");
+	}
+
+	// 创建管线布局
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &mDescriptorSetLayout;
+
+	if (vkCreatePipelineLayout(mDevice->getDevice(), &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to create pipeline layout!");
+	}
+
+	//
 }
 
 RHIGraphicsPipelineState::~RHIGraphicsPipelineState()
