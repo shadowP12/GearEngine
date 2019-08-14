@@ -1,4 +1,5 @@
 #include "RHIPipelineState.h"
+#include "RHIDevice.h"
 #include "Math/GMath.h"
 #include <array>
 
@@ -33,19 +34,25 @@ bool RHIGraphicsPipelineState::VariantKey::EqualFunction::operator()(
 RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIPipelineStateInfo& info)
 	:mDevice(device), mVertexProgram(info.vertexProgram), mFragmentProgram(info.fragmentProgram)
 {
-	VkDescriptorPoolSize poolSize = {};
-	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSize.descriptorCount = 1;
+	VkDescriptorPoolSize poolSizes[2];
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; 
+	poolSizes[0].descriptorCount = mVertexProgram->mParamInfo.samplers.size() + mFragmentProgram->mParamInfo.samplers.size();
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[1].descriptorCount = mVertexProgram->mParamInfo.paramBlocks.size() + mFragmentProgram->mParamInfo.paramBlocks.size();
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = 1;
-	poolInfo.pPoolSizes = &poolSize;
-	poolInfo.maxSets = 1;
+	poolInfo.poolSizeCount = sizeof(poolSizes) / sizeof(poolSizes[0]);;
+	poolInfo.pPoolSizes = poolSizes;
+	// ÁÙÊ±×ö·¨
+	poolInfo.maxSets = 100;
 
-	//if (vkCreateDescriptorPool(vk_core::instance().getDevice()->getDevice(), &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) {
-	//	throw std::runtime_error("failed to create descriptor pool!");
-	//}
+	if (vkCreateDescriptorPool(mDevice->getDevice(), &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create descriptor pool!");
+	}
+
+	
 }
 
 RHIGraphicsPipelineState::~RHIGraphicsPipelineState()
