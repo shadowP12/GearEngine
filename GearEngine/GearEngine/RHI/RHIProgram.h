@@ -28,6 +28,7 @@ public:
 	VkShaderModule getHandle() const { return mModule; }
 private:
 	friend class RHIProgramManager;
+	friend class RHIGraphicsPipelineState;
 	RHIDevice* mDevice;
 	VkShaderModule mModule;
 	std::string mSource;
