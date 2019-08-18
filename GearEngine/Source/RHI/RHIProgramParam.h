@@ -89,6 +89,7 @@ struct RHIParamInfo
 	std::map<std::string, RHIParamBlockInfo> paramBlocks;
 	std::map<std::string, RHIParamDataInfo> params;
 	std::map<std::string, RHIParamObjectInfo> samplers;
+	std::vector<uint32_t> sets;
 };
 
 // note:目前只支持两种类型的着色器

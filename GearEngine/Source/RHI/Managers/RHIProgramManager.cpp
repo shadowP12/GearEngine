@@ -193,6 +193,14 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 		blockInfo.slot = uniformBlock.getType()->getQualifier().layoutBinding;
 
 		rhiProgram->mParamInfo.paramBlocks[uniformBlock.name] = blockInfo;
+		uint32_t flag = 0;
+		for (uint32_t i = 0; i < rhiProgram->mParamInfo.sets.size(); i++)
+		{
+			if (rhiProgram->mParamInfo.sets[i] == blockInfo.set)
+				flag = 1;
+		}
+		if (flag == 0)
+			rhiProgram->mParamInfo.sets.push_back(blockInfo.set);
 	}
 
 	int numUniformVariables = program.getNumUniformVariables();
@@ -211,6 +219,16 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 			objInfo.set = qualifier.layoutSet;
 			objInfo.slot = qualifier.layoutBinding;
 			rhiProgram->mParamInfo.samplers[uniformVar.name] = objInfo;
+
+			uint32_t flag = 0;
+			for (uint32_t i = 0; i < rhiProgram->mParamInfo.sets.size(); i++)
+			{
+				if (rhiProgram->mParamInfo.sets[i] == objInfo.set)
+					flag = 1;
+			}
+			if (flag == 0)
+				rhiProgram->mParamInfo.sets.push_back(objInfo.set);
+
 			continue;
 		}
 		if (ttype->getBasicType() == glslang::EbtStruct)

@@ -59,8 +59,9 @@ private:
 	// 构建一个巨大的DescriptorPool好处在于方便,但反过来会造成内存浪费
 	// 现在方案为为每个RHIPipeline都拥有一个DescriptorPool
 	VkDescriptorPool mDescriptorPool;
-	VkDescriptorSetLayout mDescriptorSetLayout;
+	std::map<uint32_t, VkDescriptorSetLayout> mDescriptorSetLayouts;
 	VkPipelineLayout mPipelineLayout;
+	std::vector<uint32_t> mSets;
 };
 
 #endif
