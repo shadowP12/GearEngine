@@ -9,7 +9,7 @@ RHIProgram::RHIProgram(RHIDevice* device, const RHIProgramInfo& info)
 
 RHIProgram::~RHIProgram()
 {
-	vkDestroyShaderModule(mDevice->getDevice(), mModule, nullptr);
+	//vkDestroyShaderModule(mDevice->getDevice(), mModule, nullptr);
 }
 
 void RHIProgram::compile()
@@ -21,9 +21,10 @@ void RHIProgram::compile()
 	moduleInfo.flags = 0;
 	moduleInfo.codeSize = mBytecode.size();
 	moduleInfo.pCode = mBytecode.data();
-
+	/*
 	if (vkCreateShaderModule(mDevice->getDevice(), &moduleInfo, nullptr, &mModule) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create shader module!");
 	}
+	*/
 }

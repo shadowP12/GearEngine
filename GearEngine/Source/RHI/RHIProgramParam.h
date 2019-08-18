@@ -56,29 +56,29 @@ struct RHIParamDataInfo
 {
 	std::string name;
 	RHIParamDataType type;
-	UINT32 elementSize;
-	UINT32 arraySize;
-	UINT32 arrayElementStride;
-	UINT32 paramBlockSlot;
-	UINT32 paramBlockSet;
+	uint32_t elementSize;
+	uint32_t arraySize;
+	uint32_t arrayElementStride;
+	uint32_t paramBlockSlot;
+	uint32_t paramBlockSet;
 	//shader里面的数据会自动对齐(除非显示表达),所以内存的偏移不能直接按照数据类型去进行计算
-	UINT32 memOffset;
+	uint32_t memOffset;
 };
 
 struct RHIParamObjectInfo
 {
 	std::string name;
 	RHIParamObjectType type;
-	UINT32 slot;
-	UINT32 set;
+	uint32_t slot;
+	uint32_t set;
 };
 
 struct RHIParamBlockInfo
 {
 	std::string name;
-	UINT32 slot;
-	UINT32 set;
-	UINT32 blockSize;
+	uint32_t slot;
+	uint32_t set;
+	uint32_t blockSize;
 	//是否能让不同管线阶段共享
 	bool isShareable = false;
 };

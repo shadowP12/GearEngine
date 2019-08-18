@@ -48,25 +48,26 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 		}
 	}
 
-	static const float graphicsQueuePrio = 0.5f;
-	static const float computeQueuePrio = 1.0f;
-	static const float transferQueuePrio = 1.0f;
+	const float graphicsQueuePrio = 0.0;
+	const float computeQueuePrio = 0.1;
+	const float transferQueuePrio = 0.2;
 
-	VkDeviceQueueCreateInfo queueInfo[3] = {};
-
+	std::vector<VkDeviceQueueCreateInfo> queueInfo{};
+	queueInfo.resize(3);
+	
 	queueInfo[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	queueInfo[0].queueFamilyIndex = graphicsFamily;
-	queueInfo[0].queueCount = queueFamilyProperties[graphicsFamily].queueCount;
+	queueInfo[0].queueCount = 1;// queueFamilyProperties[graphicsFamily].queueCount;
 	queueInfo[0].pQueuePriorities = &graphicsQueuePrio;
 
 	queueInfo[1].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	queueInfo[1].queueFamilyIndex = computeFamily;
-	queueInfo[1].queueCount = queueFamilyProperties[computeFamily].queueCount;
+	queueInfo[1].queueCount = 1;// queueFamilyProperties[computeFamily].queueCount;
 	queueInfo[1].pQueuePriorities = &computeQueuePrio;
 
 	queueInfo[2].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 	queueInfo[2].queueFamilyIndex = transferFamily;
-	queueInfo[2].queueCount = queueFamilyProperties[transferFamily].queueCount;
+	queueInfo[2].queueCount = 1;// queueFamilyProperties[transferFamily].queueCount;
 	queueInfo[2].pQueuePriorities = &transferQueuePrio;
 
 	const char* extensions[5];
@@ -106,8 +107,8 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	deviceInfo.pNext = nullptr;
 	deviceInfo.flags = 0;
-	deviceInfo.queueCreateInfoCount = 3;
-	deviceInfo.pQueueCreateInfos = queueInfo;
+	deviceInfo.queueCreateInfoCount = queueInfo.size();
+	deviceInfo.pQueueCreateInfos = queueInfo.data();
 	deviceInfo.pEnabledFeatures = &mDeviceFeatures;
 	deviceInfo.enabledExtensionCount = numExtensions;
 	deviceInfo.ppEnabledExtensionNames = extensions;
@@ -130,6 +131,9 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	mGraphicsQueue = new RHIQueue(this, graphicsQueue, graphicsFamily);
 	mComputeQueue = new RHIQueue(this, computeQueue, computeFamily);
 	mTransferQueue = new RHIQueue(this, transferQueue, transferFamily);
+
+	//
+	createCommandPool();
 }
 
 

@@ -253,5 +253,6 @@ VkPipeline RHIGraphicsPipelineState::createVariant(RHIRenderPass * renderPass)
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
 	*/
+	return VkPipeline();
 }
 

@@ -131,7 +131,7 @@ inline bool isInc(StoreMaskBits a, StoreMaskBits b)
 }
 
 //¹¤¾ßº¯Êý
-inline VkSampleCountFlagBits getSampleFlags(UINT32 numSamples)
+inline VkSampleCountFlagBits getSampleFlags(uint32_t numSamples)
 {
 	switch (numSamples)
 	{

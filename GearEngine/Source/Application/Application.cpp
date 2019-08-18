@@ -29,13 +29,11 @@ void Application::prepare()
 	programInfo.type = RHIProgramType::Vertex;
 	programInfo.entryPoint = "main";
 	readFile("D:/GearEngine/GearEngine/Resource/Shaders/default.vert", programInfo.source);
-
+	
 	RHIProgram* program = device->createProgram(programInfo);
 	program->compile();
 	delete program;
 }
-
-
 
 void Application::runMainLoop()
 {

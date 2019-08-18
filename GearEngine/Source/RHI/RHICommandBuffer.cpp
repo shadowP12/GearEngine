@@ -21,7 +21,7 @@ RHICommandBufferPool::RHICommandBufferPool(RHIDevice* device, RHIQueue* queue, b
 
 RHICommandBufferPool::~RHICommandBufferPool()
 {
-	
+	vkDestroyCommandPool(mDevice->getDevice(), mPool, nullptr);
 }
 
 RHICommandBuffer* RHICommandBufferPool::allocCommandBuffer(bool primary)

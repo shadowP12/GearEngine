@@ -15,7 +15,6 @@ Window::Window(int width, int height)
 	glfwSetScrollCallback(mWindow, mouseScrollCallback);
 
 	//≥ı ºªØΩªªª¡¥
-
 	auto res = glfwCreateWindowSurface(RHI::instance().getInstance(), mWindow, nullptr, &mSurface);
 	if (res != VK_SUCCESS)
 	{

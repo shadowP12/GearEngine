@@ -6,9 +6,7 @@
 #include "RHIQueue.h"
 #include "RHIProgram.h"
 #include <vector>
-/**
-  
-*/
+
 class RHIDevice
 {
 public:
