@@ -146,7 +146,7 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 	}
 
 	glslang::TShader shader(glslType);
-	shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_3);
+	shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
 
 	const char* sourceBytes = rhiProgram->mSource.c_str();
 	shader.setStrings(&sourceBytes, 1);
@@ -179,9 +179,8 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 	spv::SpvBuildLogger logger;
 	glslang::SpvOptions options;
 	options.disableOptimizer = true;
-	options.optimizeSize = false;
+	options.optimizeSize = true;
 	glslang::GlslangToSpv(*program.getIntermediate(glslType), rhiProgram->mBytecode, &options);
-	
 	//有反射信息去构建shader里面的参数布局
 	int numUniformBlocks = program.getNumUniformBlocks();
 	for (int i = 0; i < numUniformBlocks; i++)

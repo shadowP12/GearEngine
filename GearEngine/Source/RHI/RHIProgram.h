@@ -35,7 +35,7 @@ private:
 	std::string mEntryPoint;
 	RHIProgramType mType;
 	//编译后的产物
-	std::vector<unsigned int> mBytecode;
+	std::vector<uint32_t> mBytecode;
 	RHIParamInfo mParamInfo;
 };
 #endif
