@@ -145,6 +145,8 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 		setLayouts.push_back(setLayout);
 	}
 
+	// 创建desc set
+	
 	// 创建管线布局
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

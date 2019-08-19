@@ -20,4 +20,31 @@ private:
 	VkDeviceMemory mMemory;
 	VkDeviceSize mSize;
 };
+
+class RHIVertexBuffer : public RHIBuffer
+{
+public:
+	RHIVertexBuffer(RHIDevice* device, uint32_t elementSize, uint32_t vertexCount);
+	~RHIVertexBuffer();
+private:
+};
+
+class RHIIndexBuffer : public RHIBuffer
+{
+public:
+	RHIIndexBuffer(RHIDevice* device, uint32_t elementSize, uint32_t indexCount);
+	~RHIIndexBuffer();
+	uint32_t getIndexCount() { return mIndexCount; }
+private:
+	uint32_t mIndexCount;
+};
+
+class RHIUniformBuffer : public RHIBuffer
+{
+public:
+	RHIUniformBuffer(RHIDevice* device, uint32_t size);
+	~RHIUniformBuffer();
+private:
+};
+
 #endif

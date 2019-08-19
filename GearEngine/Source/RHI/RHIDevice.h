@@ -1,7 +1,7 @@
 #ifndef RHI_DEVICE_H
 #define RHI_DEVICE_H
 #include "RHIDefine.h"
-#include "RHIBuffer.h"
+#include "RHIBuffers.h"
 #include "RHICommandBuffer.h"
 #include "RHIQueue.h"
 #include "RHIProgram.h"

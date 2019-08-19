@@ -1,4 +1,4 @@
-#include "RHIBuffer.h"
+#include "RHIBuffers.h"
 #include "RHIDevice.h"
 /**
   usageFlags : bufferÓÃÍ¾
@@ -58,4 +58,37 @@ void RHIBuffer::writeData(uint32_t offset, uint32_t size, void * source)
 	vkMapMemory(mDevice->getDevice(), mMemory, offset, size, 0, &data);
 	memcpy(data, source, static_cast<size_t>(size));
 	vkUnmapMemory(mDevice->getDevice(), mMemory);
+}
+
+RHIVertexBuffer::RHIVertexBuffer(RHIDevice* device, uint32_t elementSize, uint32_t vertexCount)
+	: RHIBuffer(device, elementSize * vertexCount, 
+				VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+{
+}
+
+RHIVertexBuffer::~RHIVertexBuffer() 
+{
+}
+
+RHIIndexBuffer::RHIIndexBuffer(RHIDevice* device, uint32_t elementSize, uint32_t indexCount)
+	: RHIBuffer(device, elementSize*indexCount,
+				VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+{
+	mIndexCount = indexCount;
+}
+
+RHIIndexBuffer::~RHIIndexBuffer()
+{
+}
+
+RHIUniformBuffer::RHIUniformBuffer(RHIDevice* device, uint32_t size)
+	: RHIBuffer(device, size,
+				VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+{
+}
+RHIUniformBuffer::~RHIUniformBuffer()
+{
 }

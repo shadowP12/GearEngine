@@ -11,7 +11,7 @@ set(GEAR_ENGINE_APPLICATION_INC
 set(GEAR_ENGINE_RHI_SRC
 	Source/RHI/RHI.cpp
 	Source/RHI/RHIDevice.cpp
-	Source/RHI/RHIBuffer.cpp
+	Source/RHI/RHIBuffers.cpp
 	Source/RHI/RHICommandBuffer.cpp
 	Source/RHI/RHIFramebuffer.cpp
 	Source/RHI/RHIPipelineState.cpp
@@ -29,7 +29,7 @@ set(GEAR_ENGINE_RHI_INC
 	Source/RHI/RHI.h
 	Source/RHI/RHIDefine.h
 	Source/RHI/RHIDevice.h
-	Source/RHI/RHIBuffer.h
+	Source/RHI/RHIBuffers.h
 	Source/RHI/RHICommandBuffer.h
 	Source/RHI/RHIFramebuffer.h
 	Source/RHI/RHIPipelineState.h
