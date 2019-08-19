@@ -104,7 +104,6 @@ class RHIProgramParam
 public:
 	RHIProgramParam();
 	~RHIProgramParam();
-
 private:
 
 };
@@ -112,11 +111,14 @@ private:
 class RHIProgramParamList
 {
 public:
-	RHIProgramParamList();
+	RHIProgramParamList(RHIDevice* device, const std::map<uint32_t, VkDescriptorSet>& descriptorSets,
+						const RHIParamInfo& vertexProgramParamInfo, const RHIParamInfo& fragmentProgramParamInfo);
 	~RHIProgramParamList();
-	
 private:
-
+	RHIDevice* mDevice;
+	std::map<uint32_t, VkDescriptorSet> mDescriptorSets;
+	RHIParamInfo mVertexProgramParamInfo;
+	RHIParamInfo mFragmentProgramParamInfo;
 };
 
 #endif

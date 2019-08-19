@@ -146,7 +146,24 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 	}
 
 	// 创建desc set
-	
+	std::map<uint32_t, VkDescriptorSet> descriptorSets;
+	for (auto& entry : mDescriptorSetLayouts)
+	{
+		VkDescriptorSetLayout layouts[] = { entry.second };
+		VkDescriptorSetAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = mDescriptorPool;
+		allocInfo.descriptorSetCount = 1;
+		allocInfo.pSetLayouts = layouts;
+
+		VkDescriptorSet descriptorSet;
+		if (vkAllocateDescriptorSets(mDevice->getDevice(), &allocInfo, &descriptorSet) != VK_SUCCESS) 
+		{
+			throw std::runtime_error("failed to allocate descriptor set!");
+		}
+		descriptorSets[entry.first] = descriptorSet;
+	}
+
 	// 创建管线布局
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
