@@ -108,6 +108,9 @@ private:
 
 };
 
+class RHIDevice;
+class RHIUniformBuffer;
+
 class RHIProgramParamList
 {
 public:
@@ -119,6 +122,7 @@ private:
 	std::map<uint32_t, VkDescriptorSet> mDescriptorSets;
 	RHIParamInfo mVertexProgramParamInfo;
 	RHIParamInfo mFragmentProgramParamInfo;
+	std::map<std::string, RHIUniformBuffer> mUniformBuffers;
 };
 
 #endif

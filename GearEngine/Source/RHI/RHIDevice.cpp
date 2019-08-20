@@ -198,3 +198,21 @@ RHIProgram * RHIDevice::createProgram(const RHIProgramInfo & programInfo)
 	RHIProgram* ret = new RHIProgram(this, programInfo);
 	return ret;
 }
+
+RHIUniformBuffer* RHIDevice::createUniformBuffer(uint32_t size)
+{
+	RHIUniformBuffer* ret = new RHIUniformBuffer(this, size);
+	return ret;
+}
+
+RHIVertexBuffer* RHIDevice::createVertexBuffer(uint32_t elementSize, uint32_t vertexCount)
+{
+	RHIVertexBuffer* ret = new RHIVertexBuffer(this, elementSize, vertexCount);
+	return ret;
+}
+
+RHIIndexBuffer* RHIDevice::createIndexBuffer(uint32_t elementSize, uint32_t indexCount)
+{
+	RHIIndexBuffer* ret = new RHIIndexBuffer(this, elementSize, indexCount);
+	return ret;
+}

@@ -17,6 +17,9 @@ public:
 	RHIQueue* getGraphicsQueue() { return mGraphicsQueue; }
 	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
 	RHIBuffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
+	RHIUniformBuffer* createUniformBuffer(uint32_t size);
+	RHIVertexBuffer* createVertexBuffer(uint32_t elementSize, uint32_t vertexCount);
+	RHIIndexBuffer* createIndexBuffer(uint32_t elementSize, uint32_t indexCount);
 	RHICommandBuffer* allocCommandBuffer(const CommandBufferType& type, bool primary);
 	RHIProgram* createProgram(const RHIProgramInfo& programInfo);
 private:
