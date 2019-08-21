@@ -54,7 +54,6 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = sizeof(poolSizes) / sizeof(poolSizes[0]);;
 	poolInfo.pPoolSizes = poolSizes;
-	// 偷懒的做法方便快速开发,大版本稳定后修改
 	poolInfo.maxSets = mSets.size();
 
 	if (vkCreateDescriptorPool(mDevice->getDevice(), &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) 
@@ -146,7 +145,6 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 	}
 
 	// 创建desc set
-	std::map<uint32_t, VkDescriptorSet> descriptorSets;
 	for (auto& entry : mDescriptorSetLayouts)
 	{
 		VkDescriptorSetLayout layouts[] = { entry.second };
@@ -161,7 +159,7 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 		{
 			throw std::runtime_error("failed to allocate descriptor set!");
 		}
-		descriptorSets[entry.first] = descriptorSet;
+		mDescriptorSets[entry.first] = descriptorSet;
 	}
 
 	// 创建管线布局
@@ -180,6 +178,19 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 
 RHIGraphicsPipelineState::~RHIGraphicsPipelineState()
 {
+	for (auto& entry : mDescriptorSetLayouts)
+	{
+		vkDestroyDescriptorSetLayout(mDevice->getDevice(), entry.second, nullptr);
+	}
+
+	for (auto& entry : mDescriptorSets)
+	{
+		VkResult result = vkFreeDescriptorSets(mDevice->getDevice(), mDescriptorPool, 1, &entry.second);
+		assert(result == VK_SUCCESS);
+	}
+
+	vkDestroyPipelineLayout(mDevice->getDevice(), mPipelineLayout, nullptr);
+	vkDestroyDescriptorPool(mDevice->getDevice(), mDescriptorPool, nullptr);
 }
 
 VkPipeline RHIGraphicsPipelineState::getPipeline(RHIRenderPass * renderPass)

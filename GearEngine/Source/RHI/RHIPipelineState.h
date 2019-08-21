@@ -60,6 +60,7 @@ private:
 	// 现在方案为为每个RHIPipeline都拥有一个DescriptorPool
 	VkDescriptorPool mDescriptorPool;
 	std::map<uint32_t, VkDescriptorSetLayout> mDescriptorSetLayouts;
+	std::map<uint32_t, VkDescriptorSet> mDescriptorSets;
 	VkPipelineLayout mPipelineLayout;
 	std::vector<uint32_t> mSets;
 };

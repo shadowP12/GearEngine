@@ -117,12 +117,13 @@ public:
 	RHIProgramParamList(RHIDevice* device, const std::map<uint32_t, VkDescriptorSet>& descriptorSets,
 						const RHIParamInfo& vertexProgramParamInfo, const RHIParamInfo& fragmentProgramParamInfo);
 	~RHIProgramParamList();
+	void setParamBlockBuffer(std::string name,RHIUniformBuffer* buffer);
 private:
 	RHIDevice* mDevice;
 	std::map<uint32_t, VkDescriptorSet> mDescriptorSets;
 	RHIParamInfo mVertexProgramParamInfo;
 	RHIParamInfo mFragmentProgramParamInfo;
-	std::map<std::string, RHIUniformBuffer> mUniformBuffers;
+	std::map<uint32_t, VkWriteDescriptorSet> mWriteDescriptorSets;
 };
 
 #endif
