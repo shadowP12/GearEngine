@@ -173,7 +173,8 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 		throw std::runtime_error("failed to create pipeline layout!");
 	}
 
-	//
+	// 创建program parm list
+	mParamList = new RHIProgramParamList(mDevice, mDescriptorSets,mVertexProgram->mParamInfo, mFragmentProgram->mParamInfo);
 }
 
 RHIGraphicsPipelineState::~RHIGraphicsPipelineState()
@@ -191,6 +192,9 @@ RHIGraphicsPipelineState::~RHIGraphicsPipelineState()
 
 	vkDestroyPipelineLayout(mDevice->getDevice(), mPipelineLayout, nullptr);
 	vkDestroyDescriptorPool(mDevice->getDevice(), mDescriptorPool, nullptr);
+
+	if (mParamList)
+		delete mParamList;
 }
 
 VkPipeline RHIGraphicsPipelineState::getPipeline(RHIRenderPass * renderPass)
@@ -280,6 +284,16 @@ VkPipeline RHIGraphicsPipelineState::createVariant(RHIRenderPass * renderPass)
 	viewportState.pScissors = NULL;
 	viewportState.pViewports = NULL;
 
+	VkPipelineRasterizationStateCreateInfo rasterizer = {};
+	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterizer.depthClampEnable = VK_FALSE;
+	rasterizer.rasterizerDiscardEnable = VK_FALSE;
+	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizer.lineWidth = 1.0f;
+	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rasterizer.depthBiasEnable = VK_FALSE;
+
 	VkPipelineMultisampleStateCreateInfo multisampling = {};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multisampling.sampleShadingEnable = VK_FALSE;
@@ -300,7 +314,6 @@ VkPipeline RHIGraphicsPipelineState::createVariant(RHIRenderPass * renderPass)
 	colorBlending.blendConstants[2] = 0.0f;
 	colorBlending.blendConstants[3] = 0.0f;
 
-
 	VkPipelineDepthStencilStateCreateInfo depthStencil = {};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencil.depthTestEnable = VK_TRUE;
@@ -308,17 +321,31 @@ VkPipeline RHIGraphicsPipelineState::createVariant(RHIRenderPass * renderPass)
 	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
 	depthStencil.stencilTestEnable = VK_FALSE;
-	/*
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = &mDescriptorSetLayout;
+	
+	VkGraphicsPipelineCreateInfo pipelineInfo = {};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.pDynamicState = &dynamicState;
+	pipelineInfo.pViewportState = &viewportState;
+	pipelineInfo.pRasterizationState = &rasterizer;
+	pipelineInfo.pMultisampleState = &multisampling;
+	pipelineInfo.pDepthStencilState = &depthStencil;
+	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.layout = mPipelineLayout;
+	// render pass的取值不应该有pipeline判断,较好的方案为外部预先设置好renderpass
+	pipelineInfo.renderPass = renderPass->getVkRenderPass(LoadMaskBits::LOAD_NONE, StoreMaskBits::STORE_NONE, ClearMaskBits::CLEAR_NONE);
+	pipelineInfo.subpass = 0;
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreatePipelineLayout(vk_core::instance().getDevice()->getDevice(), &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS) 
+	VkPipeline pipeline;
+	if (vkCreateGraphicsPipelines(mDevice->getDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
 	{
-		throw std::runtime_error("failed to create pipeline layout!");
+		throw std::runtime_error("failed to create graphics pipeline!");
 	}
-	*/
-	return VkPipeline();
+	
+	return pipeline;
 }
 

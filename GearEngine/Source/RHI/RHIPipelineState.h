@@ -55,6 +55,7 @@ private:
 	RHIDevice* mDevice;
 	RHIProgram* mVertexProgram = nullptr;
 	RHIProgram* mFragmentProgram = nullptr;
+	RHIProgramParamList* mParamList = nullptr;
 	std::unordered_map<VariantKey, VkPipeline, VariantKey::HashFunction, VariantKey::EqualFunction> mPipelines;
 	// 构建一个巨大的DescriptorPool好处在于方便,但反过来会造成内存浪费
 	// 现在方案为为每个RHIPipeline都拥有一个DescriptorPool
