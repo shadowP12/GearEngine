@@ -12,6 +12,10 @@ enum class CommandBufferType
 class RHIDevice;
 class RHIQueue;
 class RHICommandBuffer;
+class RHIVertexBuffer;
+class RHIIndexBuffer;
+class RHIGraphicsPipelineState;
+class RHIRenderPass;
 
 class RHICommandBufferPool
 {

@@ -20,7 +20,7 @@ class RHITexture
 public:
 	RHITexture(RHIDevice* device, const TextureDesc& textureDesc);
 	virtual~RHITexture();
-	VkImage getImage() { return mImage; }
+	VkImage getHandle() { return mImage; }
 private:
 private:
 	friend class RHITextureView;
