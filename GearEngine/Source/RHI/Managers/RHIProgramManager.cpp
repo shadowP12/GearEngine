@@ -150,10 +150,7 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 
 	const char* sourceBytes = rhiProgram->mSource.c_str();
 	shader.setStrings(&sourceBytes, 1);
-
-	//暂时设置为"main"
 	shader.setEntryPoint("main");
-	//预处理此版本不加入
 	//shader.setPreamble(preamble.c_str());
 
 	TBuiltInResource resources = DefaultTBuiltInResource;
@@ -181,7 +178,8 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 	options.disableOptimizer = true;
 	options.optimizeSize = true;
 	glslang::GlslangToSpv(*program.getIntermediate(glslType), rhiProgram->mBytecode, &options);
-	//有反射信息去构建shader里面的参数布局
+
+	// 反射信息去构建shader里面的参数布局
 	int numUniformBlocks = program.getNumUniformBlocks();
 	for (int i = 0; i < numUniformBlocks; i++)
 	{

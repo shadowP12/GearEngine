@@ -28,6 +28,8 @@ public:
 	RHIGraphicsPipelineState(RHIDevice* device, const RHIPipelineStateInfo& info);
 	~RHIGraphicsPipelineState();
 	VkPipeline getPipeline(RHIRenderPass* renderPass);
+	VkPipelineLayout getLayout() { return mPipelineLayout; }
+	std::vector<VkDescriptorSet>& getDescSets() { return mDescriptorSets2; }
 private:
 	struct VariantKey
 	{
@@ -62,6 +64,8 @@ private:
 	VkDescriptorPool mDescriptorPool;
 	std::map<uint32_t, VkDescriptorSetLayout> mDescriptorSetLayouts;
 	std::map<uint32_t, VkDescriptorSet> mDescriptorSets;
+	// ¡Ÿ ±±‰¡ø
+	std::vector<VkDescriptorSet> mDescriptorSets2;
 	VkPipelineLayout mPipelineLayout;
 	std::vector<uint32_t> mSets;
 };

@@ -20,7 +20,8 @@ class RHIFramebuffer
 public:
 	RHIFramebuffer(RHIDevice* device, const RHIFramebufferInfo& info);
 	~RHIFramebuffer();
-
+	RHIRenderPass* getRenderPass() { return mRenderpass; }
+	VkFramebuffer getHandle() { return mFramebuffer; }
 private:
 	RHIDevice* mDevice;
 	RHIRenderPass* mRenderpass;

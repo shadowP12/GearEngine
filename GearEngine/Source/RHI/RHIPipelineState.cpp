@@ -160,6 +160,7 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 			throw std::runtime_error("failed to allocate descriptor set!");
 		}
 		mDescriptorSets[entry.first] = descriptorSet;
+		mDescriptorSets2.push_back(descriptorSet);
 	}
 
 	// 创建管线布局

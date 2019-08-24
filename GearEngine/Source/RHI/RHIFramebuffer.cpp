@@ -28,7 +28,6 @@ RHIFramebuffer::RHIFramebuffer(RHIDevice* device, const RHIFramebufferInfo& info
 	framebufferInfo.layers = info.layers;
 	framebufferInfo.renderPass = mRenderpass ->getVkRenderPass(LoadMaskBits::LOAD_NONE, StoreMaskBits::STORE_NONE, ClearMaskBits::CLEAR_NONE);
 
-
 	if (vkCreateFramebuffer(mDevice->getDevice(), &framebufferInfo, nullptr, &mFramebuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to create framebuffer!");

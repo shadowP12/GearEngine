@@ -1,6 +1,7 @@
 #ifndef RHI_COMMANDBUFFER_H
 #define RHI_COMMANDBUFFER_H
 #include "RHIDefine.h"
+#include "Math/GMath.h"
 #include <vector>
 enum class CommandBufferType
 {
@@ -16,6 +17,7 @@ class RHIVertexBuffer;
 class RHIIndexBuffer;
 class RHIGraphicsPipelineState;
 class RHIRenderPass;
+class RHIFramebuffer;
 
 class RHICommandBufferPool
 {
@@ -39,6 +41,16 @@ public:
 	VkCommandBuffer getHandle() { return mCommandBuffer; }
 	void begin();
 	void end();
+	void beginRenderPass(glm::vec4 renderArea);
+	void endRenderPass();
+	void bindVertexBuffer(RHIVertexBuffer* vertexBuffer);
+	void bindIndexBuffer(RHIIndexBuffer* indexBuffer);
+	void bindGraphicsPipelineState(RHIGraphicsPipelineState* pipelineState);
+	void setRenderTarget(RHIFramebuffer* framebuffer);
+	void setViewport(glm::vec4 viewport);
+	void setScissor(glm::vec4 scissor);
+	void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance);
+	bool isInRenderPass() const { return mState == State::RecordingRenderPass; }
 	enum class State
 	{
 		Ready,
@@ -53,6 +65,12 @@ private:
 	RHIDevice* mDevice;
 	RHIQueue* mQueue;
 	RHICommandBufferPool* mCommandPool;
+	RHIFramebuffer* mFramebuffer;
+	RHIGraphicsPipelineState* mGraphicsPipelineState;
+	RHIVertexBuffer* mVertexBuffer;
+	RHIIndexBuffer* mIndexBuffer;
+	glm::vec4 mViewport;
+	glm::vec4 mScissor;
 	VkCommandBuffer mCommandBuffer;
 	VkFence mFence;
 	std::vector<VkSemaphore> mWaitSemaphores;
