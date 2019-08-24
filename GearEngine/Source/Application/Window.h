@@ -23,13 +23,19 @@ public:
 	int getHeight();
 	void reset(uint32_t width, uint32_t height);
 	std::vector<const char*> getRequiredExtensions(bool enableValidationLayers);
-	
+	void beginFrame();
+	void endFrame();
 private:
 	int mWidth;
 	int mHeight;
 	GLFWwindow* mWindow;
 	VkSurfaceKHR mSurface;
 	RHISwapChain* mSwapChain;
+	// 这里使用比较讨巧的方法
+	// 将gpu数据绘制到屏幕时独自发送一条命令
+	VkSemaphore mImageAvailableSemaphore;
+	VkSemaphore mRenderFinishedSemaphore;
+	uint32_t mFrameIndex;
 };
 
 #endif

@@ -8,5 +8,4 @@ RHIQueue::RHIQueue(RHIDevice* device, VkQueue queue, uint32_t familyIndex)
 
 RHIQueue::~RHIQueue()
 {
-
 }

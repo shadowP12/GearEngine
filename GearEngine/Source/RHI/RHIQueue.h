@@ -9,6 +9,7 @@ class RHIQueue
 public:
 	RHIQueue(RHIDevice* device, VkQueue queue, uint32_t familyIndex);
 	~RHIQueue();
+	VkQueue getHandle() { return mQueue; }
 	uint32_t getFamilyIndex() { return mFamilyIndex; }
 private:
 	RHIDevice* mDevice;

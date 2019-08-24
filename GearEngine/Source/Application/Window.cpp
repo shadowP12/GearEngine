@@ -32,6 +32,14 @@ Window::Window(int width, int height)
 	}
 
 	mSwapChain = new RHISwapChain(RHI::instance().getDevice(), mSurface, width, height);
+
+	// 创建显示信号量
+	VkSemaphoreCreateInfo semaphoreInfo = {};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	if (vkCreateSemaphore(RHI::instance().getDevice()->getDevice(), &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS ||
+		vkCreateSemaphore(RHI::instance().getDevice()->getDevice(), &semaphoreInfo, nullptr, &mRenderFinishedSemaphore) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create semaphores!");
+	}
 }
 
 Window::~Window()
@@ -39,6 +47,55 @@ Window::~Window()
 	glfwDestroyWindow(mWindow);
 	if (mSwapChain)
 		delete mSwapChain;
+}
+
+void Window::beginFrame()
+{
+	VkResult result = vkAcquireNextImageKHR(RHI::instance().getDevice()->getDevice(), mSwapChain->getHandle(), std::numeric_limits<uint64_t>::max(), mImageAvailableSemaphore, VK_NULL_HANDLE, &mFrameIndex);
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
+	{
+		throw std::runtime_error("failed to acquire swap chain image!");
+	}
+}
+
+void Window::endFrame()
+{
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 0;
+	submitInfo.pCommandBuffers = nullptr;
+	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	if (vkQueueSubmit(RHI::instance().getDevice()->getGraphicsQueue()->getHandle(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to submit present command buffer!");
+	}
+
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+	VkSwapchainKHR swapChains[] = { mSwapChain->getHandle() };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.pImageIndices = &mFrameIndex;
+
+	VkResult result = vkQueuePresentKHR(RHI::instance().getDevice()->getGraphicsQueue()->getHandle(), &presentInfo);
+
+	if (result != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to present swap chain image!");
+	}
+
+	// 万金油做法
+	vkQueueWaitIdle(RHI::instance().getDevice()->getGraphicsQueue()->getHandle());
 }
 
 GLFWwindow * Window::getWindowPtr()
