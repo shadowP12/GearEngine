@@ -6,10 +6,11 @@ class Application
 {
 public:
 	Application();
-	~Application();
-	void prepare();
-	void runMainLoop();
-private:
+	virtual ~Application();
+	virtual void prepare();
+	virtual void runMainLoop();
+	virtual void finish();
+protected:
 	Window* mWindow;
 };
 #endif

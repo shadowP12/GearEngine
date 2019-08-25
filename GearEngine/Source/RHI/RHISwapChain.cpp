@@ -78,8 +78,6 @@ RHISwapChain::~RHISwapChain()
 	vkDestroySwapchainKHR(mDevice->getDevice(), mSwapChain, nullptr);
 }
 
-
-
 SwapChainSupportDetails RHISwapChain::querySwapChainSupport()
 {
 	SwapChainSupportDetails details;

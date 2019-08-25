@@ -23,23 +23,20 @@ Application::~Application()
 
 void Application::prepare()
 {
-	RHIDevice* device = RHI::instance().getDevice();
-
-	RHIProgramInfo programInfo;
-	programInfo.type = RHIProgramType::Vertex;
-	programInfo.entryPoint = "main";
-	readFile("D:/GearEngine/GearEngine/Resource/Shaders/default.vert", programInfo.source);
-	
-	RHIProgram* program = device->createProgram(programInfo);
-	program->compile();
-	delete program;
 }
 
 void Application::runMainLoop()
 {
 	while (!glfwWindowShouldClose(mWindow->getWindowPtr())) 
 	{
+		mWindow->beginFrame();
+		// ²åÈëÖ´ÐÐ´úÂë
+		mWindow->endFrame();
 		Input::instance().update();
 		glfwPollEvents();
 	}
+}
+
+void Application::finish()
+{
 }
