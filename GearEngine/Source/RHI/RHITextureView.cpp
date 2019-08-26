@@ -5,7 +5,7 @@ RHITextureView::RHITextureView(RHIDevice* device, const TextureViewDesc& texture
 {
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	viewInfo.image = mTexture->getImage();
+	viewInfo.image = mTexture->getHandle();
 	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	viewInfo.format = textureViewDesc.format;
 	viewInfo.subresourceRange.aspectMask = textureViewDesc.aspectMask;

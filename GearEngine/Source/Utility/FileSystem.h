@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-bool readFile(const std::string& dstFileName, std::string& outData)
+inline bool readFile(const std::string& dstFileName, std::string& outData)
 {
 	std::istream* stream = &std::cin;
 	std::ifstream inputFile;

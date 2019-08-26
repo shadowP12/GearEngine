@@ -106,7 +106,8 @@ void RHICommandBuffer::beginRenderPass(glm::vec4 renderArea)
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = mFramebuffer->getRenderPass()->getVkRenderPass(LoadMaskBits::LOAD_NONE, StoreMaskBits::STORE_NONE, ClearMaskBits::CLEAR_NONE);
 	renderPassInfo.framebuffer = mFramebuffer->getHandle();
-	renderPassInfo.renderArea.offset = {renderArea.x, renderArea.y};
+	renderPassInfo.renderArea.offset.x = renderArea.x;
+	renderPassInfo.renderArea.offset.y = renderArea.y;
 	VkExtent2D extent;
 	extent.width = renderArea.z;
 	extent.height = renderArea.w;
@@ -195,7 +196,8 @@ void RHICommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, 
 	vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor = {};
-	scissor.offset = { mScissor.x, mScissor.y };
+	scissor.offset.x = mScissor.x;
+	scissor.offset.y = mScissor.y;
 	VkExtent2D extent;
 	extent.width = mScissor.z;
 	extent.height = mScissor.w;

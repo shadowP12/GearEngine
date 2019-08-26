@@ -3,6 +3,9 @@
 #include "Application/Window.h"
 #include "RHI/RHI.h"
 #include "RHI/RHIPipelineState.h"
+#include "RHI/RHITexture.h"
+#include "RHI/RHITextureView.h"
+#include "RHI/RHIFramebuffer.h"
 #include "Utility/FileSystem.h"
 
 class MyApplication : public Application
@@ -17,6 +20,7 @@ public:
 	}
 	virtual void prepare()
 	{
+		/*
 		RHIDevice* device = RHI::instance().getDevice();
 		// 创建cmd buffer
 		mTestCmdBuffer = device->allocCommandBuffer(CommandBufferType::GRAPHICS, true);
@@ -38,7 +42,7 @@ public:
 		RHIPipelineStateInfo pipelineInfo;
 		pipelineInfo.vertexProgram = mTestVertexProgram;
 		pipelineInfo.fragmentProgram = mTestFragmentProgram;
-		// pso对象应该由device创建,为了快速验证直接创建pso对象
+		// 快速验证直接创建pso对象
 		mTestPipeline = new RHIGraphicsPipelineState(device, pipelineInfo);
 
 		// 创建render target
@@ -49,8 +53,42 @@ public:
 		passInfo.color[0] = color;
 		passInfo.hasDepth = false;
 		passInfo.numColorAttachments = 1;
-
 		mTestRenderpass = new RHIRenderPass(device, passInfo);
+
+		TextureDesc texInfo;
+		texInfo.extent.width = 800;
+		texInfo.extent.height = 600;
+		texInfo.extent.depth = 1;
+		texInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+		texInfo.mipLevels = 1;
+		texInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+		texInfo.arrayLayers = 1;
+		texInfo.type = VK_IMAGE_TYPE_2D;
+		texInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+		mTestTex = new RHITexture(device, texInfo);
+
+		TextureViewDesc texViewInfo;
+		texViewInfo.texture = mTestTex;
+		texViewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+		texViewInfo.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		texViewInfo.baseArrayLayer = 0;
+		texViewInfo.baseMipLevel = 0;
+		texViewInfo.layerCount = 1;
+		texViewInfo.levelCount = 1;
+		
+		mTestTexView = new RHITextureView(device, texViewInfo);
+
+		RHIFramebufferInfo fbInfo;
+		fbInfo.color[0] = mTestTexView;
+		fbInfo.depth = nullptr;
+		fbInfo.width = 800;
+		fbInfo.height = 600;
+		fbInfo.renderpass = mTestRenderpass;
+		fbInfo.layers = 1;
+
+		mTestFramebuffer = new RHIFramebuffer(device, fbInfo);
+		*/
 	}
 	virtual void runMainLoop()
 	{
@@ -66,12 +104,16 @@ public:
 	}
 	virtual void finish()
 	{
+		/*
 		delete mTestCmdBuffer;
 		delete mTestVertexProgram;
 		delete mTestFragmentProgram;
 		delete mTestPipeline;
 		delete mTestRenderpass;
-		//delete mTextFramebuffer;
+		delete mTestFramebuffer;
+		delete mTestTex;
+		delete mTestTexView;
+		*/
 	}
 
 private:
@@ -80,7 +122,9 @@ private:
 	RHIProgram* mTestFragmentProgram;
 	RHIGraphicsPipelineState* mTestPipeline;
 	RHIRenderPass* mTestRenderpass;
-	//RHIFramebuffer* mTextFramebuffer;
+	RHIFramebuffer* mTestFramebuffer;
+	RHITexture* mTestTex;
+	RHITextureView* mTestTexView;
 };
 
 int main()
