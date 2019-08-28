@@ -67,7 +67,7 @@ private:
 	// ¡Ÿ ±±‰¡ø
 	std::vector<VkDescriptorSet> mDescriptorSets2;
 	VkPipelineLayout mPipelineLayout;
-	std::vector<uint32_t> mSets;
+	std::map<uint32_t, uint32_t> mSets;
 };
 
 #endif

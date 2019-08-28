@@ -3,7 +3,7 @@
 #include "RHIDefine.h"
 #include "RHITexture.h"
 
-struct TextureViewDesc
+struct RHITextureViewInfo
 {
 	RHITexture* texture;
 	VkFormat format;
@@ -18,7 +18,7 @@ class RHIDevice;
 class RHITextureView
 {
 public:
-	RHITextureView(RHIDevice* device, const TextureViewDesc& textureViewDesc);
+	RHITextureView(RHIDevice* device, const RHITextureViewInfo& textureViewDesc);
 	~RHITextureView();
 	VkImageView getHandle() { return mImageView; }
 private:

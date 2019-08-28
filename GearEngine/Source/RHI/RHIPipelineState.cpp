@@ -37,11 +37,11 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 	// note:vertexProgram和fragmentProgram的sets不应该重复
 	for (uint32_t i = 0; i < mVertexProgram->mParamInfo.sets.size(); i++)
 	{
-		mSets.push_back(mVertexProgram->mParamInfo.sets[i]);
+		mSets[mVertexProgram->mParamInfo.sets[i]] = 1;
 	}
 	for (uint32_t i = 0; i < mFragmentProgram->mParamInfo.sets.size(); i++)
 	{
-		mSets.push_back(mFragmentProgram->mParamInfo.sets[i]);
+		mSets[mFragmentProgram->mParamInfo.sets[i]] = 1;
 	}
 	// 创建DescriptorPool
 	VkDescriptorPoolSize poolSizes[2];
@@ -63,12 +63,11 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 
 	// 创建Descriptor Layouts
 	std::map<uint32_t, VkDescriptorSetLayoutCreateInfo> layoutCreateInfos;
-	
-	for (uint32_t i = 0; i < mSets.size(); i++)
+	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
+	for (auto& e : mSets)
 	{
-		uint32_t set = mSets[i];
-		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
-
+		uint32_t set = e.first;
+		setLayoutBindings.clear();
 		for (auto& entry : mVertexProgram->mParamInfo.paramBlocks)
 		{
 			if (entry.second.set == set)
@@ -110,7 +109,7 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 				setLayoutBindings.push_back(layoutBinding);
 			}
 		}
-		for (auto& entry : mFragmentProgram->mParamInfo.paramBlocks)
+		for (auto& entry : mFragmentProgram->mParamInfo.samplers)
 		{
 			if (entry.second.set == set)
 			{
@@ -128,7 +127,6 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		layoutInfo.bindingCount = setLayoutBindings.size();
 		layoutInfo.pBindings = setLayoutBindings.data();
-		
 		layoutCreateInfos[set] = layoutInfo;
 	}
 

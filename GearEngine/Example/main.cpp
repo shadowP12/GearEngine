@@ -20,7 +20,6 @@ public:
 	}
 	virtual void prepare()
 	{
-		/*
 		RHIDevice* device = RHI::instance().getDevice();
 		// 创建cmd buffer
 		mTestCmdBuffer = device->allocCommandBuffer(CommandBufferType::GRAPHICS, true);
@@ -46,10 +45,10 @@ public:
 		mTestPipeline = new RHIGraphicsPipelineState(device, pipelineInfo);
 
 		// 创建render target
-		RHIRenderPassAttachmentDesc color;
+		RHIRenderPassAttachmentInfo color;
 		color.format = VK_FORMAT_B8G8R8A8_UNORM;
 		color.numSample = 1;
-		RHIRenderPassDesc passInfo;
+		RHIRenderPassInfo passInfo;
 		passInfo.color[0] = color;
 		passInfo.hasDepth = false;
 		passInfo.numColorAttachments = 1;
@@ -68,7 +67,7 @@ public:
 
 		mTestTex = new RHITexture(device, texInfo);
 
-		TextureViewDesc texViewInfo;
+		RHITextureViewInfo texViewInfo;
 		texViewInfo.texture = mTestTex;
 		texViewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
 		texViewInfo.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -86,9 +85,10 @@ public:
 		fbInfo.height = 600;
 		fbInfo.renderpass = mTestRenderpass;
 		fbInfo.layers = 1;
+		fbInfo.numColorAttachments = 1;
+		fbInfo.hasDepth = false;
 
 		mTestFramebuffer = new RHIFramebuffer(device, fbInfo);
-		*/
 	}
 	virtual void runMainLoop()
 	{
@@ -104,7 +104,6 @@ public:
 	}
 	virtual void finish()
 	{
-		/*
 		delete mTestCmdBuffer;
 		delete mTestVertexProgram;
 		delete mTestFragmentProgram;
@@ -113,7 +112,6 @@ public:
 		delete mTestFramebuffer;
 		delete mTestTex;
 		delete mTestTexView;
-		*/
 	}
 
 private:

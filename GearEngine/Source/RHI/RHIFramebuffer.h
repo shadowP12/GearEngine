@@ -10,9 +10,12 @@ struct RHIFramebufferInfo
 	RHIRenderPass* renderpass;
 	RHITextureView* color[8];
 	RHITextureView* depth;
-	UINT32 width = 0;
-	UINT32 height = 0;
-	UINT32 layers = 0;
+	uint32_t width = 0;
+	uint32_t height = 0;
+	uint32_t layers = 0;
+	uint32_t numColorAttachments;
+	bool hasDepth;
+	
 };
 
 class RHIFramebuffer

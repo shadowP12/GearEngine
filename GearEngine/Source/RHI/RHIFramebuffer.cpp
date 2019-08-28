@@ -6,15 +6,12 @@ RHIFramebuffer::RHIFramebuffer(RHIDevice* device, const RHIFramebufferInfo& info
 	:mDevice(device), mRenderpass(info.renderpass)
 {
 	std::vector<VkImageView> attachmentViews;
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < info.numColorAttachments; i++)
 	{
-		if (info.color[i])
-		{
-			attachmentViews.push_back(info.color[i]->getHandle());
-		}
+		attachmentViews.push_back(info.color[i]->getHandle());
 	}
 
-	if(info.depth)
+	if(info.hasDepth)
 		attachmentViews.push_back(info.depth->getHandle());
 
 	VkFramebufferCreateInfo framebufferInfo;

@@ -1,6 +1,6 @@
 #include "RHITextureView.h"
 #include "RHIDevice.h"
-RHITextureView::RHITextureView(RHIDevice* device, const TextureViewDesc& textureViewDesc)
+RHITextureView::RHITextureView(RHIDevice* device, const RHITextureViewInfo& textureViewDesc)
 	:mDevice(device),mTexture(textureViewDesc.texture)
 {
 	VkImageViewCreateInfo viewInfo = {};

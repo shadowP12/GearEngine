@@ -24,7 +24,7 @@ bool RHIRenderPass::VariantKey::EqualFunction::operator()(
 	return lhs.loadMask == rhs.loadMask && lhs.storeMask == rhs.storeMask && lhs.clearMask == rhs.clearMask;
 }
 
-RHIRenderPass::RHIRenderPass(RHIDevice* device, const RHIRenderPassDesc& desc)
+RHIRenderPass::RHIRenderPass(RHIDevice* device, const RHIRenderPassInfo& desc)
 	:mDevice(device), mDesc(desc)
 {
 	mID = sNextValidID++;

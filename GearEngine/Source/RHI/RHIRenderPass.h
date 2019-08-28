@@ -11,14 +11,14 @@
 
 class RHIDevice;
 
-struct RHIRenderPassAttachmentDesc {
+struct RHIRenderPassAttachmentInfo {
 	VkFormat format = VK_FORMAT_UNDEFINED;
 	uint32_t numSample = 1;
 };
 
-struct RHIRenderPassDesc {
-	RHIRenderPassAttachmentDesc color[8];
-	RHIRenderPassAttachmentDesc depthStencil;
+struct RHIRenderPassInfo {
+	RHIRenderPassAttachmentInfo color[8];
+	RHIRenderPassAttachmentInfo depthStencil;
 	uint32_t numColorAttachments;
 	bool hasDepth;
 };
@@ -26,7 +26,7 @@ struct RHIRenderPassDesc {
 class RHIRenderPass
 {
 public:
-	RHIRenderPass(RHIDevice* device, const RHIRenderPassDesc& desc);
+	RHIRenderPass(RHIDevice* device, const RHIRenderPassInfo& desc);
 	virtual ~RHIRenderPass();
 	uint32_t getID() { return mID; }
 	VkRenderPass getVkRenderPass(LoadMaskBits load, StoreMaskBits store, ClearMaskBits clear);
@@ -56,7 +56,7 @@ private:
 private:
 	RHIDevice* mDevice;
 	VkRenderPass mRenderPass;
-	RHIRenderPassDesc mDesc;
+	RHIRenderPassInfo mDesc;
 	uint32_t mID;
 	std::unordered_map<VariantKey, VkRenderPass, VariantKey::HashFunction, VariantKey::EqualFunction> mVariants;
 
