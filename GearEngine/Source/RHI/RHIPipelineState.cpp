@@ -334,8 +334,7 @@ VkPipeline RHIGraphicsPipelineState::createVariant(RHIRenderPass * renderPass)
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.layout = mPipelineLayout;
-	// render pass的取值不应该有pipeline判断,较好的方案为外部预先设置好renderpass
-	pipelineInfo.renderPass = renderPass->getVkRenderPass(LoadMaskBits::LOAD_NONE, StoreMaskBits::STORE_NONE, ClearMaskBits::CLEAR_NONE);
+	pipelineInfo.renderPass = renderPass->getHandle();
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 

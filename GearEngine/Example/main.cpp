@@ -45,8 +45,8 @@ public:
 		mTestPipeline = new RHIGraphicsPipelineState(device, pipelineInfo);
 
 		// ´´½¨render target
-		RHIRenderPassAttachmentInfo color;
-		color.format = VK_FORMAT_B8G8R8A8_UNORM;
+		RHIColorAttachmentInfo color;
+		color.format = VK_FORMAT_R8G8B8A8_UNORM;
 		color.numSample = 1;
 		RHIRenderPassInfo passInfo;
 		passInfo.color[0] = color;
@@ -54,7 +54,7 @@ public:
 		passInfo.numColorAttachments = 1;
 		mTestRenderpass = new RHIRenderPass(device, passInfo);
 
-		TextureDesc texInfo;
+		RHITextureInfo texInfo;
 		texInfo.extent.width = 800;
 		texInfo.extent.height = 600;
 		texInfo.extent.depth = 1;
@@ -63,7 +63,7 @@ public:
 		texInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		texInfo.arrayLayers = 1;
 		texInfo.type = VK_IMAGE_TYPE_2D;
-		texInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+		texInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 		mTestTex = new RHITexture(device, texInfo);
 

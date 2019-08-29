@@ -104,7 +104,7 @@ void RHICommandBuffer::beginRenderPass(glm::vec4 renderArea)
 {
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = mFramebuffer->getRenderPass()->getVkRenderPass(LoadMaskBits::LOAD_NONE, StoreMaskBits::STORE_NONE, ClearMaskBits::CLEAR_NONE);
+	renderPassInfo.renderPass = mFramebuffer->getRenderPass()->getHandle();
 	renderPassInfo.framebuffer = mFramebuffer->getHandle();
 	renderPassInfo.renderArea.offset.x = renderArea.x;
 	renderPassInfo.renderArea.offset.y = renderArea.y;

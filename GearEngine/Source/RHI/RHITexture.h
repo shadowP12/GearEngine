@@ -2,7 +2,7 @@
 #define RHI_TEXTURE_H
 #include "RHIDefine.h"
 
-struct TextureDesc
+struct RHITextureInfo
 {
 	VkImageType type;
 	VkFormat format;
@@ -18,7 +18,7 @@ class RHIDevice;
 class RHITexture
 {
 public:
-	RHITexture(RHIDevice* device, const TextureDesc& textureDesc);
+	RHITexture(RHIDevice* device, const RHITextureInfo& textureDesc);
 	virtual~RHITexture();
 	VkImage getHandle() { return mImage; }
 private:

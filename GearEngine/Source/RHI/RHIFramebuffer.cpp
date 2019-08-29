@@ -23,7 +23,7 @@ RHIFramebuffer::RHIFramebuffer(RHIDevice* device, const RHIFramebufferInfo& info
 	framebufferInfo.width = info.width;
 	framebufferInfo.height = info.height;
 	framebufferInfo.layers = info.layers;
-	framebufferInfo.renderPass = mRenderpass ->getVkRenderPass(LoadMaskBits::LOAD_NONE, StoreMaskBits::STORE_NONE, ClearMaskBits::CLEAR_NONE);
+	framebufferInfo.renderPass = mRenderpass->getHandle();
 
 	if (vkCreateFramebuffer(mDevice->getDevice(), &framebufferInfo, nullptr, &mFramebuffer) != VK_SUCCESS)
 	{

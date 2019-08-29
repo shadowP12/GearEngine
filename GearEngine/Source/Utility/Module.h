@@ -2,8 +2,6 @@
 #define MODULE_H
 #include <iostream>
 
-#define ERROR(info) throw std::runtime_error(info)
-
 template <class T>
 class Module {
 public:
@@ -11,12 +9,12 @@ public:
 	{
 		if (!isStartedUp()) 
 		{
-			ERROR("Trying to access a module but it hasn't been started up yet.");
+			throw std::runtime_error("Trying to access a module but it hasn't been started up yet.");
 		}
 
 		if (isDestroyed()) 
 		{
-			ERROR("Trying to access a destroyed module.");
+			throw std::runtime_error("Trying to access a destroyed module.");
 		}
 
 		return *_instance();
@@ -26,12 +24,12 @@ public:
 	{
 		if (!isStartedUp()) 
 		{
-			ERROR("Trying to access a module but it hasn't been started up yet.");
+			throw std::runtime_error("Trying to access a module but it hasn't been started up yet.");
 		}
 
 		if (isDestroyed()) 
 		{
-			ERROR("Trying to access a destroyed module.");
+			throw std::runtime_error("Trying to access a destroyed module.");
 		}
 
 		return _instance();
@@ -52,12 +50,12 @@ public:
 	{
 		if (isDestroyed()) 
 		{
-			ERROR("Trying to shut down an already shut down module.");
+			throw std::runtime_error("Trying to shut down an already shut down module.");
 		}
 
 		if (!isStartedUp()) 
 		{
-			ERROR("Trying to shut down a module which was never started.");
+			throw std::runtime_error("Trying to shut down a module which was never started.");
 		}
 
 		((Module*)_instance())->onShutDown();

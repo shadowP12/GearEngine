@@ -86,7 +86,7 @@ void Window::endFrame()
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &mFrameIndex;
-
+	
 	VkResult result = vkQueuePresentKHR(RHI::instance().getDevice()->getGraphicsQueue()->getHandle(), &presentInfo);
 
 	if (result != VK_SUCCESS) 

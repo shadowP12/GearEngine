@@ -13,6 +13,8 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 static void mouseButtonCallback(GLFWwindow * window, int button, int action, int mods);
 static void mouseScrollCallback(GLFWwindow * window, double xOffset, double yOffset);
 
+class RHICommandBuffer;
+
 class Window
 {
 public:
@@ -31,6 +33,7 @@ private:
 	GLFWwindow* mWindow;
 	VkSurfaceKHR mSurface;
 	RHISwapChain* mSwapChain;
+	RHICommandBuffer* mPresentCmdBuffer;
 	// 这里使用比较讨巧的方法
 	// 将gpu数据绘制到屏幕时独自发送一条命令
 	VkSemaphore mImageAvailableSemaphore;

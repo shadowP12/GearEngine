@@ -5,7 +5,7 @@
 * 稀疏纹理会需要用到flag，但是目前以普通2d纹理为主故设为默认值0
 */
 
-RHITexture::RHITexture(RHIDevice* device, const TextureDesc& textureDesc)
+RHITexture::RHITexture(RHIDevice* device, const RHITextureInfo& textureDesc)
 	:mDevice(device)
 {
 	VkImageCreateInfo imageInfo = {};
