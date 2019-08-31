@@ -4,6 +4,7 @@
 #include <vector>
 /**
  交换链不提供重构功能,当窗口尺寸发生改变时应重新创建一个交换链
+ 交换链的帧缓存现不支持深度缓存
 */
 struct SwapChainSupportDetails
 {
@@ -13,7 +14,9 @@ struct SwapChainSupportDetails
 };
 
 class RHIDevice;
-
+class RHIRenderPass;
+class RHIFramebuffer;
+class RHITextureView;
 class RHISwapChain
 {
 public:
@@ -26,10 +29,12 @@ private:
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
 private:
 	RHIDevice* mDevice;
+	RHIRenderPass* mRenderPass;
+	std::vector<RHIFramebuffer*> mFramebuffers;
+	std::vector<RHITextureView*> mTextureViews;
 	VkSurfaceKHR mSurface;
 	VkSwapchainKHR mSwapChain;
 	std::vector<VkImage> mSwapChainImages;
-	std::vector<VkImageView> mSwapChainImageViews;
 	VkFormat mSwapChainImageFormat;
 	uint32_t mWidth;
 	uint32_t mHeight;

@@ -5,6 +5,10 @@
 #include "RHICommandBuffer.h"
 #include "RHIQueue.h"
 #include "RHIProgram.h"
+#include "RHIRenderPass.h"
+#include "RHIFramebuffer.h"
+#include "RHITexture.h"
+#include "RHITextureView.h"
 #include <vector>
 
 class RHIDevice
@@ -20,8 +24,13 @@ public:
 	RHIUniformBuffer* createUniformBuffer(uint32_t size);
 	RHIVertexBuffer* createVertexBuffer(uint32_t elementSize, uint32_t vertexCount);
 	RHIIndexBuffer* createIndexBuffer(uint32_t elementSize, uint32_t indexCount);
+	RHITexture* createTexture(const RHITextureInfo& textureInfo);
+	RHITextureView* createTextureView(const RHITextureViewInfo& viewInfo);
+	RHITextureView* createTextureView(VkImageView view);
 	RHICommandBuffer* allocCommandBuffer(const CommandBufferType& type, bool primary);
 	RHIProgram* createProgram(const RHIProgramInfo& programInfo);
+	RHIRenderPass* createRenderPass(const RHIRenderPassInfo& renderPassInfo);
+	RHIFramebuffer* createFramebuffer(const RHIFramebufferInfo& framebufferInfo);
 private:
 	void createCommandPool();
 private:

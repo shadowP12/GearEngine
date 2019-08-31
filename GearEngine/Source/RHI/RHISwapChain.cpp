@@ -1,4 +1,8 @@
 #include "RHISwapChain.h"
+#include "RHIRenderPass.h"
+#include "RHIFramebuffer.h"
+#include "RHITexture.h"
+#include "RHITextureView.h"
 #include "RHIDevice.h"
 
 RHISwapChain::RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t width, uint32_t height)
@@ -48,7 +52,6 @@ RHISwapChain::RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t wid
 	mSwapChainImageFormat = surfaceFormat.format;
 
 	//get image view
-	mSwapChainImageViews.resize(mSwapChainImages.size());
 	for (uint32_t i = 0; i < mSwapChainImages.size(); i++)
 	{
 		VkImageViewCreateInfo viewInfo = {};
@@ -62,19 +65,58 @@ RHISwapChain::RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t wid
 		viewInfo.subresourceRange.baseArrayLayer = 0;
 		viewInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(mDevice->getDevice(), &viewInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS)
+		VkImageView view;
+		if (vkCreateImageView(mDevice->getDevice(), &viewInfo, nullptr, &view) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create image view!");
 		}
+		RHITextureView* rhiView = mDevice->createTextureView(view);
+		mTextureViews.push_back(rhiView);
+	}
+
+	// 创建对应的帧缓存和renderpass
+	RHIColorAttachmentInfo color;
+	color.format = VK_FORMAT_B8G8R8A8_UNORM;
+	color.numSample = 1;
+	color.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	RHIRenderPassInfo passInfo;
+	passInfo.color[0] = color;
+	passInfo.hasDepth = false;
+	passInfo.numColorAttachments = 1;
+	mRenderPass = device->createRenderPass(passInfo);
+
+	for (uint32_t i = 0; i < mSwapChainImages.size(); i++)
+	{
+		RHIFramebufferInfo fbInfo;
+		fbInfo.color[0] = mTextureViews[i];
+		fbInfo.depth = nullptr;
+		fbInfo.width = 800;
+		fbInfo.height = 600;
+		fbInfo.renderpass = mRenderPass;
+		fbInfo.layers = 1;
+		fbInfo.numColorAttachments = 1;
+		fbInfo.hasDepth = false;
+
+		RHIFramebuffer* fb = mDevice->createFramebuffer(fbInfo);
+		mFramebuffers.push_back(fb);
 	}
 }
 
 RHISwapChain::~RHISwapChain()
 {
-	for (size_t i = 0; i < mSwapChainImageViews.size(); i++)
+	for (int i = 0; i < mTextureViews.size(); i++)
 	{
-		vkDestroyImageView(mDevice->getDevice(), mSwapChainImageViews[i], nullptr);
+		delete mTextureViews[i];
 	}
+	
+	if (mRenderPass)
+		delete mRenderPass;
+
+	for (int i = 0; i < mFramebuffers.size(); i++)
+	{
+		delete mFramebuffers[i];
+	}
+
 	vkDestroySwapchainKHR(mDevice->getDevice(), mSwapChain, nullptr);
 }
 

@@ -20,6 +20,11 @@ RHITextureView::RHITextureView(RHIDevice* device, const RHITextureViewInfo& text
 	}
 }
 
+RHITextureView::RHITextureView(RHIDevice* device, VkImageView view)
+	:mDevice(device), mImageView(view)
+{
+}
+
 RHITextureView::~RHITextureView()
 {
 	vkDestroyImageView(mDevice->getDevice(), mImageView, nullptr);

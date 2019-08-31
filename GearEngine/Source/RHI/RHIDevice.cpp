@@ -216,3 +216,33 @@ RHIIndexBuffer* RHIDevice::createIndexBuffer(uint32_t elementSize, uint32_t inde
 	RHIIndexBuffer* ret = new RHIIndexBuffer(this, elementSize, indexCount);
 	return ret;
 }
+
+RHIRenderPass* RHIDevice::createRenderPass(const RHIRenderPassInfo& renderPassInfo)
+{
+	RHIRenderPass* ret = new RHIRenderPass(this, renderPassInfo);
+	return ret;
+}
+
+RHIFramebuffer* RHIDevice::createFramebuffer(const RHIFramebufferInfo& framebufferInfo)
+{
+	RHIFramebuffer* ret = new RHIFramebuffer(this, framebufferInfo);
+	return ret;
+}
+
+RHITexture* RHIDevice::createTexture(const RHITextureInfo& textureInfo)
+{
+	RHITexture* ret = new RHITexture(this, textureInfo);
+	return ret;
+}
+
+RHITextureView* RHIDevice::createTextureView(const RHITextureViewInfo& viewInfo)
+{
+	RHITextureView* ret = new RHITextureView(this, viewInfo);
+	return ret;
+}
+
+RHITextureView* RHIDevice::createTextureView(VkImageView view)
+{
+	RHITextureView* ret = new RHITextureView(this, view);
+	return ret;
+}

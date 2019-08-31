@@ -19,6 +19,7 @@ class RHITextureView
 {
 public:
 	RHITextureView(RHIDevice* device, const RHITextureViewInfo& textureViewDesc);
+	RHITextureView(RHIDevice* device, VkImageView view);
 	~RHITextureView();
 	VkImageView getHandle() { return mImageView; }
 private:
