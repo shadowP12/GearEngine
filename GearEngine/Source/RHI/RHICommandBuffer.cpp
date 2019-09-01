@@ -113,9 +113,9 @@ void RHICommandBuffer::beginRenderPass(glm::vec4 renderArea)
 	extent.height = renderArea.w;
 	renderPassInfo.renderArea.extent = extent;
 
-	std::array<VkClearValue, 2> clearValues = {};
-	clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-	clearValues[1].depthStencil = { 1.0f, 0 };
+	std::array<VkClearValue, 1> clearValues = {};
+	clearValues[0].color = { 1.0f, 1.0f, 0.0, 0.0f };
+	//clearValues[1].depthStencil = { 1.0f, 0 };
 
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	renderPassInfo.pClearValues = clearValues.data();
@@ -202,7 +202,7 @@ void RHICommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, 
 	extent.width = mScissor.z;
 	extent.height = mScissor.w;
 	scissor.extent = extent;
-	vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+	//vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
 
 	vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipelineState->getPipeline(mFramebuffer->getRenderPass()));
 

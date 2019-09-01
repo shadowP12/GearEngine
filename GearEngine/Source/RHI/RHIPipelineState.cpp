@@ -280,6 +280,14 @@ VkPipeline RHIGraphicsPipelineState::createVariant(RHIRenderPass * renderPass)
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
+	VkViewport viewport = {};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = (float)800;
+	viewport.height = (float)600;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
 	VkPipelineViewportStateCreateInfo viewportState = {};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewportState.pNext = NULL;
@@ -287,7 +295,7 @@ VkPipeline RHIGraphicsPipelineState::createVariant(RHIRenderPass * renderPass)
 	viewportState.viewportCount = 1;
 	viewportState.scissorCount = 1;
 	viewportState.pScissors = NULL;
-	viewportState.pViewports = NULL;
+	viewportState.pViewports = &viewport;
 
 	VkPipelineRasterizationStateCreateInfo rasterizer = {};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -296,7 +304,7 @@ VkPipeline RHIGraphicsPipelineState::createVariant(RHIRenderPass * renderPass)
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 
 	VkPipelineMultisampleStateCreateInfo multisampling = {};
