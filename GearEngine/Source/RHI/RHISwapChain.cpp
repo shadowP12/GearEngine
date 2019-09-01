@@ -78,6 +78,7 @@ RHISwapChain::RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t wid
 	RHIColorAttachmentInfo color;
 	color.format = VK_FORMAT_B8G8R8A8_UNORM;
 	color.numSample = 1;
+	color.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	color.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 	RHIRenderPassInfo passInfo;
 	passInfo.color[0] = color;
@@ -178,3 +179,12 @@ VkPresentModeKHR RHISwapChain::chooseSwapPresentMode(const std::vector<VkPresent
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 
+RHIFramebuffer* RHISwapChain::getFramebuffer(uint32_t index)
+{
+	if (index < 0 || index >= mFramebuffers.size())
+	{
+		return nullptr;
+	}
+
+	return mFramebuffers[index];
+}

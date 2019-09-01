@@ -33,4 +33,5 @@ RHIFramebuffer::RHIFramebuffer(RHIDevice* device, const RHIFramebufferInfo& info
 
 RHIFramebuffer::~RHIFramebuffer()
 {
+	vkDestroyFramebuffer(mDevice->getDevice(), mFramebuffer, nullptr);
 }

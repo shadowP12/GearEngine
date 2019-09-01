@@ -47,6 +47,8 @@ Window::~Window()
 	glfwDestroyWindow(mWindow);
 	if (mSwapChain)
 		delete mSwapChain;
+	vkDestroySemaphore(RHI::instance().getDevice()->getDevice(), mImageAvailableSemaphore, nullptr);
+	vkDestroySemaphore(RHI::instance().getDevice()->getDevice(), mRenderFinishedSemaphore, nullptr);
 }
 
 void Window::beginFrame()
@@ -58,6 +60,7 @@ void Window::beginFrame()
 	}
 }
 
+// note:必须保证渲染流程不为空
 void Window::endFrame()
 {
 	VkSubmitInfo submitInfo = {};
@@ -96,6 +99,52 @@ void Window::endFrame()
 
 	// 万金油做法
 	vkQueueWaitIdle(RHI::instance().getDevice()->getGraphicsQueue()->getHandle());
+}
+
+void Window::endFrame(RHICommandBuffer* cmdBuffer)
+{
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+	VkCommandBuffer cmd[] = { cmdBuffer->getHandle() };
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = cmd;
+	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	if (vkQueueSubmit(RHI::instance().getDevice()->getGraphicsQueue()->getHandle(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to submit present command buffer!");
+	}
+
+	VkPresentInfoKHR presentInfo = {};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+	VkSwapchainKHR swapChains[] = { mSwapChain->getHandle() };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.pImageIndices = &mFrameIndex;
+
+	VkResult result = vkQueuePresentKHR(RHI::instance().getDevice()->getGraphicsQueue()->getHandle(), &presentInfo);
+
+	if (result != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to present swap chain image!");
+	}
+
+	// 万金油做法
+	vkQueueWaitIdle(RHI::instance().getDevice()->getGraphicsQueue()->getHandle());
+}
+
+RHIFramebuffer* Window::getFramebuffer()
+{
+	return mSwapChain->getFramebuffer(mFrameIndex);
 }
 
 GLFWwindow * Window::getWindowPtr()

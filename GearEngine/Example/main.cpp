@@ -8,6 +8,22 @@
 #include "RHI/RHIFramebuffer.h"
 #include "Utility/FileSystem.h"
 
+struct Vertex {
+	glm::vec3 pos;
+	glm::vec3 normal;
+	glm::vec2 uv;
+};
+
+float vertices[] = {
+	-0.5f, -0.5f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0,
+	 0.5f, -0.5f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0,
+	 0.0f,  0.5f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0
+};
+
+unsigned int indices[] = {
+	0, 1, 2
+};
+
 class MyApplication : public Application
 {
 public:
@@ -44,51 +60,11 @@ public:
 		// 快速验证直接创建pso对象
 		mTestPipeline = new RHIGraphicsPipelineState(device, pipelineInfo);
 
-		// 创建render target
-		RHIColorAttachmentInfo color;
-		color.format = VK_FORMAT_R8G8B8A8_UNORM;
-		color.numSample = 1;
-		RHIRenderPassInfo passInfo;
-		passInfo.color[0] = color;
-		passInfo.hasDepth = false;
-		passInfo.numColorAttachments = 1;
-		mTestRenderpass = new RHIRenderPass(device, passInfo);
-
-		RHITextureInfo texInfo;
-		texInfo.extent.width = 800;
-		texInfo.extent.height = 600;
-		texInfo.extent.depth = 1;
-		texInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-		texInfo.mipLevels = 1;
-		texInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-		texInfo.arrayLayers = 1;
-		texInfo.type = VK_IMAGE_TYPE_2D;
-		texInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-		mTestTex = new RHITexture(device, texInfo);
-
-		RHITextureViewInfo texViewInfo;
-		texViewInfo.texture = mTestTex;
-		texViewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-		texViewInfo.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		texViewInfo.baseArrayLayer = 0;
-		texViewInfo.baseMipLevel = 0;
-		texViewInfo.layerCount = 1;
-		texViewInfo.levelCount = 1;
+		mTestVertexbuffer = device->createVertexBuffer(sizeof(Vertex), 3);
+		mTestVertexbuffer->writeData(0,sizeof(vertices), vertices);
 		
-		mTestTexView = new RHITextureView(device, texViewInfo);
-
-		RHIFramebufferInfo fbInfo;
-		fbInfo.color[0] = mTestTexView;
-		fbInfo.depth = nullptr;
-		fbInfo.width = 800;
-		fbInfo.height = 600;
-		fbInfo.renderpass = mTestRenderpass;
-		fbInfo.layers = 1;
-		fbInfo.numColorAttachments = 1;
-		fbInfo.hasDepth = false;
-
-		mTestFramebuffer = new RHIFramebuffer(device, fbInfo);
+		mTestIndexbuffer = device->createIndexBuffer(sizeof(unsigned int),3);
+		mTestIndexbuffer->writeData(0,sizeof(indices), indices);
 	}
 	virtual void runMainLoop()
 	{
@@ -96,8 +72,19 @@ public:
 		{
 			mWindow->beginFrame();
 			// 插入执行代码
+			mTestCmdBuffer->setRenderTarget(mWindow->getFramebuffer());
+			mTestCmdBuffer->setViewport(glm::vec4(0, 0, 800, 600));
+			mTestCmdBuffer->setScissor(glm::vec4(0, 0, 800, 600));
+			mTestCmdBuffer->bindGraphicsPipelineState(mTestPipeline);
+			mTestCmdBuffer->bindIndexBuffer(mTestIndexbuffer);
+			mTestCmdBuffer->bindVertexBuffer(mTestVertexbuffer);
+			mTestCmdBuffer->begin();
+			mTestCmdBuffer->beginRenderPass(glm::vec4(0,0,800,600));
+			mTestCmdBuffer->draw(3,1,0,0);
+			mTestCmdBuffer->endRenderPass();
+			mTestCmdBuffer->end();
 			
-			mWindow->endFrame();
+			mWindow->endFrame(mTestCmdBuffer);
 			Input::instance().update();
 			glfwPollEvents();
 		}
@@ -108,10 +95,8 @@ public:
 		delete mTestVertexProgram;
 		delete mTestFragmentProgram;
 		delete mTestPipeline;
-		delete mTestRenderpass;
-		delete mTestFramebuffer;
-		delete mTestTex;
-		delete mTestTexView;
+		delete mTestVertexbuffer;
+		delete mTestIndexbuffer;
 	}
 
 private:
@@ -119,10 +104,8 @@ private:
 	RHIProgram* mTestVertexProgram;
 	RHIProgram* mTestFragmentProgram;
 	RHIGraphicsPipelineState* mTestPipeline;
-	RHIRenderPass* mTestRenderpass;
-	RHIFramebuffer* mTestFramebuffer;
-	RHITexture* mTestTex;
-	RHITextureView* mTestTexView;
+	RHIVertexBuffer* mTestVertexbuffer;
+	RHIIndexBuffer* mTestIndexbuffer;
 };
 
 int main()

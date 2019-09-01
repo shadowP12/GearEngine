@@ -23,11 +23,13 @@ public:
 	RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t width, uint32_t height);
 	~RHISwapChain();
 	VkSwapchainKHR getHandle() { return mSwapChain; }
+	RHIFramebuffer* getFramebuffer(uint32_t index);
 private:
 	SwapChainSupportDetails querySwapChainSupport();
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
 private:
+	friend class Window;
 	RHIDevice* mDevice;
 	RHIRenderPass* mRenderPass;
 	std::vector<RHIFramebuffer*> mFramebuffers;

@@ -14,7 +14,7 @@ static void mouseButtonCallback(GLFWwindow * window, int button, int action, int
 static void mouseScrollCallback(GLFWwindow * window, double xOffset, double yOffset);
 
 class RHICommandBuffer;
-
+class RHIFramebuffer;
 class Window
 {
 public:
@@ -27,6 +27,8 @@ public:
 	std::vector<const char*> getRequiredExtensions(bool enableValidationLayers);
 	void beginFrame();
 	void endFrame();
+	void endFrame(RHICommandBuffer* cmdBuffer);
+	RHIFramebuffer* getFramebuffer();
 private:
 	int mWidth;
 	int mHeight;
@@ -34,8 +36,6 @@ private:
 	VkSurfaceKHR mSurface;
 	RHISwapChain* mSwapChain;
 	RHICommandBuffer* mPresentCmdBuffer;
-	// 这里使用比较讨巧的方法
-	// 将gpu数据绘制到屏幕时独自发送一条命令
 	VkSemaphore mImageAvailableSemaphore;
 	VkSemaphore mRenderFinishedSemaphore;
 	uint32_t mFrameIndex;

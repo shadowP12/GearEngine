@@ -50,6 +50,7 @@ public:
 	void setViewport(glm::vec4 viewport);
 	void setScissor(glm::vec4 scissor);
 	void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance);
+	void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
 	bool isInRenderPass() const { return mState == State::RecordingRenderPass; }
 	enum class State
 	{
