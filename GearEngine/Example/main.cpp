@@ -15,13 +15,13 @@ struct Vertex {
 };
 
 float vertices[] = {
-	-0.5f, -0.0f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0,
-	0.0f,  1.0f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0,
+	0.0f,  0.5f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0,
+	-0.5f, -0.5f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0,
 	 0.5f, -0.5f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0
 };
 
 unsigned int indices[] = {
-	0, 1, 2
+	2, 1, 0
 };
 
 class MyApplication : public Application
@@ -80,7 +80,7 @@ public:
 			mTestCmdBuffer->bindVertexBuffer(mTestVertexbuffer);
 			mTestCmdBuffer->begin();
 			mTestCmdBuffer->beginRenderPass(glm::vec4(0,0,800,600));
-			mTestCmdBuffer->draw(3,1,0,0);
+			mTestCmdBuffer->drawIndexed(3,1,0,0,0);
 			mTestCmdBuffer->endRenderPass();
 			mTestCmdBuffer->end();
 			

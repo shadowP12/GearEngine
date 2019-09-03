@@ -43,6 +43,14 @@ set(GEAR_ENGINE_RHI_INC
 	Source/RHI/Managers/RHIProgramManager.h
 )
 
+set(GEAR_ENGINE_MESH_SRC
+	Source/Mesh/VertexDescription.cpp
+)
+
+set(GEAR_ENGINE_MESH_INC
+	Source/Mesh/VertexDescription.h
+)
+
 set(GEAR_ENGINE_UTILITY_INC
 	Source/Utility/FileSystem.h
 	Source/Utility/Hash.h
@@ -57,4 +65,5 @@ set(GEAR_ENGINE_MATH_INC
 set(GEAR_ENGINE_SRC
 	${GEAR_ENGINE_APPLICATION_SRC}
 	${GEAR_ENGINE_RHI_SRC}
+	${GEAR_ENGINE_MESH_SRC}
 )
