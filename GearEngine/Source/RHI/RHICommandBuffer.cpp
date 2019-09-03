@@ -202,7 +202,7 @@ void RHICommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, 
 	extent.width = mScissor.z;
 	extent.height = mScissor.w;
 	scissor.extent = extent;
-	//vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+	vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
 
 	vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipelineState->getPipeline(mFramebuffer->getRenderPass()));
 
@@ -212,7 +212,8 @@ void RHICommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, 
 
 	vkCmdBindIndexBuffer(mCommandBuffer, mIndexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
 	std::vector<VkDescriptorSet> sets = mGraphicsPipelineState->getDescSets();
-	//vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipelineState->getLayout(), 0, sets.size(), sets.data(), 0, nullptr);
+	if (sets.size() > 0)
+		vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipelineState->getLayout(), 0, sets.size(), sets.data(), 0, nullptr);
 
 	vkCmdDrawIndexed(mCommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
@@ -266,6 +267,7 @@ void RHICommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(mCommandBuffer, 0, 1, vertexBuffers, offsets);
 	std::vector<VkDescriptorSet> sets = mGraphicsPipelineState->getDescSets();
-	//vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipelineState->getLayout(), 0, sets.size(), sets.data(), 0, nullptr);
+	if(sets.size() > 0)
+		vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipelineState->getLayout(), 0, sets.size(), sets.data(), 0, nullptr);
 	vkCmdDraw(mCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
