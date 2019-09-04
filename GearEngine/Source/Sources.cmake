@@ -23,6 +23,7 @@ set(GEAR_ENGINE_RHI_SRC
 	Source/RHI/RHITexture.cpp
 	Source/RHI/RHITextureView.cpp
 	Source/RHI/Managers/RHIProgramManager.cpp
+	Source/RHI/Managers/RHIVertexInputManager.cpp
 )
 
 set(GEAR_ENGINE_RHI_INC
@@ -41,6 +42,7 @@ set(GEAR_ENGINE_RHI_INC
 	Source/RHI/RHITexture.h
 	Source/RHI/RHITextureView.h
 	Source/RHI/Managers/RHIProgramManager.h
+	Source/RHI/Managers/RHIVertexInputManager.h
 )
 
 set(GEAR_ENGINE_MESH_SRC
