@@ -134,6 +134,9 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 
 	//
 	createCommandPool();
+
+	//
+	mDummyUniformBuffer = createUniformBuffer(16);
 }
 
 
@@ -145,6 +148,7 @@ RHIDevice::~RHIDevice()
 	SAFE_DELETE(mGraphicsQueue);
 	SAFE_DELETE(mComputeQueue);
 	SAFE_DELETE(mTransferQueue);
+	SAFE_DELETE(mDummyUniformBuffer);
 	vkDestroyDevice(mDevice, nullptr);
 }
 

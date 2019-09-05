@@ -1,9 +1,9 @@
-#ifndef TEXTURE_H
-#define TEXTURE_H
+#ifndef TEXTURE_2D_H
+#define TEXTURE_2D_H
 #include "../RenderAPI/Image.h"
 #include "../Resource/Resource.h"
 #include "../RenderAPI/Buffer.h"
-class TextureImporter;
+
 class Texture : public Resource
 {
 public:

@@ -16,6 +16,95 @@ RHIProgramParamList::RHIProgramParamList(RHIDevice* device, const std::map<uint3
 	mVertexProgramParamInfo(vertexProgramParamInfo),
 	mFragmentProgramParamInfo(fragmentProgramParamInfo)
 {
+	// 为每一个desc属性初始化,缺少这步直接调用set对象会出现报错
+	for (auto& e : mDescriptorSets)
+	{
+		uint32_t set = e.first;
+		VkDescriptorSet descSet = e.second;
+		for (auto& entry : vertexProgramParamInfo.paramBlocks)
+		{
+			if (entry.second.set == set)
+			{
+				VkDescriptorBufferInfo bufferInfo = {};
+				bufferInfo.buffer = mDevice->getDummyUniformBuffer()->getBuffer();
+				bufferInfo.offset = 0;
+				bufferInfo.range = mDevice->getDummyUniformBuffer()->getSize();
+
+				VkWriteDescriptorSet descriptorWrite = {};
+				descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrite.dstSet = descSet;
+				descriptorWrite.dstBinding = entry.second.slot;
+				descriptorWrite.dstArrayElement = 0;
+				descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				descriptorWrite.descriptorCount = 1;
+				descriptorWrite.pBufferInfo = &bufferInfo;
+
+				vkUpdateDescriptorSets(mDevice->getDevice(), 1, &descriptorWrite, 0, nullptr);
+			}
+		}
+
+		for (auto& entry : vertexProgramParamInfo.samplers)
+		{
+			VkDescriptorImageInfo imageInfo = {};
+			imageInfo.sampler = VK_NULL_HANDLE;
+			imageInfo.imageView = VK_NULL_HANDLE;
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+			VkWriteDescriptorSet descriptorWrite = {};
+			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrite.dstSet = descSet;
+			descriptorWrite.dstBinding = entry.second.slot;
+			descriptorWrite.dstArrayElement = 0;
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrite.descriptorCount = 1;
+			descriptorWrite.pImageInfo = &imageInfo;
+
+			vkUpdateDescriptorSets(mDevice->getDevice(), 1, &descriptorWrite, 0, nullptr);
+		}
+
+		for (auto& entry : fragmentProgramParamInfo.paramBlocks)
+		{
+			if (entry.second.set == set)
+			{
+				VkDescriptorBufferInfo bufferInfo = {};
+				bufferInfo.buffer = mDevice->getDummyUniformBuffer()->getBuffer();
+				bufferInfo.offset = 0;
+				bufferInfo.range = mDevice->getDummyUniformBuffer()->getSize();
+
+				VkWriteDescriptorSet descriptorWrite = {};
+				descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrite.dstSet = descSet;
+				descriptorWrite.dstBinding = entry.second.slot;
+				descriptorWrite.dstArrayElement = 0;
+				descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				descriptorWrite.descriptorCount = 1;
+				descriptorWrite.pBufferInfo = &bufferInfo;
+
+				vkUpdateDescriptorSets(mDevice->getDevice(), 1, &descriptorWrite, 0, nullptr);
+			}
+		}
+		for (auto& entry : fragmentProgramParamInfo.samplers)
+		{
+			if (entry.second.set == set)
+			{
+				VkDescriptorImageInfo imageInfo = {};
+				imageInfo.sampler = VK_NULL_HANDLE;
+				imageInfo.imageView = VK_NULL_HANDLE;
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+				VkWriteDescriptorSet descriptorWrite = {};
+				descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrite.dstSet = descSet;
+				descriptorWrite.dstBinding = entry.second.slot;
+				descriptorWrite.dstArrayElement = 0;
+				descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				descriptorWrite.descriptorCount = 1;
+				descriptorWrite.pImageInfo = &imageInfo;
+
+				vkUpdateDescriptorSets(mDevice->getDevice(), 1, &descriptorWrite, 0, nullptr);
+			}
+		}
+	}
 }
 
 RHIProgramParamList::~RHIProgramParamList()

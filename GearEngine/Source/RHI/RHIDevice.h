@@ -31,6 +31,7 @@ public:
 	RHIProgram* createProgram(const RHIProgramInfo& programInfo);
 	RHIRenderPass* createRenderPass(const RHIRenderPassInfo& renderPassInfo);
 	RHIFramebuffer* createFramebuffer(const RHIFramebufferInfo& framebufferInfo);
+	RHIUniformBuffer* getDummyUniformBuffer() { return mDummyUniformBuffer; };
 private:
 	void createCommandPool();
 private:
@@ -46,6 +47,8 @@ private:
 	RHIQueue* mGraphicsQueue;
 	RHIQueue* mComputeQueue;
 	RHIQueue* mTransferQueue;
+	//
+	RHIUniformBuffer* mDummyUniformBuffer;
 };
 
 #endif
