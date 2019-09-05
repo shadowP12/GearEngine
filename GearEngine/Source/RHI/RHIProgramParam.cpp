@@ -45,21 +45,25 @@ RHIProgramParamList::RHIProgramParamList(RHIDevice* device, const std::map<uint3
 
 		for (auto& entry : vertexProgramParamInfo.samplers)
 		{
-			VkDescriptorImageInfo imageInfo = {};
-			imageInfo.sampler = VK_NULL_HANDLE;
-			imageInfo.imageView = VK_NULL_HANDLE;
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			if (entry.second.set == set)
+			{
+				VkDescriptorImageInfo imageInfo = {};
+				imageInfo.sampler = VK_NULL_HANDLE;
+				imageInfo.imageView = VK_NULL_HANDLE;
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-			VkWriteDescriptorSet descriptorWrite = {};
-			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			descriptorWrite.dstSet = descSet;
-			descriptorWrite.dstBinding = entry.second.slot;
-			descriptorWrite.dstArrayElement = 0;
-			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorWrite.descriptorCount = 1;
-			descriptorWrite.pImageInfo = &imageInfo;
+				VkWriteDescriptorSet descriptorWrite = {};
+				descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				descriptorWrite.dstSet = descSet;
+				descriptorWrite.dstBinding = entry.second.slot;
+				descriptorWrite.dstArrayElement = 0;
+				descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				descriptorWrite.descriptorCount = 1;
+				descriptorWrite.pImageInfo = &imageInfo;
 
-			vkUpdateDescriptorSets(mDevice->getDevice(), 1, &descriptorWrite, 0, nullptr);
+				vkUpdateDescriptorSets(mDevice->getDevice(), 1, &descriptorWrite, 0, nullptr);
+
+			}
 		}
 
 		for (auto& entry : fragmentProgramParamInfo.paramBlocks)
