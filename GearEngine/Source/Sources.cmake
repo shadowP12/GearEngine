@@ -53,6 +53,14 @@ set(GEAR_ENGINE_MESH_INC
 	Source/Mesh/VertexDescription.h
 )
 
+set(GEAR_ENGINE_TEXTURE_SRC
+	Source/Texture/Texture2D.cpp
+)
+
+set(GEAR_ENGINE_TEXTURE_INC
+	Source/Texture/Texture2D.h
+)
+
 set(GEAR_ENGINE_UTILITY_INC
 	Source/Utility/FileSystem.h
 	Source/Utility/Hash.h
@@ -68,4 +76,5 @@ set(GEAR_ENGINE_SRC
 	${GEAR_ENGINE_APPLICATION_SRC}
 	${GEAR_ENGINE_RHI_SRC}
 	${GEAR_ENGINE_MESH_SRC}
+	${GEAR_ENGINE_TEXTURE_SRC}
 )

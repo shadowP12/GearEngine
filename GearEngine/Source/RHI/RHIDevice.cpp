@@ -139,7 +139,6 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	mDummyUniformBuffer = createUniformBuffer(16);
 }
 
-
 RHIDevice::~RHIDevice()
 {
 	SAFE_DELETE(mGraphicsCommandPool);
@@ -218,6 +217,12 @@ RHIVertexBuffer* RHIDevice::createVertexBuffer(uint32_t elementSize, uint32_t ve
 RHIIndexBuffer* RHIDevice::createIndexBuffer(uint32_t elementSize, uint32_t indexCount)
 {
 	RHIIndexBuffer* ret = new RHIIndexBuffer(this, elementSize, indexCount);
+	return ret;
+}
+
+RHITransferBuffer* RHIDevice::createTransferBuffer(uint32_t size)
+{
+	RHITransferBuffer* ret = new RHITransferBuffer(this, size);
 	return ret;
 }
 

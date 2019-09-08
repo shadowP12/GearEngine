@@ -47,4 +47,12 @@ public:
 private:
 };
 
+class RHITransferBuffer : public RHIBuffer
+{
+public:
+	RHITransferBuffer(RHIDevice* device, uint32_t size);
+	~RHITransferBuffer();
+private:
+};
+
 #endif

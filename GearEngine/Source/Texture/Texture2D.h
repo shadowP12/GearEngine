@@ -1,32 +1,23 @@
 #ifndef TEXTURE_2D_H
 #define TEXTURE_2D_H
-#include "../RenderAPI/Image.h"
-#include "../Resource/Resource.h"
-#include "../RenderAPI/Buffer.h"
+#include "Resource/Resource.h"
+#include "RHI//RHITexture.h"
+#include "RHI//RHITextureView.h"
 
-class Texture : public Resource
+class Texture2D : public Resource
 {
 public:
-	Texture();
-	~Texture();
-	void init(uint32_t w, uint32_t h, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits samples, VkImageAspectFlags imageAspect);
-	void createSampler(const VkFilter &filter = VK_FILTER_NEAREST, const VkSamplerAddressMode &addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT);
+	Texture2D();
+	~Texture2D();
+	void writeData(void *pixelData, uint32_t size);
+private:
 	void setImageLayout(const VkFormat &format, const VkImageLayout &oldLayout, const VkImageLayout &newLayout);
 	void copyBufferToImage(const uint32_t &width, const uint32_t &height, const VkBuffer &buffer, const VkImage &image);
-	void writeData(void *pixelData, VkDeviceSize size);
-	VkSampler getSampler() { return mSampler; }
-	VkImage getImage() { return mImage->getImage(); }
-	VkImageView getView() { return mImage->getView(); }
-	VkImageLayout getLayout() { return mDesc.layout; }
+	void createSampler(const VkFilter &filter = VK_FILTER_NEAREST, const VkSamplerAddressMode &addressMode = VK_SAMPLER_ADDRESS_MODE_REPEAT);
 private:
-	void createImage();
-	Buffer* createStaging(VkDeviceSize size);
-private:
-	friend TextureImporter;
-	Image* mImage;
-	VkImageCreateInfo mImageCI;
+	RHITexture* mTexture;
+	RHITextureView* mTextureView;
 	VkSampler mSampler;
-	IMAGE_DESC mDesc;
 	uint32_t mWidth, mHeight;
 	uint32_t mNumMipLevels;
 	uint32_t mNumFaces;

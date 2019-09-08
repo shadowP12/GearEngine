@@ -1,20 +1,16 @@
-#include "Texture.h"
-#include "../RenderAPI/VulkanContext.h"
-#include "../RenderAPI/CommandBuffer.h"
+#include "Texture2D.h"
+#include "RHI/RHI.h"
+#include "RHI/RHIBuffers.h"
 #include <assert.h>
-Texture::Texture()
+Texture2D::Texture2D()
 {
-	mNumMipLevels = 1;
-	mNumFaces = 1;
 }
 
-Texture::~Texture()
+Texture2D::~Texture2D()
 {
-	if(mImage)
-		mImage->destroy();
-	vkDestroySampler(VulkanContext::instance().getDevice(),mSampler,nullptr);
 }
 
+/*
 void Texture::init(uint32_t w, uint32_t h, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits samples, VkImageAspectFlags imageAspect)
 {
 	mWidth = w;
@@ -45,8 +41,6 @@ void Texture::init(uint32_t w, uint32_t h, VkImageUsageFlags usage, VkFormat for
 	mDesc.numFaces = mNumFaces;
 	mDesc.numMipLevels = mNumMipLevels;
 	mDesc.type = TextureType::TEX_TYPE_2D;
-	
-	createImage();
 }
 
 void Texture::setImageLayout(const VkFormat &format, const VkImageLayout &oldLayout, const VkImageLayout &newLayout)
@@ -101,7 +95,7 @@ void Texture::setImageLayout(const VkFormat &format, const VkImageLayout &oldLay
 		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
-		newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) 
+		newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
 	{
 		imageMemoryBarrier.srcAccessMask = 0;
 		imageMemoryBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -178,14 +172,14 @@ void Texture::createImage()
 	mImage = VulkanContext::instance().getResourceManager()->create<Image>(mDesc, memory);
 }
 
-Buffer * Texture::createStaging(VkDeviceSize size)
+Buffer * Texture2D::createStaging(uint32_t size)
 {
 	VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 	VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 	return VulkanContext::instance().getResourceManager()->create<Buffer>(size, usageFlags, memoryPropertyFlags);
 }
 
-void Texture::createSampler(const VkFilter &filter, const VkSamplerAddressMode &addressMode)
+void Texture2D::createSampler(const VkFilter &filter, const VkSamplerAddressMode &addressMode)
 {
 	VkSamplerCreateInfo samplerCI = {};
 	samplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -209,3 +203,4 @@ void Texture::createSampler(const VkFilter &filter, const VkSamplerAddressMode &
 		throw std::runtime_error("failed to create texture sampler !");
 	}
 }
+*/

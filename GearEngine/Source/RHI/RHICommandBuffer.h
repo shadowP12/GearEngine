@@ -15,6 +15,7 @@ class RHIQueue;
 class RHICommandBuffer;
 class RHIVertexBuffer;
 class RHIIndexBuffer;
+class RHITransferBuffer;
 class RHIGraphicsPipelineState;
 class RHIRenderPass;
 class RHIFramebuffer;
@@ -41,6 +42,7 @@ public:
 	VkCommandBuffer getHandle() { return mCommandBuffer; }
 	void begin();
 	void end();
+	// 绘制相关命令
 	void beginRenderPass(glm::vec4 renderArea);
 	void endRenderPass();
 	void bindVertexBuffer(RHIVertexBuffer* vertexBuffer);
@@ -52,6 +54,9 @@ public:
 	void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance);
 	void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
 	bool isInRenderPass() const { return mState == State::RecordingRenderPass; }
+	// 传输相关命令
+	void setImageLayout();
+	void copyBufferToImage();
 	enum class State
 	{
 		Ready,
