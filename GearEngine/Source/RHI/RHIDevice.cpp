@@ -48,9 +48,9 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 		}
 	}
 
-	const float graphicsQueuePrio = 0.0;
-	const float computeQueuePrio = 0.1;
-	const float transferQueuePrio = 0.2;
+	const float graphicsQueuePrio = 0.0f;
+	const float computeQueuePrio = 0.1f;
+	const float transferQueuePrio = 0.2f;
 
 	std::vector<VkDeviceQueueCreateInfo> queueInfo{};
 	queueInfo.resize(3);

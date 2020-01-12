@@ -105,7 +105,7 @@ RHISwapChain::RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t wid
 
 RHISwapChain::~RHISwapChain()
 {
-	for (int i = 0; i < mTextureViews.size(); i++)
+	for (int i = 0; i < (int)mTextureViews.size(); i++)
 	{
 		delete mTextureViews[i];
 	}
@@ -113,7 +113,7 @@ RHISwapChain::~RHISwapChain()
 	if (mRenderPass)
 		delete mRenderPass;
 
-	for (int i = 0; i < mFramebuffers.size(); i++)
+	for (int i = 0; i < (int)mFramebuffers.size(); i++)
 	{
 		delete mFramebuffers[i];
 	}

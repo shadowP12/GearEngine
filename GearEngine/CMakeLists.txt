@@ -7,9 +7,9 @@ include_directories(ThirdParty/glslang/include)
 
 include(Source/Sources.cmake)
 #add_definitions(-D VK_PROTOTYPES)
-add_definitions(-D VK_USE_PLATFORM_WIN32_KHR)
-add_definitions(-D NOMINMAX)
-
+#add_definitions(-D VK_USE_PLATFORM_WIN32_KHR)
+#add_definitions(-D NOMINMAX)
+add_compile_options(/wd26812)
 add_library(GearEngine STATIC ${GEAR_ENGINE_SRC})
 
 add_executable (Example Example/main.cpp)

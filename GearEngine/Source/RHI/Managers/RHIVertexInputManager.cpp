@@ -32,7 +32,7 @@ VkPipelineVertexInputStateCreateInfo RHIVertexInputManager::createVariant(Vertex
 
 	std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 	
-	for (int i = 0; i < vertexDesc.getNumElements(); i++)
+	for (int i = 0; i < (int)vertexDesc.getNumElements(); i++)
 	{
 		VertexElement element = vertexDesc.getElement(i);
 		VkVertexInputAttributeDescription attributeDesc;

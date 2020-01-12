@@ -68,13 +68,13 @@ public:
 private:
 	friend class RHIDevice;
 	friend class RHICommandBufferPool;
-	RHIDevice* mDevice;
-	RHIQueue* mQueue;
-	RHICommandBufferPool* mCommandPool;
-	RHIFramebuffer* mFramebuffer;
-	RHIGraphicsPipelineState* mGraphicsPipelineState;
-	RHIVertexBuffer* mVertexBuffer;
-	RHIIndexBuffer* mIndexBuffer;
+	RHIDevice* mDevice = nullptr;
+	RHIQueue* mQueue = nullptr;
+	RHICommandBufferPool* mCommandPool = nullptr;
+	RHIFramebuffer* mFramebuffer = nullptr;
+	RHIGraphicsPipelineState* mGraphicsPipelineState = nullptr;
+	RHIVertexBuffer* mVertexBuffer = nullptr;
+	RHIIndexBuffer* mIndexBuffer = nullptr;
 	glm::vec4 mViewport;
 	glm::vec4 mScissor;
 	VkCommandBuffer mCommandBuffer;
@@ -82,4 +82,5 @@ private:
 	std::vector<VkSemaphore> mWaitSemaphores;
 	State mState;
 };
+
 #endif

@@ -100,12 +100,12 @@ public:
 	}
 
 private:
-	RHICommandBuffer* mTestCmdBuffer;
-	RHIProgram* mTestVertexProgram;
-	RHIProgram* mTestFragmentProgram;
-	RHIGraphicsPipelineState* mTestPipeline;
-	RHIVertexBuffer* mTestVertexbuffer;
-	RHIIndexBuffer* mTestIndexbuffer;
+	RHICommandBuffer* mTestCmdBuffer = nullptr;
+	RHIProgram* mTestVertexProgram = nullptr;
+	RHIProgram* mTestFragmentProgram = nullptr;
+	RHIGraphicsPipelineState* mTestPipeline = nullptr;
+	RHIVertexBuffer* mTestVertexbuffer = nullptr;
+	RHIIndexBuffer* mTestIndexbuffer = nullptr;
 };
 
 int main()

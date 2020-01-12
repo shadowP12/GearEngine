@@ -255,7 +255,7 @@ void mouseButtonCallback(GLFWwindow * window, int button, int action, int mods)
 
 void mouseScrollCallback(GLFWwindow * window, double xOffset, double yOffset)
 {
-	Input::instance().setMouseScrollWheel(yOffset);
+	Input::instance().setMouseScrollWheel((float)yOffset);
 }
 
 
