@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_platform.h>
 #include <vulkan/vk_sdk_platform.h>
+#include <stdexcept>
 
 #ifdef NDEBUG
 #else

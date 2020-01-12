@@ -44,13 +44,13 @@ public:
 		RHIProgramInfo programInfo;
 		programInfo.type = RHIProgramType::Vertex;
 		programInfo.entryPoint = "main";
-		readFile("D:/GearEngine/GearEngine/Resource/Shaders/default.vert", programInfo.source);
+		readFile("E:/dev/GearEngine/GearEngine/Resource/Shaders/default.vert", programInfo.source);
 		mTestVertexProgram = device->createProgram(programInfo);
 		mTestVertexProgram->compile();
 
 		programInfo.type = RHIProgramType::Fragment;
 		programInfo.entryPoint = "main";
-		readFile("D:/GearEngine/GearEngine/Resource/Shaders/default.frag", programInfo.source);
+		readFile("E:/dev/GearEngine/GearEngine/Resource/Shaders/default.frag", programInfo.source);
 		mTestFragmentProgram = device->createProgram(programInfo);
 		mTestFragmentProgram->compile();
 
