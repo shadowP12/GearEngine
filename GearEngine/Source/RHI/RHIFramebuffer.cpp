@@ -6,7 +6,7 @@ RHIFramebuffer::RHIFramebuffer(RHIDevice* device, const RHIFramebufferInfo& info
 	:mDevice(device), mRenderpass(info.renderpass)
 {
 	std::vector<VkImageView> attachmentViews;
-	for (int i = 0; i < info.numColorAttachments; i++)
+	for (int i = 0; i < (int)info.numColorAttachments; i++)
 	{
 		attachmentViews.push_back(info.color[i]->getHandle());
 	}

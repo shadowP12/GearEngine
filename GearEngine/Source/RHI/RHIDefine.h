@@ -1,8 +1,12 @@
 #ifndef RHI_DEFINE_H
 #define RHI_DEFINE_H
+#pragma warning( disable : 26812)
+#define NOMINMAX
+#define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_platform.h>
 #include <vulkan/vk_sdk_platform.h>
+#include <stdexcept>
 
 #ifdef NDEBUG
 #else
@@ -65,7 +69,7 @@ inline ClearMaskBits operator&(ClearMaskBits a, ClearMaskBits b)
 
 inline bool isInc(ClearMaskBits a, ClearMaskBits b)
 {
-	return static_cast<int>(a) & static_cast<int>(b) == static_cast<int>(b);
+	return (static_cast<int>(a) & static_cast<int>(b)) == static_cast<int>(b);
 }
 
 enum class LoadMaskBits
@@ -96,7 +100,7 @@ inline LoadMaskBits operator&(LoadMaskBits a, LoadMaskBits b)
 
 inline bool isInc(LoadMaskBits a, LoadMaskBits b)
 {
-	return static_cast<int>(a) & static_cast<int>(b) == static_cast<int>(b);
+	return (static_cast<int>(a) & static_cast<int>(b)) == static_cast<int>(b);
 }
 
 enum class StoreMaskBits
@@ -127,7 +131,7 @@ inline StoreMaskBits operator&(StoreMaskBits a, StoreMaskBits b)
 
 inline bool isInc(StoreMaskBits a, StoreMaskBits b)
 {
-	return static_cast<int>(a) & static_cast<int>(b) == static_cast<int>(b);
+	return (static_cast<int>(a) & static_cast<int>(b)) == static_cast<int>(b);
 }
 
 //¹¤¾ßº¯Êý

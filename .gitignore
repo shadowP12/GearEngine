@@ -41,3 +41,5 @@
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
+.idea
+cmake-build-debug

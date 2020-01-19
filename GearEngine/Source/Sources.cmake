@@ -70,6 +70,10 @@ set(GEAR_ENGINE_UTILITY_INC
 	Source/Utility/Module.h
 )
 
+set(GEAR_ENGINE_UTILITY_SRC
+		Source/Utility/FileSystem.cpp
+)
+
 set(GEAR_ENGINE_MATH_INC
 	Math/GMath.h
 )
@@ -79,4 +83,5 @@ set(GEAR_ENGINE_SRC
 	${GEAR_ENGINE_RHI_SRC}
 	${GEAR_ENGINE_MESH_SRC}
 	${GEAR_ENGINE_TEXTURE_SRC}
+	${GEAR_ENGINE_UTILITY_SRC}
 )

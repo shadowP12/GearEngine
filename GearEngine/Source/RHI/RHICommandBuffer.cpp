@@ -59,6 +59,14 @@ void RHICommandBufferPool::freeCommandBuffer(RHICommandBuffer * cmd)
 RHICommandBuffer::RHICommandBuffer(RHIDevice* device, RHIQueue* queue, RHICommandBufferPool* pool)
 	:mDevice(device), mQueue(queue), mCommandPool(pool)
 {
+	mCommandBuffer = nullptr;
+	mFramebuffer = nullptr;
+	mGraphicsPipelineState = nullptr;
+	mIndexBuffer = nullptr;
+	mViewport = glm::vec4(0.0f);
+	mScissor = glm::vec4(0.0f);
+	mState = State::Ready;
+
 	//分配fence
 	//todo:后续将创建fence步骤转移至device上
 	VkFenceCreateInfo fenceInfo = {};
@@ -106,11 +114,11 @@ void RHICommandBuffer::beginRenderPass(glm::vec4 renderArea)
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = mFramebuffer->getRenderPass()->getHandle();
 	renderPassInfo.framebuffer = mFramebuffer->getHandle();
-	renderPassInfo.renderArea.offset.x = renderArea.x;
-	renderPassInfo.renderArea.offset.y = renderArea.y;
+	renderPassInfo.renderArea.offset.x = (int32_t)renderArea.x;
+	renderPassInfo.renderArea.offset.y = (int32_t)renderArea.y;
 	VkExtent2D extent;
-	extent.width = renderArea.z;
-	extent.height = renderArea.w;
+	extent.width = (int32_t)renderArea.z;
+	extent.height = (int32_t)renderArea.w;
 	renderPassInfo.renderArea.extent = extent;
 
 	std::array<VkClearValue, 1> clearValues = {};
@@ -196,11 +204,11 @@ void RHICommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, 
 	vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor = {};
-	scissor.offset.x = mScissor.x;
-	scissor.offset.y = mScissor.y;
+	scissor.offset.x = (int32_t)mScissor.x;
+	scissor.offset.y = (int32_t)mScissor.y;
 	VkExtent2D extent;
-	extent.width = mScissor.z;
-	extent.height = mScissor.w;
+	extent.width = (int32_t)mScissor.z;
+	extent.height = (int32_t)mScissor.w;
 	scissor.extent = extent;
 	vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
 
@@ -253,11 +261,11 @@ void RHICommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32
 	vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
 
 	VkRect2D scissor = {};
-	scissor.offset.x = mScissor.x;
-	scissor.offset.y = mScissor.y;
+	scissor.offset.x = (int32_t)mScissor.x;
+	scissor.offset.y = (int32_t)mScissor.y;
 	VkExtent2D extent;
-	extent.width = mScissor.z;
-	extent.height = mScissor.w;
+	extent.width = (int32_t)mScissor.z;
+	extent.height = (int32_t)mScissor.w;
 	scissor.extent = extent;
 	vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
 

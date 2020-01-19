@@ -38,7 +38,7 @@ public:
 	template<class ...Args>
 	static void startUp(Args &&...args) 
 	{
-		if (isStartedUp()) ERROR("Trying to start an already started module.");
+		if (isStartedUp()) throw std::runtime_error("Trying to start an already started module.");
 
 		_instance() = new T(std::forward<Args>(args)...);
 		isStartedUp() = true;
