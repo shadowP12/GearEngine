@@ -1,12 +1,12 @@
 #include <iostream>
-#include "Application/Application.h"
-#include "Application/Window.h"
-#include "RHI/RHI.h"
-#include "RHI/RHIPipelineState.h"
-#include "RHI/RHITexture.h"
-#include "RHI/RHITextureView.h"
-#include "RHI/RHIFramebuffer.h"
-#include "Utility/FileSystem.h"
+#include <Application/Application.h>
+#include <Application/Window.h>
+#include <RHI/RHI.h>
+#include <RHI/RHIPipelineState.h>
+#include <RHI/RHITexture.h>
+#include <RHI/RHITextureView.h>
+#include <RHI/RHIFramebuffer.h>
+#include <Utility/FileSystem.h>
 
 struct Vertex {
 	glm::vec3 pos;
@@ -36,28 +36,27 @@ public:
 	}
 	virtual void prepare()
 	{
-		RHIDevice* device = RHI::instance().getDevice();
-		// 创建cmd buffer
+        std::string path = FileSystem::getCurPath();
+
+        RHIDevice* device = RHI::instance().getDevice();
 		mTestCmdBuffer = device->allocCommandBuffer(CommandBufferType::GRAPHICS, true);
 
-		// 创建pipeline state
 		RHIProgramInfo programInfo;
 		programInfo.type = RHIProgramType::Vertex;
 		programInfo.entryPoint = "main";
-		readFile("E:/dev/GearEngine/GearEngine/Resource/Shaders/default.vert", programInfo.source);
+		FileSystem::readFile(path + "/Resource/Shaders/default.vert", programInfo.source);
 		mTestVertexProgram = device->createProgram(programInfo);
 		mTestVertexProgram->compile();
 
 		programInfo.type = RHIProgramType::Fragment;
 		programInfo.entryPoint = "main";
-		readFile("E:/dev/GearEngine/GearEngine/Resource/Shaders/default.frag", programInfo.source);
+        FileSystem::readFile(path + "/Resource/Shaders/default.frag", programInfo.source);
 		mTestFragmentProgram = device->createProgram(programInfo);
 		mTestFragmentProgram->compile();
 
 		RHIPipelineStateInfo pipelineInfo;
 		pipelineInfo.vertexProgram = mTestVertexProgram;
 		pipelineInfo.fragmentProgram = mTestFragmentProgram;
-		// 快速验证直接创建pso对象
 		mTestPipeline = new RHIGraphicsPipelineState(device, pipelineInfo);
 
 		mTestVertexbuffer = device->createVertexBuffer(sizeof(Vertex), 3);
@@ -71,7 +70,6 @@ public:
 		while (!glfwWindowShouldClose(mWindow->getWindowPtr()))
 		{
 			mWindow->beginFrame();
-			// 插入执行代码
 			mTestCmdBuffer->setRenderTarget(mWindow->getFramebuffer());
 			mTestCmdBuffer->setViewport(glm::vec4(0, 0, 800, 600));
 			mTestCmdBuffer->setScissor(glm::vec4(0, 0, 800, 600));
