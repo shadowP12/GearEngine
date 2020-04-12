@@ -65,6 +65,7 @@ public:
 		mTestIndexbuffer = device->createIndexBuffer(sizeof(unsigned int),3);
 		mTestIndexbuffer->writeData(0,sizeof(indices), indices);
 	}
+
 	virtual void runMainLoop()
 	{
 		while (!glfwWindowShouldClose(mWindow->getWindowPtr()))
@@ -81,8 +82,19 @@ public:
 			mTestCmdBuffer->drawIndexed(3,1,0,0,0);
 			mTestCmdBuffer->endRenderPass();
 			mTestCmdBuffer->end();
-			
-			mWindow->endFrame(mTestCmdBuffer);
+
+            VkSubmitInfo submitInfo = {};
+            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            VkCommandBuffer cmd[] = { mTestCmdBuffer->getHandle() };
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = cmd;
+
+            if (vkQueueSubmit(RHI::instance().getDevice()->getGraphicsQueue()->getHandle(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+            {
+                throw std::runtime_error("failed to submit present command buffer!");
+            }
+
+			mWindow->endFrame();
 			Input::instance().update();
 			glfwPollEvents();
 		}

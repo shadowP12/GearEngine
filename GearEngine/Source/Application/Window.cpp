@@ -40,6 +40,12 @@ Window::Window(int width, int height)
 		vkCreateSemaphore(RHI::instance().getDevice()->getDevice(), &semaphoreInfo, nullptr, &mRenderFinishedSemaphore) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create semaphores!");
 	}
+
+	// 创建空命令
+	RHICommandBufferPool* pool = RHI::instance().getDevice()->getCommandBufferPool(CommandBufferType::GRAPHICS);
+    mEmptyStartCommandBuffer = pool->createCommandBuffer(true);
+
+    mEmptyEndCommandBuffer = pool->createCommandBuffer(true);
 }
 
 Window::~Window()
@@ -49,6 +55,9 @@ Window::~Window()
 		delete mSwapChain;
 	vkDestroySemaphore(RHI::instance().getDevice()->getDevice(), mImageAvailableSemaphore, nullptr);
 	vkDestroySemaphore(RHI::instance().getDevice()->getDevice(), mRenderFinishedSemaphore, nullptr);
+    RHICommandBufferPool* pool = RHI::instance().getDevice()->getCommandBufferPool(CommandBufferType::GRAPHICS);
+	vkFreeCommandBuffers(RHI::instance().getDevice()->getDevice(), pool->getHandle(), 1, &mEmptyStartCommandBuffer);
+    vkFreeCommandBuffers(RHI::instance().getDevice()->getDevice(), pool->getHandle(), 1, &mEmptyEndCommandBuffer);
 }
 
 void Window::beginFrame()
@@ -58,23 +67,65 @@ void Window::beginFrame()
 	{
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
+
+    VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
+
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    //这里设置成每次提交后都会自动重置命令
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    if (vkBeginCommandBuffer(mEmptyStartCommandBuffer, &beginInfo) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to begin command buffer!");
+    }
+
+    if (vkEndCommandBuffer(mEmptyStartCommandBuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to end command buffer!");
+    }
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    VkCommandBuffer cmd[] = { mEmptyStartCommandBuffer };
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = cmd;
+
+    if (vkQueueSubmit(RHI::instance().getDevice()->getGraphicsQueue()->getHandle(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to submit present command buffer!");
+    }
 }
 
 // note:必须保证渲染流程不为空
 void Window::endFrame()
 {
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    //这里设置成每次提交后都会自动重置命令
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    if (vkBeginCommandBuffer(mEmptyEndCommandBuffer, &beginInfo) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to begin command buffer!");
+    }
+
+    if (vkEndCommandBuffer(mEmptyEndCommandBuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to end command buffer!");
+    }
+
+    VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
+
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 0;
-	submitInfo.pCommandBuffers = nullptr;
-	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
+    submitInfo.commandBufferCount = 1;
+    VkCommandBuffer cmd[] = { mEmptyEndCommandBuffer };
+    submitInfo.pCommandBuffers = cmd;
 
 	if (vkQueueSubmit(RHI::instance().getDevice()->getGraphicsQueue()->getHandle(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
 	{

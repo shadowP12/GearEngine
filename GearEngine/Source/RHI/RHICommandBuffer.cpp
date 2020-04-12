@@ -51,6 +51,29 @@ RHICommandBuffer* RHICommandBufferPool::allocCommandBuffer(bool primary)
 	return commandBuffer;
 }
 
+VkCommandBuffer RHICommandBufferPool::createCommandBuffer(bool primary)
+{
+    VkCommandBufferAllocateInfo allocateInfo = {};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.commandPool = mPool;
+    if (primary)
+    {
+        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    }
+    else
+    {
+        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+    }
+    allocateInfo.commandBufferCount = 1;
+
+    VkCommandBuffer commandBuffer;
+    if (vkAllocateCommandBuffers(mDevice->getDevice(), &allocateInfo, &commandBuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate command buffer!");
+    }
+    return commandBuffer;
+}
+
 void RHICommandBufferPool::freeCommandBuffer(RHICommandBuffer * cmd)
 {
 	SAFE_DELETE(cmd);
@@ -78,6 +101,7 @@ RHICommandBuffer::RHICommandBuffer(RHIDevice* device, RHIQueue* queue, RHIComman
 		throw std::runtime_error("failed to create fence!");
 	}
 }
+
 
 RHICommandBuffer::~RHICommandBuffer()
 {

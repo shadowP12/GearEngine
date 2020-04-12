@@ -19,6 +19,7 @@ public:
 	VkDevice getDevice() { return mDevice; }
 	VkPhysicalDevice getPhyDevice() { return mGPU; }
 	RHIQueue* getGraphicsQueue() { return mGraphicsQueue; }
+	RHICommandBufferPool* getCommandBufferPool(const CommandBufferType& type);
 	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
 	RHIBuffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 	RHIUniformBuffer* createUniformBuffer(uint32_t size);

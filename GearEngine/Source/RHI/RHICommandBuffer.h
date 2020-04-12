@@ -26,7 +26,10 @@ public:
 	RHICommandBufferPool(RHIDevice* device, RHIQueue* queue, bool reset);
 	~RHICommandBufferPool();
 	RHICommandBuffer* allocCommandBuffer(bool primary);
+	// test interface
+    VkCommandBuffer createCommandBuffer(bool primary);
 	void freeCommandBuffer(RHICommandBuffer* cmd);
+    VkCommandPool getHandle() { return mPool; }
 private:
 	friend class RHICommandBuffer;
 	RHIDevice* mDevice;

@@ -40,6 +40,8 @@ private:
 	VkSemaphore mImageAvailableSemaphore;
 	VkSemaphore mRenderFinishedSemaphore;
 	uint32_t mFrameIndex;
+	VkCommandBuffer mEmptyStartCommandBuffer;
+    VkCommandBuffer mEmptyEndCommandBuffer;
 };
 
 #endif

@@ -255,3 +255,21 @@ RHITextureView* RHIDevice::createTextureView(VkImageView view)
 	RHITextureView* ret = new RHITextureView(this, view);
 	return ret;
 }
+
+RHICommandBufferPool* RHIDevice::getCommandBufferPool(const CommandBufferType& type)
+{
+    if (type == CommandBufferType::GRAPHICS)
+    {
+        return mGraphicsCommandPool;
+    }
+    else if (type == CommandBufferType::COMPUTE)
+    {
+        return mComputeCommandPool;
+    }
+    else
+    {
+        return mTransferCommandPool;
+    }
+
+    return nullptr;
+}
