@@ -4,6 +4,7 @@
 #include "RHIRenderPass.h"
 #include "RHIFramebuffer.h"
 #include "RHIPipelineState.h"
+#include "RHISynchronization.h"
 #include "Utility/Log.h"
 #include <array>
 RHICommandBufferPool::RHICommandBufferPool(RHIDevice* device, RHIQueue* queue, bool reset)
@@ -26,6 +27,15 @@ RHICommandBufferPool::RHICommandBufferPool(RHIDevice* device, RHIQueue* queue, b
 RHICommandBufferPool::~RHICommandBufferPool()
 {
 	vkDestroyCommandPool(mDevice->getDevice(), mPool, nullptr);
+}
+
+RHICommandBuffer* RHICommandBufferPool::getActiveCmdBuffer()
+{
+    RHICommandBuffer* cmdBuffer = nullptr;
+    for (int i = 0; i < mCmdBuffers.size(); ++i)
+    {
+    }
+    return cmdBuffer;
 }
 
 RHICommandBuffer* RHICommandBufferPool::allocCommandBuffer(bool primary)
@@ -90,22 +100,12 @@ RHICommandBuffer::RHICommandBuffer(RHIDevice* device, RHIQueue* queue, RHIComman
 	mScissor = glm::vec4(0.0f);
 	mState = State::Ready;
 
-	//分配fence
-	//todo:后续将创建fence步骤转移至device上
-	VkFenceCreateInfo fenceInfo = {};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-	
-	if (vkCreateFence(mDevice->getDevice(), &fenceInfo, nullptr, &mFence) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create fence!");
-	}
+	mFence = mDevice->createFence();
 }
-
 
 RHICommandBuffer::~RHICommandBuffer()
 {
-	vkDestroyFence(mDevice->getDevice(), mFence, nullptr);
+    SAFE_DELETE(mFence);
 	vkFreeCommandBuffers(mDevice->getDevice(), mCommandPool->mPool, 1, &mCommandBuffer);
 }
 
@@ -113,8 +113,8 @@ void RHICommandBuffer::begin()
 {
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	//这里设置成每次提交后都会自动重置命令
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    //指定一个处于挂起状态的命令缓冲区可以重新提交到队列,并记录到多个主命令缓冲区中
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT ;
 	if (vkBeginCommandBuffer(mCommandBuffer, &beginInfo) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to begin command buffer!");
@@ -153,13 +153,11 @@ void RHICommandBuffer::beginRenderPass(glm::vec4 renderArea)
 	renderPassInfo.pClearValues = clearValues.data();
 
 	vkCmdBeginRenderPass(mCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	mState = State::RecordingRenderPass;
 }
 
 void RHICommandBuffer::endRenderPass()
 {
 	vkCmdEndRenderPass(mCommandBuffer);
-	mState = State::Recording;
 }
 
 void RHICommandBuffer::setRenderTarget(RHIFramebuffer* framebuffer)
@@ -302,4 +300,62 @@ void RHICommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32
 	if(sets.size() > 0)
 		vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipelineState->getLayout(), 0, sets.size(), sets.data(), 0, nullptr);
 	vkCmdDraw(mCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void RHICommandBuffer::addWaitSemaphore(RHISemaphore* semaphore)
+{
+    mWaitSemaphores.push_back(semaphore);
+}
+
+void RHICommandBuffer::addSignalSemaphore(RHISemaphore* semaphore)
+{
+    mSignalSemaphores.push_back(semaphore);
+}
+
+void RHICommandBuffer::submit()
+{
+    std::vector<VkPipelineStageFlags> waitStages;
+    std::vector<VkSemaphore> waitSemaphores;
+    std::vector<VkSemaphore> signalSemaphores;
+
+    for(int i = 0; i < mWaitSemaphores.size(); i++)
+    {
+        waitSemaphores.push_back(mWaitSemaphores[i]->getHandle());
+        waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    }
+
+    for(int i = 0; i < mSignalSemaphores.size(); i++)
+    {
+        signalSemaphores.push_back(mSignalSemaphores[i]->getHandle());
+    }
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = waitSemaphores.size();
+    submitInfo.pWaitSemaphores = waitSemaphores.data();
+    submitInfo.pWaitDstStageMask = waitStages.data();
+    submitInfo.signalSemaphoreCount = signalSemaphores.size();
+    submitInfo.pSignalSemaphores = signalSemaphores.data();
+    submitInfo.commandBufferCount = 1;
+    VkCommandBuffer cmd[] = { mCommandBuffer };
+    submitInfo.pCommandBuffers = cmd;
+
+    if (vkQueueSubmit(mDevice->getGraphicsQueue()->getHandle(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to submit present command buffer!");
+    }
+
+    mWaitSemaphores.clear();
+    mSignalSemaphores.clear();
+    mState = State::Submitted;
+}
+
+void RHICommandBuffer::refreshFenceStatus()
+{
+    if(!mFence->checkFenceState())
+    {
+        return;
+    }
+    vkResetCommandBuffer(mCommandBuffer, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+    mState = State::Ready;
 }

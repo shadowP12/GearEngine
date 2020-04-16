@@ -23,6 +23,8 @@ set(GEAR_ENGINE_RHI_SRC
 	Source/RHI/RHISwapChain.cpp
 	Source/RHI/RHITexture.cpp
 	Source/RHI/RHITextureView.cpp
+	Source/RHI/RHIContext.cpp
+	Source/RHI/RHISynchronization.cpp
 	Source/RHI/Managers/RHIProgramManager.cpp
 	Source/RHI/Managers/RHIVertexInputManager.cpp
 )
@@ -43,6 +45,8 @@ set(GEAR_ENGINE_RHI_INC
 	Source/RHI/RHISwapChain.h
 	Source/RHI/RHITexture.h
 	Source/RHI/RHITextureView.h
+	Source/RHI/RHIContext.h
+	Source/RHI/RHISynchronization.h
 	Source/RHI/Managers/RHIProgramManager.h
 	Source/RHI/Managers/RHIVertexInputManager.h
 )

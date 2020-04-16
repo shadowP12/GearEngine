@@ -11,6 +11,10 @@
 #include "RHITextureView.h"
 #include <vector>
 
+class RHIContext;
+class RHIFence;
+class RHISemaphore;
+
 class RHIDevice
 {
 public:
@@ -34,10 +38,13 @@ public:
 	RHIRenderPass* createRenderPass(const RHIRenderPassInfo& renderPassInfo);
 	RHIFramebuffer* createFramebuffer(const RHIFramebufferInfo& framebufferInfo);
 	RHIUniformBuffer* getDummyUniformBuffer() { return mDummyUniformBuffer; };
+    RHIFence* createFence();
+    RHISemaphore* createSemaphore();
 private:
 	void createCommandPool();
 private:
 	friend class RHI;
+	friend class RHIContext;
 	VkPhysicalDevice mGPU;
 	VkDevice mDevice;
 	VkPhysicalDeviceProperties mDeviceProperties;
@@ -46,6 +53,7 @@ private:
 	RHICommandBufferPool* mGraphicsCommandPool;
 	RHICommandBufferPool* mComputeCommandPool;
 	RHICommandBufferPool* mTransferCommandPool;
+    RHICommandBufferPool* mHelperCommandPool;
 	RHIQueue* mGraphicsQueue;
 	RHIQueue* mComputeQueue;
 	RHIQueue* mTransferQueue;

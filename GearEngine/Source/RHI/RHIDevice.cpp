@@ -1,4 +1,5 @@
 #include "RHIDevice.h"
+#include "RHISynchronization.h"
 
 RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	:mGPU(gpu)
@@ -272,4 +273,16 @@ RHICommandBufferPool* RHIDevice::getCommandBufferPool(const CommandBufferType& t
     }
 
     return nullptr;
+}
+
+RHIFence* RHIDevice::createFence()
+{
+    RHIFence* ret = new RHIFence(this);
+    return ret;
+}
+
+RHISemaphore* RHIDevice::createSemaphore()
+{
+    RHISemaphore* ret = new RHISemaphore(this);
+    return ret;
 }

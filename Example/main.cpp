@@ -71,30 +71,30 @@ public:
 		while (!glfwWindowShouldClose(mWindow->getWindowPtr()))
 		{
 			mWindow->beginFrame();
-			mTestCmdBuffer->setRenderTarget(mWindow->getFramebuffer());
-			mTestCmdBuffer->setViewport(glm::vec4(0, 0, 800, 600));
-			mTestCmdBuffer->setScissor(glm::vec4(0, 0, 800, 600));
-			mTestCmdBuffer->bindGraphicsPipelineState(mTestPipeline);
-			mTestCmdBuffer->bindIndexBuffer(mTestIndexbuffer);
-			mTestCmdBuffer->bindVertexBuffer(mTestVertexbuffer);
-			mTestCmdBuffer->begin();
-			mTestCmdBuffer->beginRenderPass(glm::vec4(0,0,800,600));
-			mTestCmdBuffer->drawIndexed(3,1,0,0,0);
-			mTestCmdBuffer->endRenderPass();
-			mTestCmdBuffer->end();
+//			mTestCmdBuffer->setRenderTarget(mWindow->getFramebuffer());
+//			mTestCmdBuffer->setViewport(glm::vec4(0, 0, 800, 600));
+//			mTestCmdBuffer->setScissor(glm::vec4(0, 0, 800, 600));
+//			mTestCmdBuffer->bindGraphicsPipelineState(mTestPipeline);
+//			mTestCmdBuffer->bindIndexBuffer(mTestIndexbuffer);
+//			mTestCmdBuffer->bindVertexBuffer(mTestVertexbuffer);
+//			mTestCmdBuffer->begin();
+//			mTestCmdBuffer->beginRenderPass(glm::vec4(0,0,800,600));
+//			mTestCmdBuffer->drawIndexed(3,1,0,0,0);
+//			mTestCmdBuffer->endRenderPass();
+//			mTestCmdBuffer->end();
+//
+//            VkSubmitInfo submitInfo = {};
+//            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+//            VkCommandBuffer cmd[] = { mTestCmdBuffer->getHandle() };
+//            submitInfo.commandBufferCount = 1;
+//            submitInfo.pCommandBuffers = cmd;
+//
+//            if (vkQueueSubmit(RHI::instance().getDevice()->getGraphicsQueue()->getHandle(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+//            {
+//                throw std::runtime_error("failed to submit present command buffer!");
+//            }
 
-            VkSubmitInfo submitInfo = {};
-            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            VkCommandBuffer cmd[] = { mTestCmdBuffer->getHandle() };
-            submitInfo.commandBufferCount = 1;
-            submitInfo.pCommandBuffers = cmd;
-
-            if (vkQueueSubmit(RHI::instance().getDevice()->getGraphicsQueue()->getHandle(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to submit present command buffer!");
-            }
-
-			mWindow->endFrame();
+            mWindow->endFrame();
 			Input::instance().update();
 			glfwPollEvents();
 		}

@@ -19,12 +19,15 @@ class RHITransferBuffer;
 class RHIGraphicsPipelineState;
 class RHIRenderPass;
 class RHIFramebuffer;
+class RHIFence;
+class RHISemaphore;
 
 class RHICommandBufferPool
 {
 public:
 	RHICommandBufferPool(RHIDevice* device, RHIQueue* queue, bool reset);
 	~RHICommandBufferPool();
+	RHICommandBuffer* getActiveCmdBuffer();
 	RHICommandBuffer* allocCommandBuffer(bool primary);
 	// test interface
     VkCommandBuffer createCommandBuffer(bool primary);
@@ -34,6 +37,7 @@ private:
 	friend class RHICommandBuffer;
 	RHIDevice* mDevice;
 	RHIQueue* mQueue;
+	std::vector<RHICommandBuffer*> mCmdBuffers;
 	VkCommandPool mPool;
 };
 
@@ -45,7 +49,6 @@ public:
 	VkCommandBuffer getHandle() { return mCommandBuffer; }
 	void begin();
 	void end();
-	// 绘制相关命令
 	void beginRenderPass(glm::vec4 renderArea);
 	void endRenderPass();
 	void bindVertexBuffer(RHIVertexBuffer* vertexBuffer);
@@ -56,24 +59,27 @@ public:
 	void setScissor(glm::vec4 scissor);
 	void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance);
 	void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
-	bool isInRenderPass() const { return mState == State::RecordingRenderPass; }
-	// 传输相关命令
 	void setImageLayout();
 	void copyBufferToImage();
+	void addWaitSemaphore(RHISemaphore* semaphore);
+	void addSignalSemaphore(RHISemaphore* semaphore);
+    void submit();
+	// 命令状态
 	enum class State
 	{
 		Ready,
 		Recording,
-		RecordingRenderPass,
 		RecordingDone,
 		Submitted
 	};
+    void refreshFenceStatus();
 private:
 	friend class RHIDevice;
 	friend class RHICommandBufferPool;
 	RHIDevice* mDevice = nullptr;
 	RHIQueue* mQueue = nullptr;
 	RHICommandBufferPool* mCommandPool = nullptr;
+	RHIFence* mFence = nullptr;
 	RHIFramebuffer* mFramebuffer = nullptr;
 	RHIGraphicsPipelineState* mGraphicsPipelineState = nullptr;
 	RHIVertexBuffer* mVertexBuffer = nullptr;
@@ -81,8 +87,8 @@ private:
 	glm::vec4 mViewport;
 	glm::vec4 mScissor;
 	VkCommandBuffer mCommandBuffer;
-	VkFence mFence;
-	std::vector<VkSemaphore> mWaitSemaphores;
+	std::vector<RHISemaphore*> mWaitSemaphores;
+    std::vector<RHISemaphore*> mSignalSemaphores;
 	State mState;
 };
 
