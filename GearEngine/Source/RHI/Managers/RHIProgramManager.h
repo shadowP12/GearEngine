@@ -1,17 +1,24 @@
 #ifndef RHI_PROGRAM_MANAGER_H
 #define RHI_PROGRAM_MANAGER_H
-#include "RHI/RHIProgram.h"
-#include "Utility/Module.h"
-/**
-   负责program的实时编译
-*/
-class RHIProgramManager : public Module<RHIProgramManager>
+
+#include "../RHIProgram.h"
+#include <map>
+
+class RHIDevice;
+
+class RHIProgramManager
 {
 public:
-	RHIProgramManager();
+	RHIProgramManager(RHIDevice* device);
 	~RHIProgramManager();
+    RHIProgram* createProgram(const RHIProgramInfo& info);
+    void deleteProgram(RHIProgram* program);
 	void compile(RHIProgram* program);
 private:
+    friend class RHIProgram;
+    RHIDevice* mDevice;
+    std::map<uint32_t, RHIProgram*> mPrograms;
+    static uint32_t sNextValidID;
 };
 
 #endif

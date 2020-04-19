@@ -12,6 +12,7 @@
 #include <vector>
 
 class RHIContext;
+class RHIProgramManager;
 class RHIFence;
 class RHISemaphore;
 
@@ -51,9 +52,7 @@ private:
 	VkPhysicalDeviceFeatures mDeviceFeatures;
 	VkPhysicalDeviceMemoryProperties mMemoryProperties;
     VkDescriptorPool mDescriptorPool;
-	RHICommandBufferPool* mGraphicsCommandPool;
-	RHICommandBufferPool* mComputeCommandPool;
-	RHICommandBufferPool* mTransferCommandPool;
+    RHIProgramManager* mProgramMgr;
     RHICommandBufferPool* mHelperCommandPool;
 	RHIQueue* mGraphicsQueue;
 	RHIQueue* mComputeQueue;

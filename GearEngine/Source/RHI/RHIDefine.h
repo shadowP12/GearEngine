@@ -164,6 +164,7 @@ class RHIObject
 public:
     RHIObject(){}
     ~RHIObject(){}
+    void setID(uint32_t id){mID = id;}
     uint32_t getID(){return mID;}
 protected:
     uint32_t mID;

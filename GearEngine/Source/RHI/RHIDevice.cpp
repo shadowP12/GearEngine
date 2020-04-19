@@ -1,6 +1,7 @@
 #include "RHIDevice.h"
 #include "RHIContext.h"
 #include "RHISynchronization.h"
+#include "Managers/RHIProgramManager.h"
 
 RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	:mGPU(gpu)
@@ -138,6 +139,9 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 
 	mDummyUniformBuffer = createUniformBuffer(16);
 
+	// 创建program mgr
+	mProgramMgr = new RHIProgramManager(this);
+
 	// 创建全局的描述符池
 	uint32_t setCount                  = 65535;
     uint32_t sampledImageCount         = 32 * 65536;
@@ -193,6 +197,7 @@ RHIDevice::~RHIDevice()
 	SAFE_DELETE(mComputeQueue);
 	SAFE_DELETE(mTransferQueue);
 	SAFE_DELETE(mDummyUniformBuffer);
+	SAFE_DELETE(mProgramMgr);
     vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
     vkDeviceWaitIdle(mDevice);
 	vkDestroyDevice(mDevice, nullptr);
@@ -220,7 +225,7 @@ RHIBuffer * RHIDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usageF
 
 RHIProgram * RHIDevice::createProgram(const RHIProgramInfo & programInfo)
 {
-	RHIProgram* ret = new RHIProgram(this, programInfo);
+	RHIProgram* ret = mProgramMgr->createProgram(programInfo);
 	return ret;
 }
 

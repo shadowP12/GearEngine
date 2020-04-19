@@ -2,19 +2,21 @@
 #include "RHIDevice.h"
 #include "Managers/RHIProgramManager.h"
 
-RHIProgram::RHIProgram(RHIDevice* device, const RHIProgramInfo& info)
-	:mDevice(device), mSource(info.source), mEntryPoint(info.entryPoint), mType(info.type)
+RHIProgram::RHIProgram(RHIDevice* device, RHIProgramManager* mgr, const RHIProgramInfo& info)
+	:mDevice(device), mProgramMgr(mgr), mSource(info.source), mEntryPoint(info.entryPoint), mType(info.type)
 {
+    mIsCompiled = false;
 }
 
 RHIProgram::~RHIProgram()
 {
+    mProgramMgr->deleteProgram(this);
 	vkDestroyShaderModule(mDevice->getDevice(), mModule, nullptr);
 }
 
 void RHIProgram::compile()
 {
-	RHIProgramManager::instance().compile(this);
+	mProgramMgr->compile(this);
 	VkShaderModuleCreateInfo moduleInfo;
 	moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	moduleInfo.pNext = nullptr;
@@ -27,4 +29,5 @@ void RHIProgram::compile()
 		throw std::runtime_error("failed to create shader module!");
 	}
 
+    mIsCompiled = true;
 }

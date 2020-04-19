@@ -1,4 +1,5 @@
 #include "RHIProgramManager.h"
+#include "../RHIDevice.h"
 #include "glslang/Include/ResourceLimits.h"
 #include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"
@@ -120,14 +121,36 @@ const TBuiltInResource DefaultTBuiltInResource = {
 	/*.generalConstantMatrixVectorIndexing = */ 1,
 } };
 
-RHIProgramManager::RHIProgramManager()
+uint32_t RHIProgramManager::sNextValidID = 1;
+
+RHIProgramManager::RHIProgramManager(RHIDevice* device)
+    :mDevice(device)
 {
 	glslang::InitializeProcess();
 }
 
 RHIProgramManager::~RHIProgramManager()
 {
+
 	glslang::FinalizeProcess();
+}
+
+RHIProgram* RHIProgramManager::createProgram(const RHIProgramInfo &info)
+{
+    RHIProgram* ret = new RHIProgram(mDevice, this, info);
+    mPrograms[sNextValidID] = ret;
+    ret->setID(sNextValidID);
+    sNextValidID++;
+    return ret;
+}
+
+void RHIProgramManager::deleteProgram(RHIProgram* program)
+{
+    auto it = mPrograms.find(program->getID());
+    if (it != mPrograms.end())
+    {
+        mPrograms.erase(it);
+    }
 }
 
 void RHIProgramManager::compile(RHIProgram* rhiProgram)
