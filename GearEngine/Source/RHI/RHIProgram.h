@@ -33,6 +33,7 @@ private:
 	RHIDevice* mDevice;
 	RHIProgramManager* mProgramMgr;
 	VkShaderModule mModule;
+
 	std::string mSource;
 	std::string mEntryPoint;
 	RHIProgramType mType;

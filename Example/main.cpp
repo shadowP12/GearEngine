@@ -60,7 +60,7 @@ public:
 
 		mTestVertexbuffer = device->createVertexBuffer(sizeof(Vertex), 3);
 		mTestVertexbuffer->writeData(0,sizeof(vertices), vertices);
-		
+
 		mTestIndexbuffer = device->createIndexBuffer(sizeof(unsigned int),3);
 		mTestIndexbuffer->writeData(0,sizeof(indices), indices);
 	}
@@ -93,12 +93,12 @@ public:
 	}
 	virtual void finish()
 	{
-		delete mTestCmdBuffer;
-		delete mTestVertexProgram;
-		delete mTestFragmentProgram;
-		delete mTestPipeline;
-		delete mTestVertexbuffer;
-		delete mTestIndexbuffer;
+		SAFE_DELETE(mTestCmdBuffer);
+        SAFE_DELETE(mTestVertexProgram);
+        SAFE_DELETE(mTestFragmentProgram);
+        SAFE_DELETE(mTestPipeline);
+        SAFE_DELETE(mTestVertexbuffer);
+        SAFE_DELETE(mTestIndexbuffer);
 	}
 
 private:

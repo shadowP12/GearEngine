@@ -43,25 +43,6 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 	{
 		mSets[mFragmentProgram->mParamInfo.sets[i]] = 1;
 	}
-	// 创建DescriptorPool
-	// note:这里加1是为了保证pool的descriptorCount不为零
-	VkDescriptorPoolSize poolSizes[2];
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; 
-	poolSizes[0].descriptorCount = mVertexProgram->mParamInfo.samplers.size() + mFragmentProgram->mParamInfo.samplers.size() + 1;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[1].descriptorCount = mVertexProgram->mParamInfo.paramBlocks.size() + mFragmentProgram->mParamInfo.paramBlocks.size() + 1;
-
-	VkDescriptorPoolCreateInfo poolInfo = {};
-	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-	poolInfo.poolSizeCount = sizeof(poolSizes) / sizeof(poolSizes[0]);;
-	poolInfo.pPoolSizes = poolSizes;
-	poolInfo.maxSets = mSets.size() + 1;
-
-	if (vkCreateDescriptorPool(mDevice->getDevice(), &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) 
-	{
-		throw std::runtime_error("failed to create descriptor pool!");
-	}
 
 	// 创建Descriptor Layouts
 	std::map<uint32_t, VkDescriptorSetLayoutCreateInfo> layoutCreateInfos;
@@ -150,7 +131,7 @@ RHIGraphicsPipelineState::RHIGraphicsPipelineState(RHIDevice* device, const RHIP
 		VkDescriptorSetLayout layouts[] = { entry.second };
 		VkDescriptorSetAllocateInfo allocInfo = {};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = mDescriptorPool;
+		allocInfo.descriptorPool = mDevice->getDescriptorPool();
 		allocInfo.descriptorSetCount = 1;
 		allocInfo.pSetLayouts = layouts;
 
@@ -187,7 +168,7 @@ RHIGraphicsPipelineState::~RHIGraphicsPipelineState()
 
 	for (auto& entry : mDescriptorSets)
 	{
-		VkResult result = vkFreeDescriptorSets(mDevice->getDevice(), mDescriptorPool, 1, &entry.second);
+		VkResult result = vkFreeDescriptorSets(mDevice->getDevice(), mDevice->getDescriptorPool(), 1, &entry.second);
 		assert(result == VK_SUCCESS);
 	}
 
@@ -197,7 +178,6 @@ RHIGraphicsPipelineState::~RHIGraphicsPipelineState()
 	}
 
 	vkDestroyPipelineLayout(mDevice->getDevice(), mPipelineLayout, nullptr);
-	vkDestroyDescriptorPool(mDevice->getDevice(), mDescriptorPool, nullptr);
 
 	if (mParamList)
 		delete mParamList;

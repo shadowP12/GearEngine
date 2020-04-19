@@ -198,8 +198,8 @@ RHIDevice::~RHIDevice()
 	SAFE_DELETE(mTransferQueue);
 	SAFE_DELETE(mDummyUniformBuffer);
 	SAFE_DELETE(mProgramMgr);
-    vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
     vkDeviceWaitIdle(mDevice);
+    vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
 	vkDestroyDevice(mDevice, nullptr);
 }
 
