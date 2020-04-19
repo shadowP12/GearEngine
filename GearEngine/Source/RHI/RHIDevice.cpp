@@ -1,4 +1,5 @@
 #include "RHIDevice.h"
+#include "RHIContext.h"
 #include "RHISynchronization.h"
 
 RHIDevice::RHIDevice(VkPhysicalDevice gpu)
@@ -133,30 +134,68 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	mComputeQueue = new RHIQueue(this, computeQueue, computeFamily);
 	mTransferQueue = new RHIQueue(this, transferQueue, transferFamily);
 
-	//
-	createCommandPool();
+    mHelperCommandPool = new RHICommandBufferPool(this, mGraphicsQueue, true);
 
-	//
 	mDummyUniformBuffer = createUniformBuffer(16);
+
+	// 创建全局的描述符池
+	uint32_t setCount                  = 65535;
+    uint32_t sampledImageCount         = 32 * 65536;
+    uint32_t storageImageCount         = 1  * 65536;
+    uint32_t uniformBufferCount        = 1  * 65536;
+    uint32_t uniformBufferDynamicCount = 4  * 65536;
+    uint32_t storageBufferCount        = 1  * 65536;
+    uint32_t uniformTexelBufferCount   = 8192;
+    uint32_t storageTexelBufferCount   = 8192;
+    uint32_t samplerCount              = 2  * 65536;
+
+    VkDescriptorPoolSize poolSizes[8];
+
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    poolSizes[0].descriptorCount = sampledImageCount;
+
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    poolSizes[1].descriptorCount = storageImageCount;
+
+    poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[2].descriptorCount = uniformBufferCount;
+
+    poolSizes[3].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    poolSizes[3].descriptorCount = uniformBufferDynamicCount;
+
+    poolSizes[4].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    poolSizes[4].descriptorCount = storageBufferCount;
+
+    poolSizes[5].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+    poolSizes[5].descriptorCount = samplerCount;
+
+    poolSizes[6].type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    poolSizes[6].descriptorCount = uniformTexelBufferCount;
+
+    poolSizes[7].type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+    poolSizes[7].descriptorCount = storageTexelBufferCount;
+
+    VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
+    descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolCreateInfo.pNext = nullptr;
+    descriptorPoolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; // Allocated descriptor sets will release their allocations back to the pool
+    descriptorPoolCreateInfo.maxSets = setCount;
+    descriptorPoolCreateInfo.poolSizeCount = 8;
+    descriptorPoolCreateInfo.pPoolSizes = poolSizes;
+
+    vkCreateDescriptorPool(mDevice, &descriptorPoolCreateInfo, nullptr, &mDescriptorPool);
 }
 
 RHIDevice::~RHIDevice()
 {
-	SAFE_DELETE(mGraphicsCommandPool);
-	SAFE_DELETE(mComputeCommandPool);
-	SAFE_DELETE(mTransferCommandPool);
+	SAFE_DELETE(mHelperCommandPool);
 	SAFE_DELETE(mGraphicsQueue);
 	SAFE_DELETE(mComputeQueue);
 	SAFE_DELETE(mTransferQueue);
 	SAFE_DELETE(mDummyUniformBuffer);
+    vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
+    vkDeviceWaitIdle(mDevice);
 	vkDestroyDevice(mDevice, nullptr);
-}
-
-void RHIDevice::createCommandPool()
-{
-	mGraphicsCommandPool = new RHICommandBufferPool(this, mGraphicsQueue, true);
-	mComputeCommandPool = new RHICommandBufferPool(this, mComputeQueue, true);
-	mTransferCommandPool = new RHICommandBufferPool(this, mTransferQueue, false);
 }
 
 uint32_t RHIDevice::findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties)
@@ -177,24 +216,6 @@ RHIBuffer * RHIDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usageF
 {
 	RHIBuffer* res = new RHIBuffer(this, size, usageFlags, memoryPropertyFlags);
 	return res;
-}
-
-RHICommandBuffer * RHIDevice::allocCommandBuffer(const CommandBufferType& type, bool primary)
-{
-	RHICommandBuffer* commandBuffer = nullptr;
-	if (type == CommandBufferType::GRAPHICS)
-	{
-		commandBuffer = mGraphicsCommandPool->allocCommandBuffer(primary);
-	}
-	else if (type == CommandBufferType::COMPUTE)
-	{
-		commandBuffer = mComputeCommandPool->allocCommandBuffer(primary);
-	}
-	else
-	{
-		commandBuffer = mTransferCommandPool->allocCommandBuffer(primary);
-	}
-	return commandBuffer;
 }
 
 RHIProgram * RHIDevice::createProgram(const RHIProgramInfo & programInfo)
@@ -257,22 +278,9 @@ RHITextureView* RHIDevice::createTextureView(VkImageView view)
 	return ret;
 }
 
-RHICommandBufferPool* RHIDevice::getCommandBufferPool(const CommandBufferType& type)
+RHICommandBufferPool* RHIDevice::getHelperCmdBufferPool()
 {
-    if (type == CommandBufferType::GRAPHICS)
-    {
-        return mGraphicsCommandPool;
-    }
-    else if (type == CommandBufferType::COMPUTE)
-    {
-        return mComputeCommandPool;
-    }
-    else
-    {
-        return mTransferCommandPool;
-    }
-
-    return nullptr;
+    return mHelperCommandPool;
 }
 
 RHIFence* RHIDevice::createFence()
@@ -284,5 +292,17 @@ RHIFence* RHIDevice::createFence()
 RHISemaphore* RHIDevice::createSemaphore()
 {
     RHISemaphore* ret = new RHISemaphore(this);
+    return ret;
+}
+
+RHIContext* RHIDevice::createContext()
+{
+    RHIContext* ret = new RHIContext(this);
+    return ret;
+}
+
+RHICommandBufferPool* RHIDevice::createCmdBufferPool()
+{
+    RHICommandBufferPool* ret = new RHICommandBufferPool(this, mGraphicsQueue, true);
     return ret;
 }

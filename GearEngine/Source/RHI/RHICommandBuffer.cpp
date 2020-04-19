@@ -26,6 +26,10 @@ RHICommandBufferPool::RHICommandBufferPool(RHIDevice* device, RHIQueue* queue, b
 
 RHICommandBufferPool::~RHICommandBufferPool()
 {
+    for(int i = 0; i < mCmdBuffers.size(); i++)
+    {
+        SAFE_DELETE(mCmdBuffers[i]);
+    }
 	vkDestroyCommandPool(mDevice->getDevice(), mPool, nullptr);
 }
 
@@ -34,59 +38,15 @@ RHICommandBuffer* RHICommandBufferPool::getActiveCmdBuffer()
     RHICommandBuffer* cmdBuffer = nullptr;
     for (int i = 0; i < mCmdBuffers.size(); ++i)
     {
+        mCmdBuffers[i]->refreshFenceStatus();
+        if(mCmdBuffers[i]->mState == RHICommandBuffer::State::Ready)
+        {
+            return mCmdBuffers[i];
+        }
     }
+    cmdBuffer = new RHICommandBuffer(mDevice, mQueue, this);
+    mCmdBuffers.push_back(cmdBuffer);
     return cmdBuffer;
-}
-
-RHICommandBuffer* RHICommandBufferPool::allocCommandBuffer(bool primary)
-{
-	VkCommandBufferAllocateInfo allocateInfo = {};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocateInfo.commandPool = mPool;
-	if (primary)
-	{
-		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	}
-	else
-	{
-		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-	}
-	allocateInfo.commandBufferCount = 1;
-	
-	RHICommandBuffer* commandBuffer = new RHICommandBuffer(mDevice, mQueue, this);
-	if (vkAllocateCommandBuffers(mDevice->getDevice(), &allocateInfo, &commandBuffer->mCommandBuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate command buffer!");
-	}
-	return commandBuffer;
-}
-
-VkCommandBuffer RHICommandBufferPool::createCommandBuffer(bool primary)
-{
-    VkCommandBufferAllocateInfo allocateInfo = {};
-    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocateInfo.commandPool = mPool;
-    if (primary)
-    {
-        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    }
-    else
-    {
-        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-    }
-    allocateInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    if (vkAllocateCommandBuffers(mDevice->getDevice(), &allocateInfo, &commandBuffer) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate command buffer!");
-    }
-    return commandBuffer;
-}
-
-void RHICommandBufferPool::freeCommandBuffer(RHICommandBuffer * cmd)
-{
-	SAFE_DELETE(cmd);
 }
 
 RHICommandBuffer::RHICommandBuffer(RHIDevice* device, RHIQueue* queue, RHICommandBufferPool* pool)
@@ -99,6 +59,17 @@ RHICommandBuffer::RHICommandBuffer(RHIDevice* device, RHIQueue* queue, RHIComman
 	mViewport = glm::vec4(0.0f);
 	mScissor = glm::vec4(0.0f);
 	mState = State::Ready;
+
+    VkCommandBufferAllocateInfo allocateInfo = {};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.commandPool = mCommandPool->getHandle();
+    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocateInfo.commandBufferCount = 1;
+
+    if (vkAllocateCommandBuffers(mDevice->getDevice(), &allocateInfo, &mCommandBuffer) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate command buffer!");
+    }
 
 	mFence = mDevice->createFence();
 }
@@ -113,8 +84,7 @@ void RHICommandBuffer::begin()
 {
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    //指定一个处于挂起状态的命令缓冲区可以重新提交到队列,并记录到多个主命令缓冲区中
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT ;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT ;
 	if (vkBeginCommandBuffer(mCommandBuffer, &beginInfo) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to begin command buffer!");
@@ -124,7 +94,6 @@ void RHICommandBuffer::begin()
 
 void RHICommandBuffer::end()
 {
-	//
 	if (vkEndCommandBuffer(mCommandBuffer) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to end command buffer!");
@@ -333,6 +302,7 @@ void RHICommandBuffer::submit()
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.waitSemaphoreCount = waitSemaphores.size();
     submitInfo.pWaitSemaphores = waitSemaphores.data();
+
     submitInfo.pWaitDstStageMask = waitStages.data();
     submitInfo.signalSemaphoreCount = signalSemaphores.size();
     submitInfo.pSignalSemaphores = signalSemaphores.data();
@@ -340,7 +310,9 @@ void RHICommandBuffer::submit()
     VkCommandBuffer cmd[] = { mCommandBuffer };
     submitInfo.pCommandBuffers = cmd;
 
-    if (vkQueueSubmit(mDevice->getGraphicsQueue()->getHandle(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+    mFence->reset();
+
+    if (vkQueueSubmit(mDevice->getGraphicsQueue()->getHandle(), 1, &submitInfo, mFence->getHandle()) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to submit present command buffer!");
     }

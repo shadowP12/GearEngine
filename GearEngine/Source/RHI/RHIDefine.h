@@ -159,4 +159,14 @@ inline VkSampleCountFlagBits getSampleFlags(uint32_t numSamples)
 	return VK_SAMPLE_COUNT_1_BIT;
 }
 
+class RHIObject
+{
+public:
+    RHIObject(){}
+    ~RHIObject(){}
+    uint32_t getID(){return mID;}
+protected:
+    uint32_t mID;
+};
+
 #endif

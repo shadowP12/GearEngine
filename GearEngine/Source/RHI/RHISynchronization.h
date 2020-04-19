@@ -8,6 +8,7 @@ class RHIFence
 public:
     RHIFence(RHIDevice* device);
     ~RHIFence();
+    void reset();
     bool checkFenceState();
     VkFence getHandle() { return mFence; }
 private:

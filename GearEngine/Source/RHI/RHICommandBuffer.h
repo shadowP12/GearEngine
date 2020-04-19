@@ -28,10 +28,6 @@ public:
 	RHICommandBufferPool(RHIDevice* device, RHIQueue* queue, bool reset);
 	~RHICommandBufferPool();
 	RHICommandBuffer* getActiveCmdBuffer();
-	RHICommandBuffer* allocCommandBuffer(bool primary);
-	// test interface
-    VkCommandBuffer createCommandBuffer(bool primary);
-	void freeCommandBuffer(RHICommandBuffer* cmd);
     VkCommandPool getHandle() { return mPool; }
 private:
 	friend class RHICommandBuffer;
@@ -59,8 +55,6 @@ public:
 	void setScissor(glm::vec4 scissor);
 	void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance);
 	void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
-	void setImageLayout();
-	void copyBufferToImage();
 	void addWaitSemaphore(RHISemaphore* semaphore);
 	void addSignalSemaphore(RHISemaphore* semaphore);
     void submit();

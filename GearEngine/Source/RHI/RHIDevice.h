@@ -22,8 +22,8 @@ public:
 	~RHIDevice();
 	VkDevice getDevice() { return mDevice; }
 	VkPhysicalDevice getPhyDevice() { return mGPU; }
+    VkDescriptorPool getDescriptorPool(){return mDescriptorPool;}
 	RHIQueue* getGraphicsQueue() { return mGraphicsQueue; }
-	RHICommandBufferPool* getCommandBufferPool(const CommandBufferType& type);
 	uint32_t findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties);
 	RHIBuffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags);
 	RHIUniformBuffer* createUniformBuffer(uint32_t size);
@@ -33,15 +33,15 @@ public:
 	RHITexture* createTexture(const RHITextureInfo& textureInfo);
 	RHITextureView* createTextureView(const RHITextureViewInfo& viewInfo);
 	RHITextureView* createTextureView(VkImageView view);
-	RHICommandBuffer* allocCommandBuffer(const CommandBufferType& type, bool primary);
 	RHIProgram* createProgram(const RHIProgramInfo& programInfo);
 	RHIRenderPass* createRenderPass(const RHIRenderPassInfo& renderPassInfo);
 	RHIFramebuffer* createFramebuffer(const RHIFramebufferInfo& framebufferInfo);
 	RHIUniformBuffer* getDummyUniformBuffer() { return mDummyUniformBuffer; };
     RHIFence* createFence();
     RHISemaphore* createSemaphore();
-private:
-	void createCommandPool();
+    RHICommandBufferPool* getHelperCmdBufferPool();
+    RHIContext* createContext();
+    RHICommandBufferPool* createCmdBufferPool();
 private:
 	friend class RHI;
 	friend class RHIContext;
@@ -50,6 +50,7 @@ private:
 	VkPhysicalDeviceProperties mDeviceProperties;
 	VkPhysicalDeviceFeatures mDeviceFeatures;
 	VkPhysicalDeviceMemoryProperties mMemoryProperties;
+    VkDescriptorPool mDescriptorPool;
 	RHICommandBufferPool* mGraphicsCommandPool;
 	RHICommandBufferPool* mComputeCommandPool;
 	RHICommandBufferPool* mTransferCommandPool;

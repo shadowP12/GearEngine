@@ -16,6 +16,7 @@ static void mouseScrollCallback(GLFWwindow * window, double xOffset, double yOff
 
 class RHICommandBuffer;
 class RHIFramebuffer;
+class RHISemaphore;
 class Window
 {
 public:
@@ -28,7 +29,6 @@ public:
 	std::vector<const char*> getRequiredExtensions(bool enableValidationLayers);
 	void beginFrame();
 	void endFrame();
-	void endFrame(RHICommandBuffer* cmdBuffer);
 	RHIFramebuffer* getFramebuffer();
 private:
 	int mWidth;
@@ -37,11 +37,9 @@ private:
 	VkSurfaceKHR mSurface;
 	RHISwapChain* mSwapChain;
 	RHICommandBuffer* mPresentCmdBuffer;
-	VkSemaphore mImageAvailableSemaphore;
-	VkSemaphore mRenderFinishedSemaphore;
+    RHISemaphore* mImageAvailableSemaphore;
+    RHISemaphore* mRenderFinishedSemaphore;
 	uint32_t mFrameIndex;
-	VkCommandBuffer mEmptyStartCommandBuffer;
-    VkCommandBuffer mEmptyEndCommandBuffer;
 };
 
 #endif

@@ -18,6 +18,11 @@ RHIFence::~RHIFence()
     vkDestroyFence(mDevice->getDevice(), mFence, nullptr);
 }
 
+void RHIFence::reset()
+{
+    vkResetFences(mDevice->getDevice(), 1, &mFence);
+}
+
 bool RHIFence::checkFenceState()
 {
     VkResult result = vkGetFenceStatus(mDevice->getDevice(), mFence);

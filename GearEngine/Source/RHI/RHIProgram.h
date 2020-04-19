@@ -19,7 +19,7 @@ struct RHIProgramInfo
 
 class RHIDevice;
 
-class RHIProgram
+class RHIProgram : public RHIObject
 {
 public:
 	RHIProgram(RHIDevice* device, const RHIProgramInfo& info);
