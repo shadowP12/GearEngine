@@ -6,6 +6,43 @@
 #include <map>
 #include <string>
 
+namespace RHIProgramParameter
+{
+    struct UniformBuffer
+    {
+        std::string name;
+        uint32_t size;
+        uint32_t set;
+        uint32_t binding;
+    };
+
+    enum class SampleImageType
+    {
+        SAMPLER1D = 1,
+        SAMPLER2D = 2,
+        SAMPLER3D = 3,
+        SAMPLERCUBE = 4,
+        TEXTURE1D = 11,
+        TEXTURE2D = 12,
+        TEXTURE3D = 13,
+        TEXTURECUBE = 14,
+        TEXTURE1DARRAY = 21,
+        TEXTURE2DARRAY = 22,
+        TEXTURE3DARRAY = 23,
+        TEXTURECUBEARRAY = 24,
+        UNKNOWN = 0xffff
+    };
+
+    struct SampleImage
+    {
+        SampleImageType type;
+        std::string name;
+        uint32_t set;
+        uint32_t binding;
+    };
+};
+
+
 enum class RHIParamDataType
 {
 	FLOAT1 = 1,

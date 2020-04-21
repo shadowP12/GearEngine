@@ -39,6 +39,8 @@ private:
 	RHIProgramType mType;
 	//编译后的产物
 	std::vector<uint32_t> mBytecode;
+	std::vector<RHIProgramParameter::UniformBuffer> mUniformBufferInfos;
+    std::vector<RHIProgramParameter::SampleImage> mSampleImageInfos;
 	RHIParamInfo mParamInfo;
 	bool mIsCompiled = false;
 };

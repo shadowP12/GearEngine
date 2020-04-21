@@ -3,6 +3,9 @@
 #include "glslang/Include/ResourceLimits.h"
 #include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"
+#include "spirv.hpp"
+#include "spirv_glsl.hpp"
+#include "spirv_reflect.hpp"
 #include "Utility/Log.h"
 
 const TBuiltInResource DefaultTBuiltInResource = {
@@ -272,4 +275,47 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 		
 		rhiProgram->mParamInfo.params[uniformVar.name] = dataInfo;
 	}
+
+	// 使用spirv cross获取反射信息
+    spirv_cross::CompilerGLSL  glsl(rhiProgram->mBytecode);
+    spirv_cross::ShaderResources shaderResources = glsl.get_shader_resources();
+
+    for (auto &resource : shaderResources.uniform_buffers)
+    {
+        RHIProgramParameter::UniformBuffer ub;
+        ub.name = glsl.get_name(resource.id);
+        spirv_cross::SPIRType type = glsl.get_type(resource.base_type_id);
+        ub.size = glsl.get_declared_struct_size(type);
+        ub.set = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+        ub.binding = glsl.get_decoration(resource.id, spv::DecorationBinding);
+        rhiProgram->mUniformBufferInfos.push_back(ub);
+    }
+
+    for (auto &resource : shaderResources.sampled_images)
+    {
+        RHIProgramParameter::SampleImage sampleImage;
+        spirv_cross::SPIRType type = glsl.get_type(resource.base_type_id);
+        if(type.image.dim == spv::Dim1D)
+        {
+            sampleImage.type = RHIProgramParameter::SampleImageType::SAMPLER1D;
+        }
+        else if(type.image.dim == spv::Dim2D)
+        {
+            sampleImage.type = RHIProgramParameter::SampleImageType::SAMPLER2D;
+        }
+        else if(type.image.dim == spv::Dim3D)
+        {
+            sampleImage.type = RHIProgramParameter::SampleImageType::SAMPLER3D;
+        }
+        else if(type.image.dim == spv::DimCube)
+        {
+            sampleImage.type = RHIProgramParameter::SampleImageType::SAMPLERCUBE;
+        }
+
+        sampleImage.name = glsl.get_name(resource.id);
+        sampleImage.set = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+        sampleImage.binding = glsl.get_decoration(resource.id, spv::DecorationBinding);
+        rhiProgram->mSampleImageInfos.push_back(sampleImage);
+    }
+
 }
