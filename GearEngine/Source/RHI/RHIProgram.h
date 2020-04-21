@@ -19,6 +19,9 @@ struct RHIProgramInfo
 
 class RHIDevice;
 class RHIProgramManager;
+class RHIUniformBuffer;
+class RHITexture;
+class RHITextureView;
 
 class RHIProgram : public RHIObject
 {
@@ -27,13 +30,14 @@ public:
 	~RHIProgram();
 	void compile();
 	VkShaderModule getHandle() const { return mModule; }
+    void setUniformBuffer(std::string name, RHIUniformBuffer* ub);
 private:
 	friend class RHIProgramManager;
 	friend class RHIGraphicsPipelineState;
 	RHIDevice* mDevice;
 	RHIProgramManager* mProgramMgr;
 	VkShaderModule mModule;
-
+    std::map<uint32_t, VkDescriptorSet> mDescriptorSets;
 	std::string mSource;
 	std::string mEntryPoint;
 	RHIProgramType mType;
