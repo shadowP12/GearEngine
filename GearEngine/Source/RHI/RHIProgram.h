@@ -33,10 +33,11 @@ public:
     void setUniformBuffer(std::string name, RHIUniformBuffer* ub);
 private:
 	friend class RHIProgramManager;
-	friend class RHIGraphicsPipelineState;
+	friend class RHIPipelineState;
 	RHIDevice* mDevice;
 	RHIProgramManager* mProgramMgr;
 	VkShaderModule mModule;
+	std::vector<VkDescriptorSetLayout> mDescriptorSetLayouts;
     std::map<uint32_t, VkDescriptorSet> mDescriptorSets;
 	std::string mSource;
 	std::string mEntryPoint;

@@ -120,6 +120,7 @@ void RHIProgram::compile()
             throw std::runtime_error("failed to create descriptor set layout!");
         }
         setLayouts[layoutCreateInfo.first] = setLayout;
+        mDescriptorSetLayouts.push_back(setLayout);
     }
 
     // stage4

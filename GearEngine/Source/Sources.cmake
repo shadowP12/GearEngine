@@ -25,6 +25,7 @@ set(GEAR_ENGINE_RHI_SRC
 	Source/RHI/RHITextureView.cpp
 	Source/RHI/RHIContext.cpp
 	Source/RHI/RHISynchronization.cpp
+	Source/RHI/Managers/RHIPipelineStateManager.cpp
 	Source/RHI/Managers/RHIProgramManager.cpp
 	Source/RHI/Managers/RHIVertexInputManager.cpp
 )
@@ -47,6 +48,7 @@ set(GEAR_ENGINE_RHI_INC
 	Source/RHI/RHITextureView.h
 	Source/RHI/RHIContext.h
 	Source/RHI/RHISynchronization.h
+	Source/RHI/Managers/RHIPipelineStateManager.h
 	Source/RHI/Managers/RHIProgramManager.h
 	Source/RHI/Managers/RHIVertexInputManager.h
 )
