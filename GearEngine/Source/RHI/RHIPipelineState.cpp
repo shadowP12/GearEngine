@@ -49,7 +49,7 @@ RHIPipelineState::RHIPipelineState(RHIDevice* device, RHIRenderPass* renderPass,
     VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
     //dynamic state
-    VkDynamicState dynamicStateEnables[VK_DYNAMIC_STATE_RANGE_SIZE];
+    VkDynamicState dynamicStateEnables[5];
     VkPipelineDynamicStateCreateInfo dynamicState = {};
     memset(dynamicStateEnables, 0, sizeof dynamicStateEnables);
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;

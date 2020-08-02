@@ -2,6 +2,7 @@
 #include "RHIContext.h"
 #include "RHISynchronization.h"
 #include "Managers/RHIProgramManager.h"
+#include "Managers/RHIPipelineStateManager.h"
 
 RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	:mGPU(gpu)
@@ -139,6 +140,9 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 
 	mDummyUniformBuffer = createUniformBuffer(16);
 
+	//
+    mPipelineStateMgr = new RHIPipelineStateManager(this);
+
 	// ´´½¨program mgr
 	mProgramMgr = new RHIProgramManager(this);
 
@@ -198,6 +202,7 @@ RHIDevice::~RHIDevice()
 	SAFE_DELETE(mTransferQueue);
 	SAFE_DELETE(mDummyUniformBuffer);
 	SAFE_DELETE(mProgramMgr);
+	SAFE_DELETE(mPipelineStateMgr);
     vkDeviceWaitIdle(mDevice);
     vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
 	vkDestroyDevice(mDevice, nullptr);

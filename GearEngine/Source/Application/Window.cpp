@@ -135,28 +135,6 @@ GLFWwindow * Window::getWindowPtr()
 	return mWindow;
 }
 
-std::vector<const char*> Window::getRequiredExtensions(bool enableValidationLayers)
-{
-	std::vector<const char*> extensions;
-
-	unsigned int glfwExtensionCount = 0;
-	const char** glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-	for (unsigned int i = 0; i < glfwExtensionCount; i++)
-	{
-		extensions.push_back(glfwExtensions[i]);
-	}
-
-	if (enableValidationLayers)
-	{
-		//extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-	}
-
-	return extensions;
-}
-
 int Window::getWidth()
 {
 	return mWidth;

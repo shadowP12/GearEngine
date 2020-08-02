@@ -84,7 +84,7 @@ RHISwapChain::RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t wid
 	passInfo.color[0] = color;
 	passInfo.hasDepth = false;
 	passInfo.numColorAttachments = 1;
-	mRenderPass = device->createRenderPass(passInfo);
+	mRenderPass = mDevice->createRenderPass(passInfo);
 
 	for (uint32_t i = 0; i < mSwapChainImages.size(); i++)
 	{

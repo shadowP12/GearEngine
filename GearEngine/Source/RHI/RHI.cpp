@@ -2,45 +2,49 @@
 #include <assert.h>
 #include <sstream>
 #include "Utility/Log.h"
-//自定义扩展函数
-namespace rhi 
-{
-	PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT = nullptr;
-	PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT = nullptr;
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData) {
+
+    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+    return VK_FALSE;
 }
 
-//debug信息的回调函数
-VkBool32 debugMsgCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
-	size_t location, int32_t msgCode, const char* pLayerPrefix, const char* pMsg, void* pUserData)
-{
-	std::stringstream  message;
-
-	if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
-		message << "ERROR";
-
-	if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
-		message << "WARNING";
-
-	if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
-		message << "PERFORMANCE";
-
-	if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
-		message << "INFO";
-
-	if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT)
-		message << "DEBUG";
-
-	message << ": [" << pLayerPrefix << "] Code " << msgCode << ": " << pMsg << std::endl;
-
-	if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
-		LOGE("%s",message.str().c_str());
-	else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT || flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
-		LOGW("%s", message.str().c_str());
-	else
-		LOGI("%s", message.str().c_str());
-
-	return VK_FALSE;
-}
+//VkBool32 debugMsgCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject,
+//	size_t location, int32_t msgCode, const char* pLayerPrefix, const char* pMsg, void* pUserData)
+//{
+//	std::stringstream  message;
+//
+//	if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
+//		message << "ERROR";
+//
+//	if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
+//		message << "WARNING";
+//
+//	if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
+//		message << "PERFORMANCE";
+//
+//	if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
+//		message << "INFO";
+//
+//	if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT)
+//		message << "DEBUG";
+//
+//	message << ": [" << pLayerPrefix << "] Code " << msgCode << ": " << pMsg << std::endl;
+//
+//	if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
+//		LOGE("%s",message.str().c_str());
+//	else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT || flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT)
+//		LOGW("%s", message.str().c_str());
+//	else
+//		LOGI("%s", message.str().c_str());
+//
+//	return VK_FALSE;
+//}
 
 RHI::RHI()
 {
@@ -52,58 +56,46 @@ RHI::RHI()
 
 RHI::~RHI()
 {
+#if ENABLE_VALIDATION_LAYERS
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(mInstance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(mInstance, mDebugMessenger, nullptr);
+    }
+#endif
 	if (mActiceDevice)
 		delete mActiceDevice;
+
+	vkDestroyInstance(mInstance, nullptr);
 }
 
 void RHI::createInstance()
 {
+    std::vector<const char*> instanceLayers;
+    std::vector<const char*> instanceExtensions;
+#if ENABLE_VALIDATION_LAYERS
+    instanceLayers.push_back("VK_LAYER_KHRONOS_validation");
+    instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#endif
+    instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "GearEngine App";
-	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+	appInfo.applicationVersion = VK_MAKE_VERSION(1, 2, 0);
 	appInfo.pEngineName = "GearEngine";
-	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
-
-#if ENABLE_VALIDATION_LAYERS
-	const char* layers[] =
-	{
-		"VK_LAYER_LUNARG_standard_validation"
-	};
-
-	const char* extensions[] =
-	{
-		nullptr,
-		nullptr,
-		VK_EXT_DEBUG_REPORT_EXTENSION_NAME
-	};
-
-	uint32_t numLayers = sizeof(layers) / sizeof(layers[0]);
-#else
-	const char** layers = nullptr;
-	const char* extensions[] =
-	{
-		nullptr,
-		nullptr,
-	};
-
-	uint32_t numLayers = 0;
-#endif
-	extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME;
-	//目前只支持win平台
-	extensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
-	uint32_t numExtensions = sizeof(extensions) / sizeof(extensions[0]);
+	appInfo.engineVersion = VK_MAKE_VERSION(1, 2, 0);
+	appInfo.apiVersion = VK_API_VERSION_1_2;
 
 	VkInstanceCreateInfo instanceInfo;
 	instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	instanceInfo.pNext = nullptr;
 	instanceInfo.flags = 0;
 	instanceInfo.pApplicationInfo = &appInfo;
-	instanceInfo.enabledLayerCount = numLayers;
-	instanceInfo.ppEnabledLayerNames = layers;
-	instanceInfo.enabledExtensionCount = numExtensions;
-	instanceInfo.ppEnabledExtensionNames = extensions;
+	instanceInfo.enabledLayerCount = instanceLayers.size();
+	instanceInfo.ppEnabledLayerNames = instanceLayers.data();
+	instanceInfo.enabledExtensionCount = instanceExtensions.size();
+	instanceInfo.ppEnabledExtensionNames = instanceExtensions.data();
 
 	if (vkCreateInstance(&instanceInfo, nullptr, &mInstance) != VK_SUCCESS)
 	{
@@ -160,23 +152,15 @@ void RHI::createLogicalDevice()
 void RHI::setupDebugCallback()
 {
 #if ENABLE_VALIDATION_LAYERS
-
-	auto vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(mInstance, "vkCreateDebugReportCallbackEXT");
-
-	VkDebugReportFlagsEXT debugFlags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT |
-		VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-
-	VkDebugReportCallbackCreateInfoEXT debugInfo;
-	debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-	debugInfo.pNext = nullptr;
-	debugInfo.flags = 0;
-	debugInfo.pfnCallback = (PFN_vkDebugReportCallbackEXT)debugMsgCallback;
-	debugInfo.flags = debugFlags;
-
-	if (vkCreateDebugReportCallbackEXT(mInstance, &debugInfo, nullptr, &mDebugCallback) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to set up debug callback!");
-	}
+    VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = debugCallback;
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(mInstance, "vkCreateDebugUtilsMessengerEXT");
+    if (func(mInstance, &createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS) {
+        throw std::runtime_error("failed to set up debug messenger!");
+    }
 #endif
 }
 

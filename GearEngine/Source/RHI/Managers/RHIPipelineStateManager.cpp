@@ -33,7 +33,7 @@ bool RHIPipelineStateManager::VariantKey::EqualFunction::operator()(
 
 RHIPipelineStateManager::RHIPipelineStateManager(RHIDevice* device)
 {
-
+    mDevice = device;
 }
 
 RHIPipelineStateManager::~RHIPipelineStateManager()

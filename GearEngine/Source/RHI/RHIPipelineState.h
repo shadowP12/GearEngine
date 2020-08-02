@@ -19,6 +19,7 @@ public:
                              RHIProgram* fragmentProgram);
 	~RHIPipelineState();
 	VkPipelineLayout getLayout() { return mPipelineLayout; }
+	VkPipeline getHandle(){return mPipeline;}
 private:
 	RHIDevice* mDevice;
 	VkPipeline mPipeline;

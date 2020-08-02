@@ -13,6 +13,7 @@
 
 class RHIContext;
 class RHIProgramManager;
+class RHIPipelineStateManager;
 class RHIFence;
 class RHISemaphore;
 
@@ -43,6 +44,7 @@ public:
     RHICommandBufferPool* getHelperCmdBufferPool();
     RHIContext* createContext();
     RHICommandBufferPool* createCmdBufferPool();
+    RHIPipelineStateManager* getPipelineStateManager(){return mPipelineStateMgr;}
 private:
 	friend class RHI;
 	friend class RHIContext;
@@ -53,6 +55,7 @@ private:
 	VkPhysicalDeviceMemoryProperties mMemoryProperties;
     VkDescriptorPool mDescriptorPool;
     RHIProgramManager* mProgramMgr;
+    RHIPipelineStateManager* mPipelineStateMgr;
     RHICommandBufferPool* mHelperCommandPool;
 	RHIQueue* mGraphicsQueue;
 	RHIQueue* mComputeQueue;

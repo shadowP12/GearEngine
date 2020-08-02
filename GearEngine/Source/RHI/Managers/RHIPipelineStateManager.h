@@ -39,7 +39,7 @@ private:
         uint32_t fragmentProgram;
     };
 private:
-    RHIDevice* mDevice;
+    RHIDevice* mDevice = nullptr;
     std::unordered_map<VariantKey, RHIPipelineState*, VariantKey::HashFunction, VariantKey::EqualFunction> mPipelineStates;
 };
 

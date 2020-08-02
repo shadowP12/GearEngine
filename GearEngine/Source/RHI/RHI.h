@@ -21,6 +21,6 @@ private:
 	VkInstance mInstance;
 	VkPhysicalDevice mGPU;
 	RHIDevice* mActiceDevice;
-	VkDebugReportCallbackEXT mDebugCallback;
+    VkDebugUtilsMessengerEXT mDebugMessenger = VK_NULL_HANDLE;
 };
 #endif
