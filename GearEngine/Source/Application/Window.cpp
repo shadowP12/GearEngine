@@ -14,6 +14,7 @@ Window::Window(int width, int height)
 	glfwSetMouseButtonCallback(mWindow, mouseButtonCallback);
 	glfwSetCursorPosCallback(mWindow, cursorPosCallback);
 	glfwSetScrollCallback(mWindow, mouseScrollCallback);
+    (GLFWwindow*)mWindow;
 
 	//初始化交换链
 	auto res = glfwCreateWindowSurface(RHI::instance().getInstance(), mWindow, nullptr, &mSurface);
@@ -21,7 +22,7 @@ Window::Window(int width, int height)
 	{
 		throw std::runtime_error("failed to create window surface!");
 	}
-
+    void* ptr = glfwGetWin32Window(mWindow);
 	//缺少检查会崩溃
 	VkBool32 supportsPresent;
 	uint32_t graphicsFamily = RHI::instance().getDevice()->getGraphicsQueue()->getFamilyIndex();
@@ -29,7 +30,7 @@ Window::Window(int width, int height)
 
 	if (!supportsPresent)
 	{
-		throw std::runtime_error("Cannot find a graphics queue that also supports present operations.");
+		throw std::runtime_error("cannot find a graphics queue that also supports present operations.");
 	}
 
 	mSwapChain = new RHISwapChain(RHI::instance().getDevice(), mSurface, width, height);
@@ -81,8 +82,7 @@ Window::~Window()
 void Window::beginFrame()
 {
 	VkResult result = vkAcquireNextImageKHR(RHI::instance().getDevice()->getDevice(), mSwapChain->getHandle(), std::numeric_limits<uint64_t>::max(), mImageAvailableSemaphore->getHandle(), VK_NULL_HANDLE, &mFrameIndex);
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
-	{
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 

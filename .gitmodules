@@ -1,0 +1,3 @@
+[submodule "ThirdParty/GearLibs"]
+	path = ThirdParty/GearLibs
+	url = https://github.com/hipiPan/GearLibs.git
