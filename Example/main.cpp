@@ -15,7 +15,7 @@ struct Vertex {
 };
 
 float vertices[] = {
-	0.0f,  0.5f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0,
+	0.0f,  0.9f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0,
 	-0.5f, -0.5f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0,
 	 0.5f, -0.5f, 0.0f, 0.0, 0.0, 0.0, 0.0, 0.0
 };
@@ -42,13 +42,13 @@ public:
 		RHIProgramInfo programInfo;
 		programInfo.type = RHIProgramType::Vertex;
 		programInfo.entryPoint = "main";
-		FileSystem::readFile(path + "/Resource/Shaders/default.vert", programInfo.source);
+		FileSystem::readFile("./Resource/Shaders/default.vert", programInfo.source);
 		mTestVertexProgram = device->createProgram(programInfo);
 		mTestVertexProgram->compile();
 
 		programInfo.type = RHIProgramType::Fragment;
 		programInfo.entryPoint = "main";
-        FileSystem::readFile(path + "/Resource/Shaders/default.frag", programInfo.source);
+        FileSystem::readFile("./Resource/Shaders/default.frag", programInfo.source);
 		mTestFragmentProgram = device->createProgram(programInfo);
 		mTestFragmentProgram->compile();
 

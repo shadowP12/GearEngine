@@ -17,6 +17,13 @@ class RHIDevice;
 class RHIRenderPass;
 class RHIFramebuffer;
 class RHITextureView;
+
+struct RHISwapChainInfo {
+    void* windowHandle;
+    uint32_t width;
+    uint32_t height;
+};
+
 class RHISwapChain
 {
 public:

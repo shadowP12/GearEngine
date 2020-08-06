@@ -43,3 +43,4 @@
 *.vcxproj.user
 .idea
 cmake-build-debug
+cmake-build-release
