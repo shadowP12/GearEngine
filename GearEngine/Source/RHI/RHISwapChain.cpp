@@ -2,12 +2,30 @@
 #include "RHIRenderPass.h"
 #include "RHIFramebuffer.h"
 #include "RHITexture.h"
-#include "RHITextureView.h"
+#include "RHIRenderPass.h"
 #include "RHIDevice.h"
+#include "RHISynchronization.h"
+#include "RHIQueue.h"
 
-RHISwapChain::RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t width, uint32_t height)
-	:mDevice(device),mSurface(surface),mWidth(width),mHeight(height)
+RHISwapChain::RHISwapChain(RHIDevice* device, const RHISwapChainInfo& info)
+	:mDevice(device),mWidth(info.width),mHeight(info.height)
 {
+    VkWin32SurfaceCreateInfoKHR surfaceInfo = {};
+    surfaceInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    surfaceInfo.pNext = NULL;
+    surfaceInfo.flags = 0;
+    surfaceInfo.hinstance = ::GetModuleHandle(NULL);
+    surfaceInfo.hwnd = (HWND)info.windowHandle;
+    CHECK_VKRESULT(vkCreateWin32SurfaceKHR(device->getInstance(), &surfaceInfo, nullptr, &mSurface));
+
+    VkBool32 supportsPresent;
+    vkGetPhysicalDeviceSurfaceSupportKHR(mDevice->getGPU(), mDevice->getGraphicsQueue()->getFamilyIndex(), mSurface, &supportsPresent);
+    if (!supportsPresent)
+    {
+        printf("cannot find a graphics queue that also supports present operations.\n");
+    }
+
+
 	VkExtent2D swapChainExtent;
 	swapChainExtent.width = mWidth;
 	swapChainExtent.height = mHeight;
@@ -40,10 +58,7 @@ RHISwapChain::RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t wid
 	swapchainInfo.presentMode = presentMode;
 	swapchainInfo.clipped = VK_TRUE;
 
-	if (vkCreateSwapchainKHR(mDevice->getDevice(), &swapchainInfo, nullptr, &mSwapChain) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create swap chain!");
-	}
+	CHECK_VKRESULT(vkCreateSwapchainKHR(mDevice->getDevice(), &swapchainInfo, nullptr, &mSwapChain));
 
 	//get image
 	vkGetSwapchainImagesKHR(mDevice->getDevice(), mSwapChain, &imageCount, nullptr);
@@ -51,65 +66,80 @@ RHISwapChain::RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t wid
 	vkGetSwapchainImagesKHR(mDevice->getDevice(), mSwapChain, &imageCount, mSwapChainImages.data());
 	mSwapChainImageFormat = surfaceFormat.format;
 
-	//get image view
+	// create textures
 	for (uint32_t i = 0; i < mSwapChainImages.size(); i++)
 	{
-		VkImageViewCreateInfo viewInfo = {};
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.image = mSwapChainImages[i];
-		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format = mSwapChainImageFormat;
-		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = 1;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = 1;
+	    RHITexture* colorTexture = new RHITexture(mDevice, this, i);
+	    mColorTextures.push_back(colorTexture);
 
-		VkImageView view;
-		if (vkCreateImageView(mDevice->getDevice(), &viewInfo, nullptr, &view) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create image view!");
-		}
-		RHITextureView* rhiView = mDevice->createTextureView(view);
-		mTextureViews.push_back(rhiView);
+        RHITextureInfo texInfo;
+        texInfo.width = mWidth;
+        texInfo.height = mHeight;
+        texInfo.depth = 1;
+        texInfo.format = VK_FORMAT_D24_UNORM_S8_UINT;
+        texInfo.arrayLayers = 1;
+        texInfo.mipLevels = 1;
+        texInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        texInfo.descriptors = DESCRIPTOR_TYPE_TEXTURE;
+        texInfo.colorAtt = false;
+        texInfo.depthStencilAtt = true;
+	    RHITexture* depthStencilTexture = new RHITexture(mDevice, texInfo);
+	    mDepthStencilTextures.push_back(depthStencilTexture);
 	}
 
-	// 创建对应的帧缓存和renderpass
-	RHIColorAttachmentInfo color;
-	color.format = VK_FORMAT_B8G8R8A8_UNORM;
-	color.numSample = 1;
-	color.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	color.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	RHIRenderPassInfo passInfo;
-	passInfo.color[0] = color;
-	passInfo.hasDepth = false;
-	passInfo.numColorAttachments = 1;
-	mRenderPass = mDevice->createRenderPass(passInfo);
+	// create renderpass
+    {
+        RHIColorAttachmentInfo color;
+        color.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+        color.format = VK_FORMAT_B8G8R8A8_UNORM;
+//        color.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+//        color.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+        RHIDepthStencilAttachmentInfo depthStencil;
+        depthStencil.sampleCount = VK_SAMPLE_COUNT_1_BIT;
+        depthStencil.format = VK_FORMAT_D24_UNORM_S8_UINT;
+
+        RHIRenderPassInfo passInfo;
+        passInfo.numColorAttachments = 1;
+        passInfo.color[0] = color;
+        passInfo.hasDepth = true;
+        passInfo.depthStencil = depthStencil;
+        mRenderPass = new RHIRenderPass(mDevice, passInfo);
+    }
+
+    // create framebuffer
 	for (uint32_t i = 0; i < mSwapChainImages.size(); i++)
 	{
 		RHIFramebufferInfo fbInfo;
-		fbInfo.color[0] = mTextureViews[i];
+		fbInfo.color[0] = mColorTextures[i];
 		fbInfo.depth = nullptr;
 		fbInfo.width = 800;
 		fbInfo.height = 600;
 		fbInfo.renderpass = mRenderPass;
 		fbInfo.layers = 1;
 		fbInfo.numColorAttachments = 1;
-		fbInfo.hasDepth = false;
+		fbInfo.hasDepth = true;
+		fbInfo.depth = mDepthStencilTextures[i];
 
-		RHIFramebuffer* fb = mDevice->createFramebuffer(fbInfo);
+		RHIFramebuffer* fb = new RHIFramebuffer(mDevice, fbInfo);
 		mFramebuffers.push_back(fb);
 	}
 }
 
 RHISwapChain::~RHISwapChain()
 {
-	for (int i = 0; i < (int)mTextureViews.size(); i++)
+	for (int i = 0; i < (int)mColorTextures.size(); i++)
 	{
-		delete mTextureViews[i];
+		delete mColorTextures[i];
 	}
-	
+	mColorTextures.clear();
+
+    for (int i = 0; i < (int)mDepthStencilTextures.size(); i++)
+    {
+        delete mDepthStencilTextures[i];
+    }
+    mDepthStencilTextures.clear();
+
 	if (mRenderPass)
 		delete mRenderPass;
 
@@ -119,30 +149,54 @@ RHISwapChain::~RHISwapChain()
 	}
 
 	vkDestroySwapchainKHR(mDevice->getDevice(), mSwapChain, nullptr);
+    vkDestroySurfaceKHR(mDevice->getInstance(), mSurface, nullptr);
+}
+
+void RHISwapChain::acquireNextImage(RHISemaphore *signalSemaphore, RHIFence* inFence, uint32_t &imageIndex)
+{
+    VkResult vkRes = {};
+    VkSemaphore semaphore = VK_NULL_HANDLE;
+    VkFence fence = VK_NULL_HANDLE;
+
+    if(inFence)
+        fence = inFence->getHandle();
+    if(signalSemaphore)
+        semaphore = signalSemaphore->getHandle();
+
+    vkRes = vkAcquireNextImageKHR(mDevice->getDevice(), mSwapChain, UINT64_MAX, semaphore, fence, &imageIndex);
+    if (vkRes == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        printf("swapChain out of date\n");
+        imageIndex = -1;
+        if (inFence)
+        {
+            VkFence fences[] = { fence };
+            vkResetFences(mDevice->getDevice(), 1, fences);
+        }
+    }
 }
 
 SwapChainSupportDetails RHISwapChain::querySwapChainSupport()
 {
 	SwapChainSupportDetails details;
-
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mDevice->getPhyDevice(), mSurface, &details.capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mDevice->getGPU(), mSurface, &details.capabilities);
 
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice->getPhyDevice(), mSurface, &formatCount, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice->getGPU(), mSurface, &formatCount, nullptr);
 
 	if (formatCount != 0)
 	{
 		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice->getPhyDevice(), mSurface, &formatCount, details.formats.data());
+		vkGetPhysicalDeviceSurfaceFormatsKHR(mDevice->getGPU(), mSurface, &formatCount, details.formats.data());
 	}
 
 	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(mDevice->getPhyDevice(), mSurface, &presentModeCount, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(mDevice->getGPU(), mSurface, &presentModeCount, nullptr);
 
 	if (presentModeCount != 0)
 	{
 		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(mDevice->getPhyDevice(), mSurface, &presentModeCount, details.presentModes.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(mDevice->getGPU(), mSurface, &presentModeCount, details.presentModes.data());
 	}
 
 	return details;
@@ -187,4 +241,24 @@ RHIFramebuffer* RHISwapChain::getFramebuffer(uint32_t index)
 	}
 
 	return mFramebuffers[index];
+}
+
+RHITexture* RHISwapChain::getColorTexture(uint32_t index)
+{
+    if (index < 0 || index >= mColorTextures.size())
+    {
+        return nullptr;
+    }
+
+    return mColorTextures[index];
+}
+
+RHITexture* RHISwapChain::getDepthStencilTexture(uint32_t index)
+{
+    if (index < 0 || index >= mDepthStencilTextures.size())
+    {
+        return nullptr;
+    }
+
+    return mDepthStencilTextures[index];
 }

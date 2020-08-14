@@ -1,12 +1,30 @@
 #include "RHIDevice.h"
-#include "RHIContext.h"
+#include "RHIQueue.h"
 #include "RHISynchronization.h"
-#include "Managers/RHIProgramManager.h"
-#include "Managers/RHIPipelineStateManager.h"
+#include "RHICommandBuffer.h"
+#include <vector>
+#include <stdexcept>
 
-RHIDevice::RHIDevice(VkPhysicalDevice gpu)
-	:mGPU(gpu)
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData) {
+    printf("validation layer: %s\n", pCallbackData->pMessage);
+    return VK_FALSE;
+}
+
+RHIDevice::RHIDevice()
 {
+    // create instance
+    createInstance();
+
+    // setting debug callback
+    setupDebugCallback();
+
+    // pick gpu
+    pickGPU();
+
 	vkGetPhysicalDeviceProperties(mGPU, &mDeviceProperties);
 	vkGetPhysicalDeviceFeatures(mGPU, &mDeviceFeatures);
 	//预储存gpu内存属性
@@ -119,10 +137,7 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	deviceInfo.enabledLayerCount = 0;
 	deviceInfo.ppEnabledLayerNames = nullptr;
 
-	if (vkCreateDevice(mGPU, &deviceInfo, nullptr, &mDevice) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create logical device!");
-	}
+    CHECK_VKRESULT(vkCreateDevice(mGPU, &deviceInfo, nullptr, &mDevice));
 
 	VkQueue graphicsQueue;
 	VkQueue computeQueue;
@@ -132,19 +147,11 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 	vkGetDeviceQueue(mDevice, computeFamily, 0, &computeQueue);
 	vkGetDeviceQueue(mDevice, transferFamily, 0, &transferQueue);
 
-	mGraphicsQueue = new RHIQueue(this, graphicsQueue, graphicsFamily);
-	mComputeQueue = new RHIQueue(this, computeQueue, computeFamily);
-	mTransferQueue = new RHIQueue(this, transferQueue, transferFamily);
+	mGraphicsQueue = new RHIQueue(this, graphicsQueue, graphicsFamily, QUEUE_TYPE_GRAPHICS);
+	mComputeQueue = new RHIQueue(this, computeQueue, computeFamily, QUEUE_TYPE_COMPUTE);
+	mTransferQueue = new RHIQueue(this, transferQueue, transferFamily, QUEUE_TYPE_TRANSFER);
 
-    mHelperCommandPool = new RHICommandBufferPool(this, mGraphicsQueue, true);
-
-	mDummyUniformBuffer = createUniformBuffer(16);
-
-	//
-    mPipelineStateMgr = new RHIPipelineStateManager(this);
-
-	// 创建program mgr
-	mProgramMgr = new RHIProgramManager(this);
+	mGraphicsCommandPool = new RHICommandBufferPool(this, mGraphicsQueue, true);
 
 	// 创建全局的描述符池
 	uint32_t setCount                  = 65535;
@@ -196,16 +203,21 @@ RHIDevice::RHIDevice(VkPhysicalDevice gpu)
 
 RHIDevice::~RHIDevice()
 {
-	SAFE_DELETE(mHelperCommandPool);
+	SAFE_DELETE(mGraphicsCommandPool);
 	SAFE_DELETE(mGraphicsQueue);
 	SAFE_DELETE(mComputeQueue);
 	SAFE_DELETE(mTransferQueue);
-	SAFE_DELETE(mDummyUniformBuffer);
-	SAFE_DELETE(mProgramMgr);
-	SAFE_DELETE(mPipelineStateMgr);
     vkDeviceWaitIdle(mDevice);
     vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
 	vkDestroyDevice(mDevice, nullptr);
+
+#if ENABLE_VALIDATION_LAYERS
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(mInstance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(mInstance, mDebugMessenger, nullptr);
+    }
+#endif
+    vkDestroyInstance(mInstance, nullptr);
 }
 
 uint32_t RHIDevice::findMemoryType(const uint32_t &typeFilter, const VkMemoryPropertyFlags &properties)
@@ -222,97 +234,87 @@ uint32_t RHIDevice::findMemoryType(const uint32_t &typeFilter, const VkMemoryPro
 	return -1;
 }
 
-RHIBuffer * RHIDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags)
-{
-	RHIBuffer* res = new RHIBuffer(this, size, usageFlags, memoryPropertyFlags);
-	return res;
+void RHIDevice::createInstance() {
+    std::vector<const char*> instanceLayers;
+    std::vector<const char*> instanceExtensions;
+#if ENABLE_VALIDATION_LAYERS
+    instanceLayers.push_back("VK_LAYER_KHRONOS_validation");
+    instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#endif
+    instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+
+    VkApplicationInfo appInfo = {};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = "GearEngine";
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 2, 0);
+    appInfo.pEngineName = "GearEngine";
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 2, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_2;
+
+    VkInstanceCreateInfo instanceInfo;
+    instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    instanceInfo.pNext = nullptr;
+    instanceInfo.flags = 0;
+    instanceInfo.pApplicationInfo = &appInfo;
+    instanceInfo.enabledLayerCount = instanceLayers.size();
+    instanceInfo.ppEnabledLayerNames = instanceLayers.data();
+    instanceInfo.enabledExtensionCount = instanceExtensions.size();
+    instanceInfo.ppEnabledExtensionNames = instanceExtensions.data();
+
+    CHECK_VKRESULT(vkCreateInstance(&instanceInfo, nullptr, &mInstance));
 }
 
-RHIProgram * RHIDevice::createProgram(const RHIProgramInfo & programInfo)
-{
-	RHIProgram* ret = mProgramMgr->createProgram(programInfo);
-	return ret;
+void RHIDevice::pickGPU() {
+    uint32_t gpuCount = 0;
+    if (vkEnumeratePhysicalDevices(mInstance, &gpuCount, nullptr) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to find mGpu!");
+        return ;
+    }
+
+    if (gpuCount == 0)
+    {
+        throw std::runtime_error("failed to find mGpu!");
+        return ;
+    }
+
+    std::vector<VkPhysicalDevice> gpus(gpuCount);
+    if (vkEnumeratePhysicalDevices(mInstance, &gpuCount, gpus.data()) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to find mGpu!");
+        return ;
+    }
+
+    for (auto &g : gpus)
+    {
+        VkPhysicalDeviceProperties props;
+        vkGetPhysicalDeviceProperties(g, &props);
+        printf("Found Vulkan GPU: %s\n", props.deviceName);
+        printf("    API: %u.%u.%u\n",
+             VK_VERSION_MAJOR(props.apiVersion),
+             VK_VERSION_MINOR(props.apiVersion),
+             VK_VERSION_PATCH(props.apiVersion));
+        printf("    Driver: %u.%u.%u\n",
+             VK_VERSION_MAJOR(props.driverVersion),
+             VK_VERSION_MINOR(props.driverVersion),
+             VK_VERSION_PATCH(props.driverVersion));
+    }
+
+    //默认选择第一块显卡
+    mGPU = gpus.front();
 }
 
-RHIUniformBuffer* RHIDevice::createUniformBuffer(uint32_t size)
-{
-	RHIUniformBuffer* ret = new RHIUniformBuffer(this, size);
-	return ret;
-}
-
-RHIVertexBuffer* RHIDevice::createVertexBuffer(uint32_t elementSize, uint32_t vertexCount)
-{
-	RHIVertexBuffer* ret = new RHIVertexBuffer(this, elementSize, vertexCount);
-	return ret;
-}
-
-RHIIndexBuffer* RHIDevice::createIndexBuffer(uint32_t elementSize, uint32_t indexCount)
-{
-	RHIIndexBuffer* ret = new RHIIndexBuffer(this, elementSize, indexCount);
-	return ret;
-}
-
-RHITransferBuffer* RHIDevice::createTransferBuffer(uint32_t size)
-{
-	RHITransferBuffer* ret = new RHITransferBuffer(this, size);
-	return ret;
-}
-
-RHIRenderPass* RHIDevice::createRenderPass(const RHIRenderPassInfo& renderPassInfo)
-{
-	RHIRenderPass* ret = new RHIRenderPass(this, renderPassInfo);
-	return ret;
-}
-
-RHIFramebuffer* RHIDevice::createFramebuffer(const RHIFramebufferInfo& framebufferInfo)
-{
-	RHIFramebuffer* ret = new RHIFramebuffer(this, framebufferInfo);
-	return ret;
-}
-
-RHITexture* RHIDevice::createTexture(const RHITextureInfo& textureInfo)
-{
-	RHITexture* ret = new RHITexture(this, textureInfo);
-	return ret;
-}
-
-RHITextureView* RHIDevice::createTextureView(const RHITextureViewInfo& viewInfo)
-{
-	RHITextureView* ret = new RHITextureView(this, viewInfo);
-	return ret;
-}
-
-RHITextureView* RHIDevice::createTextureView(VkImageView view)
-{
-	RHITextureView* ret = new RHITextureView(this, view);
-	return ret;
-}
-
-RHICommandBufferPool* RHIDevice::getHelperCmdBufferPool()
-{
-    return mHelperCommandPool;
-}
-
-RHIFence* RHIDevice::createFence()
-{
-    RHIFence* ret = new RHIFence(this);
-    return ret;
-}
-
-RHISemaphore* RHIDevice::createSemaphore()
-{
-    RHISemaphore* ret = new RHISemaphore(this);
-    return ret;
-}
-
-RHIContext* RHIDevice::createContext()
-{
-    RHIContext* ret = new RHIContext(this);
-    return ret;
-}
-
-RHICommandBufferPool* RHIDevice::createCmdBufferPool()
-{
-    RHICommandBufferPool* ret = new RHICommandBufferPool(this, mGraphicsQueue, true);
-    return ret;
+void RHIDevice::setupDebugCallback() {
+#if ENABLE_VALIDATION_LAYERS
+    VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = debugCallback;
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(mInstance, "vkCreateDebugUtilsMessengerEXT");
+    if (func(mInstance, &createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS) {
+        throw std::runtime_error("failed to set up debug messenger!");
+    }
+#endif
 }

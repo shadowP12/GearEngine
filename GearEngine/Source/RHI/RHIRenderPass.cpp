@@ -1,13 +1,9 @@
 #include "RHIRenderPass.h"
 #include "RHIDevice.h"
 
-uint32_t RHIRenderPass::sNextValidID = 1;
-
 RHIRenderPass::RHIRenderPass(RHIDevice* device, const RHIRenderPassInfo& info)
 	:mDevice(device)
 {
-	mID = sNextValidID++;
-
 	std::vector<VkAttachmentDescription> attachmentDescs;
 	std::vector<VkAttachmentReference> colorReferences;
 	VkAttachmentReference depthReference;
@@ -18,7 +14,7 @@ RHIRenderPass::RHIRenderPass(RHIDevice* device, const RHIRenderPassInfo& info)
 		VkAttachmentDescription attachmentDesc = {};
 		attachmentDesc.flags = 0;
 		attachmentDesc.format = info.color[i].format;
-		attachmentDesc.samples = getSampleFlags(info.color[i].numSample);
+		attachmentDesc.samples = info.color[i].sampleCount;
 		attachmentDesc.loadOp = info.color[i].loadOp;
 		attachmentDesc.storeOp = info.color[i].storeOp;
 		attachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -39,7 +35,7 @@ RHIRenderPass::RHIRenderPass(RHIDevice* device, const RHIRenderPassInfo& info)
 		VkAttachmentDescription attachmentDesc = {};
 		attachmentDesc.flags = 0;
 		attachmentDesc.format = info.depthStencil.format;
-		attachmentDesc.samples = getSampleFlags(info.depthStencil.numSample);
+		attachmentDesc.samples = info.depthStencil.sampleCount;
 		attachmentDesc.loadOp = info.depthStencil.depthLoadOp;
 		attachmentDesc.storeOp = info.depthStencil.depthStoreOp;
 		attachmentDesc.stencilLoadOp = info.depthStencil.stencilLoadOp;
@@ -82,7 +78,7 @@ RHIRenderPass::RHIRenderPass(RHIDevice* device, const RHIRenderPassInfo& info)
 		subpassDesc.pDepthStencilAttachment = nullptr;
 	}
 
-	//设置subpass之间的依赖(ps:暂不支持多个subpass)
+	// todo
 	VkSubpassDependency dependencies[2];
 	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependencies[0].dstSubpass = 0;
@@ -114,10 +110,7 @@ RHIRenderPass::RHIRenderPass(RHIDevice* device, const RHIRenderPassInfo& info)
 	renderPassInfo.dependencyCount = 2;
 	renderPassInfo.pDependencies = dependencies;
 
-	if (vkCreateRenderPass(mDevice->getDevice(), &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create render pass!");
-	}
+	CHECK_VKRESULT(vkCreateRenderPass(mDevice->getDevice(), &renderPassInfo, nullptr, &mRenderPass));
 }
 
 RHIRenderPass::~RHIRenderPass()

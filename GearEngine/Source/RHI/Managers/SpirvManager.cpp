@@ -1,5 +1,4 @@
-#include "RHIProgramManager.h"
-#include "../RHIDevice.h"
+#include "SpirvManager.h"
 #include "glslang/Include/ResourceLimits.h"
 #include "glslang/Public/ShaderLang.h"
 #include "SPIRV/GlslangToSpv.h"
@@ -124,49 +123,33 @@ const TBuiltInResource DefaultTBuiltInResource = {
 	/*.generalConstantMatrixVectorIndexing = */ 1,
 } };
 
-uint32_t RHIProgramManager::sNextValidID = 1;
-
-RHIProgramManager::RHIProgramManager(RHIDevice* device)
-    :mDevice(device)
+SpirvManager::SpirvManager()
 {
 	glslang::InitializeProcess();
 }
 
-RHIProgramManager::~RHIProgramManager()
+SpirvManager::~SpirvManager()
 {
-
 	glslang::FinalizeProcess();
 }
 
-RHIProgram* RHIProgramManager::createProgram(const RHIProgramInfo &info)
+SpirvCompileResult SpirvManager::compile(const SpirvCompileInfo& info)
 {
-    RHIProgram* ret = new RHIProgram(mDevice, this, info);
-    mPrograms[sNextValidID] = ret;
-    ret->setID(sNextValidID);
-    sNextValidID++;
-    return ret;
-}
+    SpirvCompileResult res;
+    res.bytes.clear();
 
-void RHIProgramManager::deleteProgram(RHIProgram* program)
-{
-    auto it = mPrograms.find(program->getID());
-    if (it != mPrograms.end())
-    {
-        mPrograms.erase(it);
-    }
-}
-
-void RHIProgramManager::compile(RHIProgram* rhiProgram)
-{
 	EShLanguage glslType;
-	switch (rhiProgram->mType)
+	switch (info.stageType)
 	{
-	case RHIProgramType::Fragment:
-		glslType = EShLangFragment;
-		break;
-	case RHIProgramType::Vertex:
+	case STAGE_VERTEX:
 		glslType = EShLangVertex;
 		break;
+	case STAGE_FRAGMENT:
+	    glslType = EShLangFragment;
+	    break;
+	case STAGE_COMPUTE:
+	    glslType = EShLangCompute;
+	    break;
 	default:
 		break;
 	}
@@ -174,7 +157,7 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 	glslang::TShader shader(glslType);
 	shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
 
-	const char* sourceBytes = rhiProgram->mSource.c_str();
+	const char* sourceBytes = info.source.c_str();
 	shader.setStrings(&sourceBytes, 1);
 	shader.setEntryPoint("main");
 	//shader.setPreamble(preamble.c_str());
@@ -184,7 +167,7 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 	if (!shader.parse(&resources, 450, false, messages))
 	{
 		LOGE("%s\n", shader.getInfoLog());
-		return;
+		return res;
 	}
 
 	glslang::TProgram program;
@@ -193,7 +176,7 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 	if (!program.link(messages))
 	{
 		LOGE("%s\n", program.getInfoLog());
-		return;
+		return res;
 	}
 
 	program.mapIO();
@@ -203,119 +186,6 @@ void RHIProgramManager::compile(RHIProgram* rhiProgram)
 	glslang::SpvOptions options;
 	options.disableOptimizer = true;
 	options.optimizeSize = true;
-	glslang::GlslangToSpv(*program.getIntermediate(glslType), rhiProgram->mBytecode, &options);
-
-	// 反射信息去构建shader里面的参数布局
-	int numUniformBlocks = program.getNumUniformBlocks();
-	for (int i = 0; i < numUniformBlocks; i++)
-	{
-		const glslang::TObjectReflection& uniformBlock = program.getUniformBlock(i);
-		RHIParamBlockInfo blockInfo;;
-		blockInfo.name = uniformBlock.name;
-		blockInfo.blockSize = uniformBlock.size;
-		blockInfo.set = uniformBlock.getType()->getQualifier().layoutSet;
-		blockInfo.slot = uniformBlock.getType()->getQualifier().layoutBinding;
-
-		rhiProgram->mParamInfo.paramBlocks[uniformBlock.name] = blockInfo;
-		uint32_t flag = 0;
-		for (uint32_t i = 0; i < rhiProgram->mParamInfo.sets.size(); i++)
-		{
-			if (rhiProgram->mParamInfo.sets[i] == blockInfo.set)
-				flag = 1;
-		}
-		if (flag == 0)
-			rhiProgram->mParamInfo.sets.push_back(blockInfo.set);
-	}
-
-	int numUniformVariables = program.getNumUniformVariables();
-	for (int i = 0; i < numUniformVariables; i++)
-	{
-		//暂时只支持几种基本类型
-		const glslang::TObjectReflection& uniformVar = program.getUniform(i);
-		const glslang::TType* ttype = program.getUniformTType(i);
-		const glslang::TQualifier& qualifier = ttype->getQualifier();
-		if (ttype->getBasicType() == glslang::EbtSampler)
-		{
-			RHIParamObjectInfo objInfo;
-			objInfo.name = uniformVar.name;
-			//需要添加各种采样器类型判断
-			objInfo.type = RHIParamObjectType::SAMPLER2D;
-			objInfo.set = qualifier.layoutSet;
-			objInfo.slot = qualifier.layoutBinding;
-			rhiProgram->mParamInfo.samplers[uniformVar.name] = objInfo;
-
-			uint32_t flag = 0;
-			for (uint32_t i = 0; i < rhiProgram->mParamInfo.sets.size(); i++)
-			{
-				if (rhiProgram->mParamInfo.sets[i] == objInfo.set)
-					flag = 1;
-			}
-			if (flag == 0)
-				rhiProgram->mParamInfo.sets.push_back(objInfo.set);
-
-			continue;
-		}
-		if (ttype->getBasicType() == glslang::EbtStruct)
-		{
-			//暂时不支持结构体
-			continue;
-		}
-		if (ttype->getBasicType() == glslang::EbtBlock)
-		{
-			//暂时不支持数据块
-			continue;
-		}
-		//暂时不支持数组以及类型判断(...大版本稳定后会加上)
-		RHIParamDataInfo dataInfo;
-		dataInfo.name = uniformVar.name;
-		dataInfo.memOffset = uniformVar.offset;
-		const glslang::TObjectReflection& uniformBlock = program.getUniformBlock(uniformVar.index);
-		dataInfo.paramBlockSet = uniformBlock.getType()->getQualifier().layoutSet;
-		dataInfo.paramBlockSlot = uniformBlock.getType()->getQualifier().layoutBinding;
-		
-		rhiProgram->mParamInfo.params[uniformVar.name] = dataInfo;
-	}
-
-	// 使用spirv cross获取反射信息
-    spirv_cross::CompilerGLSL  glsl(rhiProgram->mBytecode);
-    spirv_cross::ShaderResources shaderResources = glsl.get_shader_resources();
-
-    for (auto &resource : shaderResources.uniform_buffers)
-    {
-        RHIProgramParameter::UniformBuffer ub;
-        ub.name = glsl.get_name(resource.id);
-        spirv_cross::SPIRType type = glsl.get_type(resource.base_type_id);
-        ub.size = glsl.get_declared_struct_size(type);
-        ub.set = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
-        ub.binding = glsl.get_decoration(resource.id, spv::DecorationBinding);
-        rhiProgram->mUniformBufferInfos.push_back(ub);
-    }
-
-    for (auto &resource : shaderResources.sampled_images)
-    {
-        RHIProgramParameter::SampleImage sampleImage;
-        spirv_cross::SPIRType type = glsl.get_type(resource.base_type_id);
-        if(type.image.dim == spv::Dim1D)
-        {
-            sampleImage.type = RHIProgramParameter::SampleImageType::SAMPLER1D;
-        }
-        else if(type.image.dim == spv::Dim2D)
-        {
-            sampleImage.type = RHIProgramParameter::SampleImageType::SAMPLER2D;
-        }
-        else if(type.image.dim == spv::Dim3D)
-        {
-            sampleImage.type = RHIProgramParameter::SampleImageType::SAMPLER3D;
-        }
-        else if(type.image.dim == spv::DimCube)
-        {
-            sampleImage.type = RHIProgramParameter::SampleImageType::SAMPLERCUBE;
-        }
-
-        sampleImage.name = glsl.get_name(resource.id);
-        sampleImage.set = glsl.get_decoration(resource.id, spv::DecorationDescriptorSet);
-        sampleImage.binding = glsl.get_decoration(resource.id, spv::DecorationBinding);
-        rhiProgram->mSampleImageInfos.push_back(sampleImage);
-    }
-
+	glslang::GlslangToSpv(*program.getIntermediate(glslType), res.bytes, &options);
+	return res;
 }

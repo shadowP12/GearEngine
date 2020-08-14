@@ -1,13 +1,16 @@
 #include "RHICommandBuffer.h"
 #include "RHIDevice.h"
 #include "RHIQueue.h"
+#include "RHIBuffer.h"
+#include "RHITexture.h"
 #include "RHIRenderPass.h"
 #include "RHIFramebuffer.h"
-#include "RHIPipelineState.h"
+#include "RHIPipeline.h"
 #include "RHISynchronization.h"
-#include "Managers/RHIPipelineStateManager.h"
+#include "RHIDescriptorSet.h"
 #include "Utility/Log.h"
 #include <array>
+
 RHICommandBufferPool::RHICommandBufferPool(RHIDevice* device, RHIQueue* queue, bool reset)
 	:mDevice(device), mQueue(queue)
 {
@@ -54,11 +57,6 @@ RHICommandBuffer::RHICommandBuffer(RHIDevice* device, RHIQueue* queue, RHIComman
 	:mDevice(device), mQueue(queue), mCommandPool(pool)
 {
 	mCommandBuffer = nullptr;
-	mFramebuffer = nullptr;
-	mPipelineState = nullptr;
-	mIndexBuffer = nullptr;
-	mViewport = glm::vec4(0.0f);
-	mScissor = glm::vec4(0.0f);
 	mState = State::Ready;
 
     VkCommandBufferAllocateInfo allocateInfo = {};
@@ -72,7 +70,7 @@ RHICommandBuffer::RHICommandBuffer(RHIDevice* device, RHIQueue* queue, RHIComman
         throw std::runtime_error("failed to allocate command buffer!");
     }
 
-	mFence = mDevice->createFence();
+	mFence = new RHIFence(mDevice);
 }
 
 RHICommandBuffer::~RHICommandBuffer()
@@ -102,236 +100,206 @@ void RHICommandBuffer::end()
 	mState = State::RecordingDone;
 }
 
-void RHICommandBuffer::beginRenderPass(glm::vec4 renderArea)
+void RHICommandBuffer::bindFramebuffer(RHIFramebuffer* fb)
 {
 	VkRenderPassBeginInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = mFramebuffer->getRenderPass()->getHandle();
-	renderPassInfo.framebuffer = mFramebuffer->getHandle();
-	renderPassInfo.renderArea.offset.x = (int32_t)renderArea.x;
-	renderPassInfo.renderArea.offset.y = (int32_t)renderArea.y;
-	VkExtent2D extent;
-	extent.width = (int32_t)renderArea.z;
-	extent.height = (int32_t)renderArea.w;
-	renderPassInfo.renderArea.extent = extent;
+	renderPassInfo.renderPass = fb->getRenderPass()->getHandle();
+	renderPassInfo.framebuffer = fb->getHandle();
+	renderPassInfo.renderArea.offset.x = 0;
+	renderPassInfo.renderArea.offset.y = 0;
+	renderPassInfo.renderArea.extent.width = fb->getWidth();
+    renderPassInfo.renderArea.extent.height = fb->getHeight();
 
-	std::array<VkClearValue, 1> clearValues = {};
-	clearValues[0].color = { 1.0f, 1.0f, 0.0, 0.0f };
-	//clearValues[1].depthStencil = { 1.0f, 0 };
-
+	std::array<VkClearValue, 2> clearValues = {};
+	clearValues[0].color = { 1.0f, 1.0f, 1.0, 0.0f };
+	clearValues[1].depthStencil = { 1.0f, 0 };
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	renderPassInfo.pClearValues = clearValues.data();
 
 	vkCmdBeginRenderPass(mCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void RHICommandBuffer::endRenderPass()
+void RHICommandBuffer::unbindFramebuffer()
 {
 	vkCmdEndRenderPass(mCommandBuffer);
 }
 
-void RHICommandBuffer::setRenderTarget(RHIFramebuffer* framebuffer)
+void RHICommandBuffer::setViewport(int x, int y, int w, int h)
 {
-	// todo: 添加判断是否处于renderpass中
-	mFramebuffer = framebuffer;
+    VkViewport viewport = {};
+    viewport.x = x;
+    viewport.y = y;
+    viewport.width = w;
+    viewport.height = h;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
 }
 
-void RHICommandBuffer::bindVertexProgram(RHIProgram* program)
+void RHICommandBuffer::setScissor(int x, int y, int w, int h)
 {
-    mVertexProgram = program;
+    VkRect2D scissor = {};
+    scissor.offset.x = x;
+    scissor.offset.y = y;
+    scissor.extent.width = w;
+    scissor.extent.height = h;
+    vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
 }
 
-void RHICommandBuffer::bindFragmentProgram(RHIProgram* program)
+void RHICommandBuffer::bindVertexBuffer(RHIBuffer *vertexBuffer, uint32_t offset)
 {
-    mFragmentProgram = program;
+    VkBuffer vertexBuffers[] = { vertexBuffer->getHandle() };
+    VkDeviceSize offsets[] = { offset };
+    vkCmdBindVertexBuffers(mCommandBuffer, 0, 1, vertexBuffers, offsets);
 }
 
-void RHICommandBuffer::bindPipelineState()
+void RHICommandBuffer::bindIndexBuffer(RHIBuffer *indexBuffer, uint32_t offset, VkIndexType type)
 {
-	mPipelineState = mDevice->getPipelineStateManager()->getPipelineState(mFramebuffer->getRenderPass(),
-	        mVertexProgram, mFragmentProgram);;
+    vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->getHandle(), offset, type);
 }
 
-void RHICommandBuffer::setViewport(glm::vec4 viewport)
+void RHICommandBuffer::bindGraphicsPipeline(RHIGraphicsPipeline *pipeline, RHIDescriptorSet** descriptorSets, uint32_t count)
 {
-	mViewport = viewport;
+    std::vector<VkDescriptorSet> sets;
+    for (int i = 0; i < count; ++i)
+    {
+        sets.push_back(descriptorSets[i]->getHandle());
+    }
+    if(sets.size() > 0)
+        vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getLayout(), 0, sets.size(), sets.data(), 0, nullptr);
+    vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getHandle());
 }
 
-void RHICommandBuffer::setScissor(glm::vec4 scissor)
+void RHICommandBuffer::bindComputePipeline(RHIComputePipeline *pipeline, RHIDescriptorSet** descriptorSets, uint32_t count)
 {
-	mScissor = scissor;
-}
-
-void RHICommandBuffer::bindVertexBuffer(RHIVertexBuffer* vertexBuffer)
-{
-	mVertexBuffer = vertexBuffer;
-}
-
-void RHICommandBuffer::bindIndexBuffer(RHIIndexBuffer* indexBuffer)
-{
-	mIndexBuffer = indexBuffer;
-}
-
-void RHICommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
-{
-	// todo: 还需添加更多状态判断,如是否处于renderpass中或是否处于读写状态等
-	if (mFramebuffer == nullptr) 
-	{
-		LOGE("invalid framebuffer");
-		return;
-	}
-	if (mPipelineState == nullptr)
-	{
-		LOGE("invalid GraphicsPipelineState");
-		return;
-	}
-		
-	if (mVertexBuffer == nullptr)
-	{
-		LOGE("invalid VertexBuffer");
-		return;
-	}
-		
-	if (mIndexBuffer == nullptr)
-	{
-		LOGE("invalid IndexBuffer");
-		return;
-	}
-	VkViewport viewport = {};
-	viewport.x = mViewport.x;
-	viewport.y = mViewport.y;
-	viewport.width = mViewport.z;
-	viewport.height = mViewport.w;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
-
-	VkRect2D scissor = {};
-	scissor.offset.x = (int32_t)mScissor.x;
-	scissor.offset.y = (int32_t)mScissor.y;
-	VkExtent2D extent;
-	extent.width = (int32_t)mScissor.z;
-	extent.height = (int32_t)mScissor.w;
-	scissor.extent = extent;
-	vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
-
-	vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineState->getHandle());
-
-	VkBuffer vertexBuffers[] = { mVertexBuffer->getBuffer() };
-	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(mCommandBuffer, 0, 1, vertexBuffers, offsets);
-
-	vkCmdBindIndexBuffer(mCommandBuffer, mIndexBuffer->getBuffer(), 0, VK_INDEX_TYPE_UINT32);
-//	std::vector<VkDescriptorSet> sets = mPipelineState->getDescSets();
-//	if (sets.size() > 0)
-//		vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineState->getLayout(), 0, sets.size(), sets.data(), 0, nullptr);
-
-	vkCmdDrawIndexed(mCommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+    std::vector<VkDescriptorSet> sets;
+    for (int i = 0; i < count; ++i)
+    {
+        sets.push_back(descriptorSets[i]->getHandle());
+    }
+    if(sets.size() > 0)
+        vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->getLayout(), 0, sets.size(), sets.data(), 0, nullptr);
+    vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->getHandle());
 }
 
 void RHICommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
-	// todo: 还需添加更多状态判断,如是否处于renderpass中或是否处于读写状态等
-	if (mFramebuffer == nullptr)
-	{
-		LOGE("invalid framebuffer");
-		return;
-	}
-	if (mPipelineState == nullptr)
-	{
-		LOGE("invalid GraphicsPipelineState");
-		return;
-	}
-
-	if (mVertexBuffer == nullptr)
-	{
-		LOGE("invalid VertexBuffer");
-		return;
-	}
-
-	if (mIndexBuffer == nullptr)
-	{
-		LOGE("invalid IndexBuffer");
-		return;
-	}
-	VkViewport viewport = {};
-	viewport.x = mViewport.x;
-	viewport.y = mViewport.y;
-	viewport.width = mViewport.z;
-	viewport.height = mViewport.w;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
-
-	VkRect2D scissor = {};
-	scissor.offset.x = (int32_t)mScissor.x;
-	scissor.offset.y = (int32_t)mScissor.y;
-	VkExtent2D extent;
-	extent.width = (int32_t)mScissor.z;
-	extent.height = (int32_t)mScissor.w;
-	scissor.extent = extent;
-	vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
-
-	vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineState->getHandle());
-
-	VkBuffer vertexBuffers[] = { mVertexBuffer->getBuffer() };
-	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(mCommandBuffer, 0, 1, vertexBuffers, offsets);
-//	std::vector<VkDescriptorSet> sets = mPipelineState->getDescSets();
-//	if(sets.size() > 0)
-//		vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipelineState->getLayout(), 0, sets.size(), sets.data(), 0, nullptr);
-	vkCmdDraw(mCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+    vkCmdDraw(mCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
-void RHICommandBuffer::addWaitSemaphore(RHISemaphore* semaphore)
+void RHICommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
 {
-    mWaitSemaphores.push_back(semaphore);
+	vkCmdDrawIndexed(mCommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
-void RHICommandBuffer::addSignalSemaphore(RHISemaphore* semaphore)
+void RHICommandBuffer::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
-    mSignalSemaphores.push_back(semaphore);
+    vkCmdDispatch(mCommandBuffer, groupCountX, groupCountY, groupCountZ);
 }
 
-void RHICommandBuffer::submit()
+void RHICommandBuffer::setResourceBarrier(uint32_t inBufferBarrierCount, RHIBufferBarrier* inBufferBarriers,
+                                          uint32_t inTextureBarrierCount, RHITextureBarrier* inTextureBarriers)
 {
-    std::vector<VkPipelineStageFlags> waitStages;
-    std::vector<VkSemaphore> waitSemaphores;
-    std::vector<VkSemaphore> signalSemaphores;
+    std::vector<VkImageMemoryBarrier> imageBarriers;
+    std::vector<VkBufferMemoryBarrier> bufferBarriers;
 
-    for(int i = 0; i < mWaitSemaphores.size(); i++)
+    VkAccessFlags srcAccessFlags = 0;
+    VkAccessFlags dstAccessFlags = 0;
+
+    for (uint32_t i = 0; i < inBufferBarrierCount; ++i)
     {
-        waitSemaphores.push_back(mWaitSemaphores[i]->getHandle());
-        waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+        RHIBufferBarrier* trans = &inBufferBarriers[i];
+        RHIBuffer* buffer = trans->buffer;
+        if (!(trans->newState & buffer->getResourceState()))
+        {
+            VkBufferMemoryBarrier bufferBarrier = {};
+            bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            bufferBarrier.pNext = NULL;
+            bufferBarrier.srcAccessMask = toVkAccessFlags(buffer->getResourceState());
+            bufferBarrier.dstAccessMask = toVkAccessFlags(trans->newState);
+            bufferBarrier.buffer = buffer->getHandle();
+            bufferBarrier.size = VK_WHOLE_SIZE;
+            bufferBarrier.offset = 0;
+            bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+            srcAccessFlags |= bufferBarrier.srcAccessMask;
+            dstAccessFlags |= bufferBarrier.dstAccessMask;
+
+            buffer->setResourceState(trans->newState);
+            bufferBarriers.push_back(bufferBarrier);
+        }
     }
 
-    for(int i = 0; i < mSignalSemaphores.size(); i++)
+    for (uint32_t i = 0; i < inTextureBarrierCount; ++i)
     {
-        signalSemaphores.push_back(mSignalSemaphores[i]->getHandle());
+        RHITextureBarrier* trans = &inTextureBarriers[i];
+        RHITexture* texture = trans->texture;
+
+        if (!(trans->newState & texture->getResourceState()))
+        {
+            VkImageMemoryBarrier imageBarrier = {};
+            imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            imageBarrier.pNext = NULL;
+            imageBarrier.srcAccessMask = toVkAccessFlags(texture->getResourceState());
+            imageBarrier.dstAccessMask = toVkAccessFlags(trans->newState);
+            imageBarrier.oldLayout = toVkImageLayout(texture->getResourceState());
+            imageBarrier.newLayout = toVkImageLayout(trans->newState);
+            imageBarrier.image = texture->getHandle();
+            imageBarrier.subresourceRange.aspectMask = texture->getAspectMask();
+            imageBarrier.subresourceRange.baseMipLevel = 0;
+            imageBarrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+            imageBarrier.subresourceRange.baseArrayLayer = 0;
+            imageBarrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+            imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            srcAccessFlags |= imageBarrier.srcAccessMask;
+            dstAccessFlags |= imageBarrier.dstAccessMask;
+
+            texture->setResourceState(trans->newState);
+            imageBarriers.push_back(imageBarrier);
+        }
     }
 
-    VkSubmitInfo submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = waitSemaphores.size();
-    submitInfo.pWaitSemaphores = waitSemaphores.data();
+    VkPipelineStageFlags srcStageMask = toPipelineStageFlags(srcAccessFlags, mQueue->getType());
+    VkPipelineStageFlags dstStageMask = toPipelineStageFlags(dstAccessFlags, mQueue->getType());
 
-    submitInfo.pWaitDstStageMask = waitStages.data();
-    submitInfo.signalSemaphoreCount = signalSemaphores.size();
-    submitInfo.pSignalSemaphores = signalSemaphores.data();
-    submitInfo.commandBufferCount = 1;
-    VkCommandBuffer cmd[] = { mCommandBuffer };
-    submitInfo.pCommandBuffers = cmd;
-
-    mFence->reset();
-
-    if (vkQueueSubmit(mDevice->getGraphicsQueue()->getHandle(), 1, &submitInfo, mFence->getHandle()) != VK_SUCCESS)
+    if (imageBarriers.size() || bufferBarriers.size())
     {
-        throw std::runtime_error("failed to submit present command buffer!");
+        vkCmdPipelineBarrier(mCommandBuffer, srcStageMask, dstStageMask, 0, 0, NULL,
+                             bufferBarriers.size(), bufferBarriers.data(),
+                             imageBarriers.size(), imageBarriers.data());
     }
+}
 
-    mWaitSemaphores.clear();
-    mSignalSemaphores.clear();
-    mState = State::Submitted;
+void RHICommandBuffer::updateBuffer(RHIBuffer *dstBuffer, uint32_t dstOffset, RHIBuffer *srcBuffer, uint32_t srcOffset, uint32_t size)
+{
+    VkBufferCopy copy = {};
+    copy.srcOffset = srcOffset;
+    copy.dstOffset = dstOffset;
+    copy.size = size;
+    vkCmdCopyBuffer(mCommandBuffer, srcBuffer->getHandle(), dstBuffer->getHandle(), 1, &copy);
+}
+
+void RHICommandBuffer::updateSubresource(RHITexture *dstTexture, RHIBuffer *srcBuffer, const SubresourceDataInfo &info)
+{
+    VkBufferImageCopy copy = {};
+    copy.bufferOffset = 0;
+    copy.bufferRowLength = 0;
+    copy.bufferImageHeight = 0;
+    copy.imageSubresource.aspectMask = dstTexture->getAspectMask();
+    copy.imageSubresource.mipLevel = info.mipLevel;
+    copy.imageSubresource.baseArrayLayer = info.arrayLayer;
+    copy.imageSubresource.layerCount = 1;
+    copy.imageOffset.x = 0;
+    copy.imageOffset.y = 0;
+    copy.imageOffset.z = 0;
+    copy.imageExtent.width = dstTexture->getWidth();
+    copy.imageExtent.height = dstTexture->getHeight();
+    copy.imageExtent.depth = dstTexture->getDepth();
+
+    vkCmdCopyBufferToImage(mCommandBuffer, srcBuffer->getHandle(), dstTexture->getHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
 }
 
 void RHICommandBuffer::refreshFenceStatus()

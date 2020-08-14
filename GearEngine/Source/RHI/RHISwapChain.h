@@ -2,10 +2,7 @@
 #define RHI_SWAP_CHAIN_H
 #include "RHIDefine.h"
 #include <vector>
-/**
- 交换链不提供重构功能,当窗口尺寸发生改变时应重新创建一个交换链
- 交换链的帧缓存现不支持深度缓存
-*/
+
 struct SwapChainSupportDetails
 {
 	VkSurfaceCapabilitiesKHR capabilities;
@@ -16,7 +13,9 @@ struct SwapChainSupportDetails
 class RHIDevice;
 class RHIRenderPass;
 class RHIFramebuffer;
-class RHITextureView;
+class RHITexture;
+class RHISemaphore;
+class RHIFence;
 
 struct RHISwapChainInfo {
     void* windowHandle;
@@ -27,10 +26,18 @@ struct RHISwapChainInfo {
 class RHISwapChain
 {
 public:
-	RHISwapChain(RHIDevice* device, VkSurfaceKHR surface, uint32_t width, uint32_t height);
+	RHISwapChain(RHIDevice* device, const RHISwapChainInfo& info);
 	~RHISwapChain();
 	VkSwapchainKHR getHandle() { return mSwapChain; }
+	VkImage getImage(uint32_t idx) { return mSwapChainImages[idx]; }
+    VkFormat getImageFormat() { return mSwapChainImageFormat; }
+	RHIRenderPass* getRenderPass() { return mRenderPass; }
 	RHIFramebuffer* getFramebuffer(uint32_t index);
+	RHITexture* getColorTexture(uint32_t index);
+	RHITexture* getDepthStencilTexture(uint32_t index);
+    void acquireNextImage(RHISemaphore* signalSemaphore, RHIFence* inFence, uint32_t& imageIndex);
+	uint32_t getWidth() { return mWidth; }
+	uint32_t getHeight() { return mHeight; }
 private:
 	SwapChainSupportDetails querySwapChainSupport();
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -40,7 +47,8 @@ private:
 	RHIDevice* mDevice;
 	RHIRenderPass* mRenderPass;
 	std::vector<RHIFramebuffer*> mFramebuffers;
-	std::vector<RHITextureView*> mTextureViews;
+	std::vector<RHITexture*> mColorTextures;
+    std::vector<RHITexture*> mDepthStencilTextures;
 	VkSurfaceKHR mSurface;
 	VkSwapchainKHR mSwapChain;
 	std::vector<VkImage> mSwapChainImages;

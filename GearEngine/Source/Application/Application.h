@@ -5,11 +5,12 @@
 class Application
 {
 public:
-	Application();
+	Application(uint32_t width, uint32_t height);
 	virtual ~Application();
 	virtual void prepare();
-	virtual void runMainLoop();
+    virtual void run();
 	virtual void finish();
+    virtual void runMainLoop();
 protected:
 	Window* mWindow;
 };

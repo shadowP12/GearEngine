@@ -1,18 +1,21 @@
 #include "RHIFramebuffer.h"
 #include "RHIDevice.h"
 #include "RHIRenderPass.h"
-#include "RHITextureView.h"
+#include "RHITexture.h"
+
 RHIFramebuffer::RHIFramebuffer(RHIDevice* device, const RHIFramebufferInfo& info)
 	:mDevice(device), mRenderpass(info.renderpass)
 {
+    mWidth = info.width;
+    mHeight = info.height;
 	std::vector<VkImageView> attachmentViews;
 	for (int i = 0; i < (int)info.numColorAttachments; i++)
 	{
-		attachmentViews.push_back(info.color[i]->getHandle());
+		attachmentViews.push_back(info.color[i]->getView());
 	}
 
 	if(info.hasDepth)
-		attachmentViews.push_back(info.depth->getHandle());
+		attachmentViews.push_back(info.depth->getView());
 
 	VkFramebufferCreateInfo framebufferInfo;
 	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -25,10 +28,7 @@ RHIFramebuffer::RHIFramebuffer(RHIDevice* device, const RHIFramebufferInfo& info
 	framebufferInfo.layers = info.layers;
 	framebufferInfo.renderPass = mRenderpass->getHandle();
 
-	if (vkCreateFramebuffer(mDevice->getDevice(), &framebufferInfo, nullptr, &mFramebuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create framebuffer!");
-	}
+	CHECK_VKRESULT(vkCreateFramebuffer(mDevice->getDevice(), &framebufferInfo, nullptr, &mFramebuffer));
 }
 
 RHIFramebuffer::~RHIFramebuffer()

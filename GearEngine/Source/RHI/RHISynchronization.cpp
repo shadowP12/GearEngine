@@ -1,5 +1,7 @@
 #include "RHISynchronization.h"
 #include "RHIDevice.h"
+#include <vector>
+
 RHIFence::RHIFence(RHIDevice* device)
     :mDevice(device)
 {
@@ -7,10 +9,7 @@ RHIFence::RHIFence(RHIDevice* device)
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateFence(mDevice->getDevice(), &fenceInfo, nullptr, &mFence) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create fence!");
-    }
+    CHECK_VKRESULT(vkCreateFence(mDevice->getDevice(), &fenceInfo, nullptr, &mFence));
 }
 
 RHIFence::~RHIFence()
@@ -38,10 +37,7 @@ RHISemaphore::RHISemaphore(RHIDevice* device)
 {
     VkSemaphoreCreateInfo semaphoreInfo = {};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    if (vkCreateSemaphore(mDevice->getDevice(), &semaphoreInfo, nullptr, &mSemaphore) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to create semaphores!");
-    }
+    CHECK_VKRESULT(vkCreateSemaphore(mDevice->getDevice(), &semaphoreInfo, nullptr, &mSemaphore));
 }
 
 RHISemaphore::~RHISemaphore()

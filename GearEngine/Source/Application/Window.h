@@ -7,8 +7,8 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <vector>
+#include <functional>
 #include "Input/Input.h"
-#include "RHI/RHISwapChain.h"
 
 static void resizeCallback(GLFWwindow *window, int width, int height);
 static void cursorPosCallback(GLFWwindow * window, double xPos, double yPos);
@@ -16,31 +16,23 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 static void mouseButtonCallback(GLFWwindow * window, int button, int action, int mods);
 static void mouseScrollCallback(GLFWwindow * window, double xOffset, double yOffset);
 
-class RHICommandBuffer;
-class RHIFramebuffer;
-class RHISemaphore;
 class Window
 {
 public:
 	Window(int width = 800, int height = 600);
 	~Window();
-	GLFWwindow* getWindowPtr();
+	void* getWindowPtr();
 	int getWidth();
 	int getHeight();
-	void reset(uint32_t width, uint32_t height);
-	void beginFrame();
-	void endFrame();
-	RHIFramebuffer* getFramebuffer();
+	void resize(uint32_t width, uint32_t height);
+	bool shouldClose();
+	void setResizeFunc(std::function<void()> func);
+	void update();
 private:
 	int mWidth;
 	int mHeight;
 	GLFWwindow* mWindow;
-	VkSurfaceKHR mSurface;
-	RHISwapChain* mSwapChain;
-	RHICommandBuffer* mPresentCmdBuffer;
-    RHISemaphore* mImageAvailableSemaphore;
-    RHISemaphore* mRenderFinishedSemaphore;
-	uint32_t mFrameIndex;
+    std::function<void()> mResizeFunc;
 };
 
 #endif

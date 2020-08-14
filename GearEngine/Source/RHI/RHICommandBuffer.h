@@ -13,15 +13,18 @@ enum class CommandBufferType
 class RHIDevice;
 class RHIQueue;
 class RHICommandBuffer;
-class RHIVertexBuffer;
-class RHIIndexBuffer;
-class RHITransferBuffer;
-class RHIPipelineState;
+class RHIBuffer;
+class RHITexture;
+class RHIGraphicsPipeline;
+class RHIComputePipeline;
 class RHIProgram;
 class RHIRenderPass;
 class RHIFramebuffer;
 class RHIFence;
 class RHISemaphore;
+class RHIDescriptorSet;
+class RHIBufferBarrier;
+class RHITextureBarrier;
 
 class RHICommandBufferPool
 {
@@ -38,6 +41,12 @@ private:
 	VkCommandPool mPool;
 };
 
+struct SubresourceDataInfo
+{
+    uint32_t mipLevel;
+    uint32_t arrayLayer;
+};
+
 class RHICommandBuffer
 {
 public:
@@ -46,22 +55,20 @@ public:
 	VkCommandBuffer getHandle() { return mCommandBuffer; }
 	void begin();
 	void end();
-	void beginRenderPass(glm::vec4 renderArea);
-	void endRenderPass();
-	void bindVertexBuffer(RHIVertexBuffer* vertexBuffer);
-	void bindIndexBuffer(RHIIndexBuffer* indexBuffer);
-	void bindVertexProgram(RHIProgram* program);
-    void bindFragmentProgram(RHIProgram* program);
-	void bindPipelineState();
-	void setRenderTarget(RHIFramebuffer* framebuffer);
-	void setViewport(glm::vec4 viewport);
-	void setScissor(glm::vec4 scissor);
+    void bindFramebuffer(RHIFramebuffer* fb);
+    void unbindFramebuffer();
+	void setViewport(int x, int y, int w, int h);
+    void setScissor(int x, int y, int w, int h);
+	void bindVertexBuffer(RHIBuffer* vertexBuffer, uint32_t offset);
+	void bindIndexBuffer(RHIBuffer* indexBuffer, uint32_t offset, VkIndexType type);
+    void bindGraphicsPipeline(RHIGraphicsPipeline* pipeline, RHIDescriptorSet** descriptorSets, uint32_t count);
+    void bindComputePipeline(RHIComputePipeline* pipeline, RHIDescriptorSet** descriptorSets, uint32_t count);
 	void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance);
 	void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
-	void addWaitSemaphore(RHISemaphore* semaphore);
-	void addSignalSemaphore(RHISemaphore* semaphore);
-    void submit();
-	// ÃüÁî×´Ì¬
+    void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+    void setResourceBarrier(uint32_t bufferBarrierCount, RHIBufferBarrier* bufferBarriers, uint32_t textureBarrierCount, RHITextureBarrier* textureBarriers);
+    void updateBuffer(RHIBuffer* dstBuffer, uint32_t dstOffset, RHIBuffer* srcBuffer, uint32_t srcOffset, uint32_t size);
+    void updateSubresource(RHITexture* dstTexture, RHIBuffer* srcBuffer, const SubresourceDataInfo& info);
 	enum class State
 	{
 		Ready,
@@ -73,21 +80,12 @@ public:
 private:
 	friend class RHIDevice;
 	friend class RHICommandBufferPool;
+	friend class RHIQueue;
 	RHIDevice* mDevice = nullptr;
 	RHIQueue* mQueue = nullptr;
 	RHICommandBufferPool* mCommandPool = nullptr;
 	RHIFence* mFence = nullptr;
-	RHIFramebuffer* mFramebuffer = nullptr;
-	RHIPipelineState* mPipelineState = nullptr;
-	RHIVertexBuffer* mVertexBuffer = nullptr;
-	RHIIndexBuffer* mIndexBuffer = nullptr;
-	RHIProgram* mVertexProgram = nullptr;
-	RHIProgram* mFragmentProgram = nullptr;
-	glm::vec4 mViewport;
-	glm::vec4 mScissor;
 	VkCommandBuffer mCommandBuffer;
-	std::vector<RHISemaphore*> mWaitSemaphores;
-    std::vector<RHISemaphore*> mSignalSemaphores;
 	State mState;
 };
 
