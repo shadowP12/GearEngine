@@ -107,14 +107,14 @@ public:
         vertexLayout.attribs[2].rate = VERTEX_ATTRIB_RATE_VERTEX;
         vertexLayout.attribs[2].semantic = SEMANTIC_TEXCOORD0;
 
-		RHIGraphicsPipelineInfo pipelineInfo;
-		pipelineInfo.renderPass = mSwapChain->getRenderPass();
-		pipelineInfo.renderTargetCount = 1;
-		pipelineInfo.descriptorSetCount = 0;
-		pipelineInfo.descriptorSets = nullptr;
-		pipelineInfo.vertexProgram = mVertexProgram;
-		pipelineInfo.fragmentProgram = mFragmentProgram;
-		pipelineInfo.vertexLayout = vertexLayout;
+        RHIGraphicsPipelineInfo pipelineInfo;
+        pipelineInfo.renderPass = mSwapChain->getRenderPass();
+        pipelineInfo.renderTargetCount = 1;
+        pipelineInfo.descriptorSetCount = 0;
+        pipelineInfo.descriptorSets = nullptr;
+        pipelineInfo.vertexProgram = mVertexProgram;
+        pipelineInfo.fragmentProgram = mFragmentProgram;
+        pipelineInfo.vertexLayout = vertexLayout;
 
 		mPipeline = new RHIGraphicsPipeline(mDevice, pipelineInfo);
 
