@@ -7,8 +7,8 @@ class RHISwapChain;
 
 struct RHISamplerInfo
 {
-    VkFilter magFilter;
-    VkFilter minFilter;
+    VkFilter magFilter = VK_FILTER_LINEAR;
+    VkFilter minFilter = VK_FILTER_LINEAR;
     VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -31,10 +31,10 @@ struct RHITextureInfo
     uint32_t width;
     uint32_t height;
     uint32_t depth;
-    uint32_t mipLevels;
-    uint32_t arrayLayers;
-	VkFormat format;
-	VkSampleCountFlagBits samples;
+    uint32_t mipLevels = 1;
+    uint32_t arrayLayers = 1;
+	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+	VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
     //ResourceState initialState;
     DescriptorType descriptors;
     bool colorAtt = false;

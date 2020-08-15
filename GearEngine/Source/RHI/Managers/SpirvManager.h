@@ -14,9 +14,9 @@ struct SpirvCompileInfo
 {
     std::string source;
     std::string entryPoint;
+    std::string includeDir;
     SpirvStageType stageType = STAGE_VERTEX;
     //TODO: program define
-    //TODO: program include
 };
 
 struct SpirvCompileResult

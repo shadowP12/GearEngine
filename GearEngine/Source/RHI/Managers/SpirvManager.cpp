@@ -5,6 +5,7 @@
 #include "spirv.hpp"
 #include "spirv_glsl.hpp"
 #include "spirv_reflect.hpp"
+#include "StandAlone/DirStackFileIncluder.h"
 #include "Utility/Log.h"
 
 const TBuiltInResource DefaultTBuiltInResource = {
@@ -162,9 +163,12 @@ SpirvCompileResult SpirvManager::compile(const SpirvCompileInfo& info)
 	shader.setEntryPoint("main");
 	//shader.setPreamble(preamble.c_str());
 
+    DirStackFileIncluder includer;
+    includer.pushExternalLocalDirectory(info.includeDir);
+
 	TBuiltInResource resources = DefaultTBuiltInResource;
 	EShMessages messages = (EShMessages)((int)EShMsgSpvRules | (int)EShMsgVulkanRules);
-	if (!shader.parse(&resources, 450, false, messages))
+	if (!shader.parse(&resources, 450, false, messages, includer))
 	{
 		LOGE("%s\n", shader.getInfoLog());
 		return res;

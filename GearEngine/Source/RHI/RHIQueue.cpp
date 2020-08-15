@@ -65,3 +65,8 @@ void RHIQueue::Present(const RHIQueuePresentInfo &info)
     CHECK_VKRESULT(vkQueuePresentKHR(mQueue, &presentInfo));
     CHECK_VKRESULT(vkQueueWaitIdle(mQueue));
 }
+
+void RHIQueue::waitIdle()
+{
+    vkQueueWaitIdle(mQueue);
+}

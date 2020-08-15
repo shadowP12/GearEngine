@@ -1,4 +1,4 @@
-﻿add_executable (Example main.cpp)
+﻿add_executable (Example 02_Texture/main.cpp)
 target_link_libraries(Example GearEngine)
 target_link_libraries(Example vulkan)
 target_link_libraries(Example glfw)

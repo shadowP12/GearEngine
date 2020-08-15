@@ -11,10 +11,10 @@ class RHISemaphore;
 struct RHIQueueSubmitInfo
 {
     RHICommandBuffer* cmdBuf;
-    uint32_t waitSemaphoreCount;
-    RHISemaphore** waitSemaphores;
-    uint32_t signalSemaphoreCount;
-    RHISemaphore** signalSemaphores;
+    uint32_t waitSemaphoreCount = 0;
+    RHISemaphore** waitSemaphores = nullptr;
+    uint32_t signalSemaphoreCount = 0;
+    RHISemaphore** signalSemaphores = nullptr;
 };
 
 struct RHIQueuePresentInfo
@@ -35,6 +35,7 @@ public:
 	QueueType getType() { return mType; }
 	void submit(const RHIQueueSubmitInfo& info);
 	void Present(const RHIQueuePresentInfo& info);
+	void waitIdle();
 private:
 	RHIDevice* mDevice;
 	VkQueue mQueue;

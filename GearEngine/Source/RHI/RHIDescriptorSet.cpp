@@ -25,7 +25,7 @@ RHIDescriptorSet::RHIDescriptorSet(RHIDevice* device, RHIDescriptorSetInfo info)
         }
         else if(info.bindings[i].type & DESCRIPTOR_TYPE_TEXTURE)
         {
-            setLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+            setLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         }
         else if(info.bindings[i].type & DESCRIPTOR_TYPE_RW_TEXTURE)
         {
@@ -100,7 +100,7 @@ void RHIDescriptorSet::updateTexture(uint32_t binding, RHITexture* texture, RHIS
 {
     // todo image layout
     VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfo.imageLayout = toVkImageLayout(texture->getResourceState());
     imageInfo.imageView = texture->getView();
     if(sampler)
         imageInfo.sampler = sampler->getHandle();
@@ -110,13 +110,13 @@ void RHIDescriptorSet::updateTexture(uint32_t binding, RHITexture* texture, RHIS
     VkWriteDescriptorSet descriptorWrite = {};
     descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptorWrite.dstSet = mSet;
-    descriptorWrite.dstBinding = 0;
+    descriptorWrite.dstBinding = binding;
     descriptorWrite.pImageInfo = &imageInfo;
     descriptorWrite.descriptorCount = 1;
 
     if(texture->getDescriptorType() & DESCRIPTOR_TYPE_TEXTURE)
     {
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     }
     else if(texture->getDescriptorType() & DESCRIPTOR_TYPE_RW_TEXTURE)
     {
