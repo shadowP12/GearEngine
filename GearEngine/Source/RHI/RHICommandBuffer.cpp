@@ -211,13 +211,29 @@ void RHICommandBuffer::setResourceBarrier(uint32_t inBufferBarrierCount, RHIBuff
     {
         RHIBufferBarrier* trans = &inBufferBarriers[i];
         RHIBuffer* buffer = trans->buffer;
+        bool flag = false;
+        VkBufferMemoryBarrier bufferBarrier = {};
         if (!(trans->newState & buffer->getResourceState()))
         {
-            VkBufferMemoryBarrier bufferBarrier = {};
+            flag = true;
             bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
             bufferBarrier.pNext = NULL;
             bufferBarrier.srcAccessMask = toVkAccessFlags(buffer->getResourceState());
             bufferBarrier.dstAccessMask = toVkAccessFlags(trans->newState);
+
+            buffer->setResourceState(trans->newState);
+        }
+        else if(trans->newState == RESOURCE_STATE_UNORDERED_ACCESS)
+        {
+            flag = true;
+            bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            bufferBarrier.pNext = NULL;
+            bufferBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            bufferBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
+        }
+
+        if(flag)
+        {
             bufferBarrier.buffer = buffer->getHandle();
             bufferBarrier.size = VK_WHOLE_SIZE;
             bufferBarrier.offset = 0;
@@ -226,8 +242,6 @@ void RHICommandBuffer::setResourceBarrier(uint32_t inBufferBarrierCount, RHIBuff
 
             srcAccessFlags |= bufferBarrier.srcAccessMask;
             dstAccessFlags |= bufferBarrier.dstAccessMask;
-
-            buffer->setResourceState(trans->newState);
             bufferBarriers.push_back(bufferBarrier);
         }
     }
@@ -236,16 +250,33 @@ void RHICommandBuffer::setResourceBarrier(uint32_t inBufferBarrierCount, RHIBuff
     {
         RHITextureBarrier* trans = &inTextureBarriers[i];
         RHITexture* texture = trans->texture;
-
+        bool flag = false;
+        VkImageMemoryBarrier imageBarrier = {};
         if (!(trans->newState & texture->getResourceState()))
         {
-            VkImageMemoryBarrier imageBarrier = {};
+            flag = true;
             imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             imageBarrier.pNext = NULL;
             imageBarrier.srcAccessMask = toVkAccessFlags(texture->getResourceState());
             imageBarrier.dstAccessMask = toVkAccessFlags(trans->newState);
             imageBarrier.oldLayout = toVkImageLayout(texture->getResourceState());
             imageBarrier.newLayout = toVkImageLayout(trans->newState);
+
+            texture->setResourceState(trans->newState);
+        }
+        else if(trans->newState == RESOURCE_STATE_UNORDERED_ACCESS)
+        {
+            flag = true;
+            imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            imageBarrier.pNext = NULL;
+            imageBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            imageBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
+            imageBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+            imageBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        }
+
+        if(flag)
+        {
             imageBarrier.image = texture->getHandle();
             imageBarrier.subresourceRange.aspectMask = texture->getAspectMask();
             imageBarrier.subresourceRange.baseMipLevel = 0;
@@ -256,12 +287,9 @@ void RHICommandBuffer::setResourceBarrier(uint32_t inBufferBarrierCount, RHIBuff
             imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             srcAccessFlags |= imageBarrier.srcAccessMask;
             dstAccessFlags |= imageBarrier.dstAccessMask;
-
-            texture->setResourceState(trans->newState);
             imageBarriers.push_back(imageBarrier);
         }
     }
-
     VkPipelineStageFlags srcStageMask = toPipelineStageFlags(srcAccessFlags, mQueue->getType());
     VkPipelineStageFlags dstStageMask = toPipelineStageFlags(dstAccessFlags, mQueue->getType());
 
