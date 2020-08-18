@@ -17,6 +17,7 @@ struct RHIGraphicsPipelineInfo
     BlendState blendState;
     DepthStencilState depthStencilState;
     RasterizerState rasterizerState;
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     RHIDescriptorSet** descriptorSets;
     uint32_t descriptorSetCount;
     uint32_t renderTargetCount;
