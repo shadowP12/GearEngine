@@ -69,7 +69,7 @@ RHIDescriptorSet::~RHIDescriptorSet()
     vkFreeDescriptorSets(mDevice->getDevice(), mDevice->getDescriptorPool(), 1, &mSet);
 }
 
-void RHIDescriptorSet::updateBuffer(uint32_t binding, RHIBuffer *buffer, uint32_t size, uint32_t offset)
+void RHIDescriptorSet::updateBuffer(uint32_t binding, DescriptorType type, RHIBuffer *buffer, uint32_t size, uint32_t offset)
 {
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = buffer->getHandle();
@@ -84,11 +84,11 @@ void RHIDescriptorSet::updateBuffer(uint32_t binding, RHIBuffer *buffer, uint32_
     descriptorWrite.descriptorCount = 1;
     descriptorWrite.pBufferInfo = &bufferInfo;
 
-    if(buffer->getDescriptorType() & DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+    if(type & DESCRIPTOR_TYPE_UNIFORM_BUFFER)
     {
         descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     }
-    else if(buffer->getDescriptorType() & VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+    else if(type & VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
     {
         descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     }
@@ -96,7 +96,7 @@ void RHIDescriptorSet::updateBuffer(uint32_t binding, RHIBuffer *buffer, uint32_
     vkUpdateDescriptorSets(mDevice->getDevice(), 1, &descriptorWrite, 0, nullptr);
 }
 
-void RHIDescriptorSet::updateTexture(uint32_t binding, RHITexture* texture, RHISampler* sampler)
+void RHIDescriptorSet::updateTexture(uint32_t binding, DescriptorType type, RHITexture* texture, RHISampler* sampler)
 {
     // todo image layout
     VkDescriptorImageInfo imageInfo{};
@@ -114,11 +114,11 @@ void RHIDescriptorSet::updateTexture(uint32_t binding, RHITexture* texture, RHIS
     descriptorWrite.pImageInfo = &imageInfo;
     descriptorWrite.descriptorCount = 1;
 
-    if(texture->getDescriptorType() & DESCRIPTOR_TYPE_TEXTURE)
+    if(type & DESCRIPTOR_TYPE_TEXTURE)
     {
         descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     }
-    else if(texture->getDescriptorType() & DESCRIPTOR_TYPE_RW_TEXTURE)
+    else if(type & DESCRIPTOR_TYPE_RW_TEXTURE)
     {
         descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     }

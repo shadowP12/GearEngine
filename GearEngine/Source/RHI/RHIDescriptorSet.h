@@ -30,8 +30,8 @@ public:
 	~RHIDescriptorSet();
     VkDescriptorSet getHandle() { return mSet; }
     VkDescriptorSetLayout getLayout() { return mLayout; }
-	void updateBuffer(uint32_t binding, RHIBuffer* buffer, uint32_t size, uint32_t offset = 0);
-    void updateTexture(uint32_t binding, RHITexture* texture, RHISampler* sampler = nullptr);
+	void updateBuffer(uint32_t binding, DescriptorType type, RHIBuffer* buffer, uint32_t size, uint32_t offset = 0);
+    void updateTexture(uint32_t binding, DescriptorType type, RHITexture* texture, RHISampler* sampler = nullptr);
 private:
 	RHIDevice* mDevice;
     RHIDescriptorSetInfo mInfo;

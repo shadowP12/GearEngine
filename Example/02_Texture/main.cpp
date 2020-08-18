@@ -157,8 +157,8 @@ public:
         descriptorSetInfo.bindings[1].type = DESCRIPTOR_TYPE_TEXTURE;
         descriptorSetInfo.bindings[1].stage = PROGRAM_FRAGMENT;
         mDescriptorSet = new RHIDescriptorSet(mDevice, descriptorSetInfo);
-        mDescriptorSet->updateBuffer(0, mUniformBuffer, sizeof(UniformBufferObject), 0);
-        mDescriptorSet->updateTexture(1, mDebugTexture, mSampler);
+        mDescriptorSet->updateBuffer(0, DESCRIPTOR_TYPE_UNIFORM_BUFFER, mUniformBuffer, sizeof(UniformBufferObject), 0);
+        mDescriptorSet->updateTexture(1, DESCRIPTOR_TYPE_TEXTURE, mDebugTexture, mSampler);
 
 		VertexLayout vertexLayout;
 		vertexLayout.attribCount = 2;
