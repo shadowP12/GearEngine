@@ -216,7 +216,7 @@ RHIComputePipeline::RHIComputePipeline(RHIDevice *device, const RHIComputePipeli
     computeShaderStageInfo.pName = "main";
 
     VkComputePipelineCreateInfo pipelineInfo = {};
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
     pipelineInfo.stage = computeShaderStageInfo;
     pipelineInfo.layout = mPipelineLayout;
 

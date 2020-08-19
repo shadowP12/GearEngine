@@ -88,7 +88,7 @@ void RHIDescriptorSet::updateBuffer(uint32_t binding, DescriptorType type, RHIBu
     {
         descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     }
-    else if(type & VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+    else if(type & DESCRIPTOR_TYPE_RW_BUFFER)
     {
         descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     }
