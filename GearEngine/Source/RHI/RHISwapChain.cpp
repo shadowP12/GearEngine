@@ -25,7 +25,6 @@ RHISwapChain::RHISwapChain(RHIDevice* device, const RHISwapChainInfo& info)
         printf("cannot find a graphics queue that also supports present operations.\n");
     }
 
-
 	VkExtent2D swapChainExtent;
 	swapChainExtent.width = mWidth;
 	swapChainExtent.height = mHeight;
@@ -113,8 +112,8 @@ RHISwapChain::RHISwapChain(RHIDevice* device, const RHISwapChainInfo& info)
 		RHIFramebufferInfo fbInfo;
 		fbInfo.color[0] = mColorTextures[i];
 		fbInfo.depth = nullptr;
-		fbInfo.width = 800;
-		fbInfo.height = 600;
+		fbInfo.width = mWidth;
+		fbInfo.height = mHeight;
 		fbInfo.renderpass = mRenderPass;
 		fbInfo.layers = 1;
 		fbInfo.numColorAttachments = 1;
