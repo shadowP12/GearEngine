@@ -1,11 +1,12 @@
 # GearEngine
-GearEngine is a simple RenderEngine for Vulkan  
-目前重构中且改动较大,改动范围主要在于:
-* 重新梳理vulkan api的封装
-* 调整渲染器架构
+GearEngine is a rendering framework
+  
+## Community
+* [discord](https://discord.com/channels/758680102715785256/758680102715785260)
 
 ## Screenshots
-![image](https://github.com/hipiPan/GearEngine/blob/master/Screenshots/N.PNG)
+![image](https://github.com/hipiPan/GearEngine/blob/master/Screenshots/1.PNG)
+
 ## Dependencies
  * [Vulkan](https://www.khronos.org/vulkan)
  * [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross)
