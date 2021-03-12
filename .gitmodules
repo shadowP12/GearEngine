@@ -1,3 +1,6 @@
-[submodule "ThirdParty/GearLibs"]
-	path = ThirdParty/GearLibs
-	url = https://github.com/hipiPan/GearLibs.git
+[submodule "External/Blast"]
+	path = External/Blast
+	url = https://github.com/hipiPan/Blast.git
+[submodule "External/glfw"]
+	path = External/glfw
+	url = https://github.com/glfw/glfw.git
