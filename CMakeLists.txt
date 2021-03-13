@@ -1,9 +1,5 @@
 ﻿cmake_minimum_required (VERSION 3.10)
-project ("GearEngine")
-
-add_subdirectory(ThirdParty)
-add_subdirectory (GearEngine)
-
-if(DEFINED EnableExample)
-    add_subdirectory(Example)
-endif()
+set(CMAKE_CXX_STANDARD 14)
+project ("Gear")
+add_subdirectory(Engine)
+add_subdirectory(Editor)
