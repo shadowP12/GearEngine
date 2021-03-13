@@ -8,3 +8,6 @@ file(GLOB_RECURSE UTILITY_SRC CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/Utilit
 target_sources(GearEngine PRIVATE ${UTILITY_INC} ${UTILITY_SRC})
 
 target_compile_definitions(GearEngine PRIVATE GEAR_EXPORTS)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../External/Blast Blast.out)
+target_link_libraries(GearEngine PRIVATE Blast)
