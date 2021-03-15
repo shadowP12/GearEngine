@@ -1,107 +1,98 @@
 #ifndef MODULE_H
 #define MODULE_H
+#include "Core/GearDefine.h"
 #include <iostream>
 
-template <class T>
-class Module {
-public:
-	static T& instance() 
-	{
-		if (!isStartedUp()) 
-		{
-			throw std::runtime_error("Trying to access a module but it hasn't been started up yet.");
-		}
+namespace gear {
+    template<class T>
+    class Module {
+    public:
+        static T& instance() {
+            if (!isStartedUp()) {
+                throw std::runtime_error("Trying to access a module but it hasn't been started up yet.");
+            }
 
-		if (isDestroyed()) 
-		{
-			throw std::runtime_error("Trying to access a destroyed module.");
-		}
+            if (isDestroyed()) {
+                throw std::runtime_error("Trying to access a destroyed module.");
+            }
 
-		return *_instance();
-	}
+            return *_instance();
+        }
 
-	static T* instancePtr() 
-	{
-		if (!isStartedUp()) 
-		{
-			throw std::runtime_error("Trying to access a module but it hasn't been started up yet.");
-		}
+        static T* instancePtr() {
+            if (!isStartedUp()) {
+                throw std::runtime_error("Trying to access a module but it hasn't been started up yet.");
+            }
 
-		if (isDestroyed()) 
-		{
-			throw std::runtime_error("Trying to access a destroyed module.");
-		}
+            if (isDestroyed()) {
+                throw std::runtime_error("Trying to access a destroyed module.");
+            }
 
-		return _instance();
-	}
+            return _instance();
+        }
 
-	template<class ...Args>
-	static void startUp(Args &&...args) 
-	{
-		if (isStartedUp()) throw std::runtime_error("Trying to start an already started module.");
+        template<class ...Args>
+        static void startUp(Args&& ...args) {
+            if (isStartedUp()) throw std::runtime_error("Trying to start an already started module.");
 
-		_instance() = new T(std::forward<Args>(args)...);
-		isStartedUp() = true;
+            _instance() = new T(std::forward<Args>(args)...);
+            isStartedUp() = true;
 
-		((Module*)_instance())->onStartUp();
-	}
+            ((Module*) _instance())->onStartUp();
+        }
 
-	static void shutDown() 
-	{
-		if (isDestroyed()) 
-		{
-			throw std::runtime_error("Trying to shut down an already shut down module.");
-		}
+        static void shutDown() {
+            if (isDestroyed()) {
+                throw std::runtime_error("Trying to shut down an already shut down module.");
+            }
 
-		if (!isStartedUp()) 
-		{
-			throw std::runtime_error("Trying to shut down a module which was never started.");
-		}
+            if (!isStartedUp()) {
+                throw std::runtime_error("Trying to shut down a module which was never started.");
+            }
 
-		((Module*)_instance())->onShutDown();
+            ((Module*) _instance())->onShutDown();
 
-		delete(_instance());
-		isDestroyed() = true;
-	}
+            delete (_instance());
+            isDestroyed() = true;
+        }
 
-	static bool isStarted() 
-	{
-		return isStartedUp() && !isDestroyed();
-	}
+        static bool isStarted() {
+            return isStartedUp() && !isDestroyed();
+        }
 
-protected:
-	Module() = default;
+    protected:
+        Module() = default;
 
-	virtual ~Module() = default;
+        virtual ~Module() = default;
 
-	Module(Module&&) = default;
-	Module(const Module&) = default;
-	Module& operator=(Module&&) = default;
-	Module& operator=(const Module&) = default;
+        Module(Module&&) = default;
+
+        Module(const Module&) = default;
+
+        Module& operator=(Module&&) = default;
+
+        Module& operator=(const Module&) = default;
 
 
-	virtual void onStartUp() {}
+        virtual void onStartUp() {}
 
-	virtual void onShutDown() {}
+        virtual void onShutDown() {}
 
-	static T*& _instance() 
-	{
-		static T* inst = nullptr;
-		return inst;
-	}
+        static T*& _instance() {
+            static T* inst = nullptr;
+            return inst;
+        }
 
 
-	static bool& isDestroyed() 
-	{
-		static bool inst = false;
-		return inst;
-	}
+        static bool& isDestroyed() {
+            static bool inst = false;
+            return inst;
+        }
 
-	static bool& isStartedUp() 
-	{
-		static bool inst = false;
-		return inst;
-	}
-};
-
+        static bool& isStartedUp() {
+            static bool inst = false;
+            return inst;
+        }
+    };
+}
 #endif
