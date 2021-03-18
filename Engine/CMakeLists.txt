@@ -2,6 +2,8 @@ add_library(GearEngine STATIC)
 
 target_include_directories(GearEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+target_sources(GearEngine PRIVATE GearEngine.h GearEngine.cpp)
+
 file(GLOB_RECURSE RENDERER_INC CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/Renderer/*.h)
 file(GLOB_RECURSE RENDERER_SRC CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/Renderer/*.cpp)
 target_sources(GearEngine PRIVATE ${RENDERER_INC} ${RENDERER_SRC})
@@ -14,5 +16,19 @@ target_compile_definitions(GearEngine PRIVATE GEAR_EXPORTS)
 target_compile_definitions(GearEngine PRIVATE CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON)
 target_compile_definitions(GearEngine PRIVATE BUILD_SHARED_LIBS=TRUE)
 
+# blast
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../External/Blast Blast.out)
 target_link_libraries(GearEngine PRIVATE Blast)
+
+# window's uuid
+target_link_libraries(GearEngine PUBLIC rpcrt4)
+
+# file system
+add_library(filesystem INTERFACE)
+target_include_directories(filesystem INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../External/filesystem)
+target_link_libraries(GearEngine PUBLIC filesystem)
+
+# glm
+add_library(glm INTERFACE)
+target_include_directories(filesystem INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../External/glm)
+target_link_libraries(GearEngine PUBLIC glm)

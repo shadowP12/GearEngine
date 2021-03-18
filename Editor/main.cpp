@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <Engine/Renderer/Renderer.h>
+#include <Engine/GearEngine.h>
 
 GLFWwindow* gWindowPtr = nullptr;
 
@@ -15,17 +16,14 @@ int main()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     gWindowPtr = glfwCreateWindow(800, 600, "GearEditor", nullptr, nullptr);
     glfwSetWindowUserPointer(gWindowPtr, nullptr);
-    gear::Renderer::startUp();
-    gear::Renderer::instance().initSurface(glfwGetWin32Window(gWindowPtr));
-    gear::Renderer::instance().setSurfaceSizeFunc(getSurfaceSize);
-    gear::Renderer::instance().resize(800, 600);
+    gear::gEngine.getRenderer()->initSurface(glfwGetWin32Window(gWindowPtr));
+    gear::gEngine.getRenderer()->setSurfaceSizeFunc(getSurfaceSize);
+    gear::gEngine.getRenderer()->resize(800, 600);
     while (!glfwWindowShouldClose(gWindowPtr)) {
-        gear::Renderer::instance().render();
+        gear::gEngine.getRenderer()->render();
         glfwPollEvents();
     }
     glfwDestroyWindow(gWindowPtr);
     glfwTerminate();
-
-    gear::Renderer::shutDown();
     return 0;
 }

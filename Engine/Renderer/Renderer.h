@@ -1,6 +1,5 @@
 #pragma once
 #include "Core/GearDefine.h"
-#include "Utility/Module.h"
 #include <functional>
 
 namespace Blast {
@@ -18,7 +17,7 @@ namespace Blast {
 }
 
 namespace gear {
-    class Renderer : public Module<Renderer> {
+    class Renderer {
     public:
         Renderer();
         ~Renderer();
@@ -27,6 +26,7 @@ namespace gear {
         void resize(uint32_t width, uint32_t height);
         void render();
     private:
+        friend class CopyEngine;
         std::function<void(int*, int*)> mGetSurfaceSizeFunc;
         Blast::ShaderCompiler* mShaderCompiler = nullptr;
         Blast::GfxContext* mContext = nullptr;
