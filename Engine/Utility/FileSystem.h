@@ -1,4 +1,9 @@
 #pragma once
 #include "Core/GearDefine.h"
 
-GEAR_EXPORT void test();
+#include <string>
+namespace gear {
+    std::string getCurrentPath();
+
+    std::string readFileData(const std::string& path);
+}

@@ -1,16 +1,21 @@
 #include "Renderer.h"
-#include <Gfx/GfxContext.h>
-#include <Gfx/GfxBuffer.h>
-#include <Gfx/GfxTexture.h>
-#include <Gfx/GfxSampler.h>
-#include <Gfx/GfxSwapchain.h>
-#include <Gfx/GfxCommandBuffer.h>
-#include <Gfx/GfxRenderPass.h>
-#include <Gfx/GfxShader.h>
-#include <Gfx/GfxPipeline.h>
-#include <Gfx/Vulkan/VulkanContext.h>
-#include <Utility/ShaderCompiler.h>
-#include <Utility/VulkanShaderCompiler.h>
+#include "CopyEngine.h"
+#include "RenderBuiltinResource.h"
+#include "RenderTarget.h"
+#include "Utility/FileSystem.h"
+
+#include <Blast/Gfx/GfxContext.h>
+#include <Blast/Gfx/GfxBuffer.h>
+#include <Blast/Gfx/GfxTexture.h>
+#include <Blast/Gfx/GfxSampler.h>
+#include <Blast/Gfx/GfxSwapchain.h>
+#include <Blast/Gfx/GfxCommandBuffer.h>
+#include <Blast/Gfx/GfxRenderTarget.h>
+#include <Blast/Gfx/GfxShader.h>
+#include <Blast/Gfx/GfxPipeline.h>
+#include <Blast/Gfx/Vulkan/VulkanContext.h>
+#include <Blast/Utility/ShaderCompiler.h>
+#include <Blast/Utility/VulkanShaderCompiler.h>
 
 namespace gear {
     Renderer::Renderer() {
@@ -21,15 +26,21 @@ namespace gear {
         cmdPoolDesc.queue = mQueue;
         cmdPoolDesc.transient = false;
         mCmdPool = mContext->createCommandBufferPool(cmdPoolDesc);
+        mCopyEngine = new CopyEngine(this);
+        mRenderBuiltinResource = new RenderBuiltinResource(this);
     }
 
     Renderer::~Renderer() {
         mQueue->waitIdle();
+        SAFE_DELETE(mCopyEngine);
         SAFE_DELETE_ARRAY(mCmds);
         SAFE_DELETE_ARRAY(mRenderCompleteFences);
         SAFE_DELETE_ARRAY(mImageAcquiredSemaphores);
         SAFE_DELETE_ARRAY(mRenderCompleteSemaphores);
-        SAFE_DELETE_ARRAY(mRenderPasses);
+        SAFE_DELETE_ARRAY(mFramebuffers);
+        SAFE_DELETE_ARRAY(mColors);
+        SAFE_DELETE_ARRAY(mDepthStencils);
+        SAFE_DELETE(mRenderPass)
         SAFE_DELETE(mCmdPool);
         SAFE_DELETE(mQueue);
         SAFE_DELETE(mSurface);
@@ -42,13 +53,31 @@ namespace gear {
         Blast::GfxSurfaceDesc surfaceDesc;
         surfaceDesc.originSurface = surface;
         mSurface = mContext->createSurface(surfaceDesc);
+
+        Blast::GfxRenderPassDesc renderPassDesc;
+        renderPassDesc.numColorAttachments = 1;
+        renderPassDesc.colors[0].format = mSurface->getFormat();
+        renderPassDesc.colors[0].loadOp = Blast::LOAD_ACTION_CLEAR;
+        renderPassDesc.hasDepthStencil = true;
+        renderPassDesc.depthStencil.format = Blast::FORMAT_D24_UNORM_S8_UINT;
+        renderPassDesc.depthStencil.depthLoadOp = Blast::LOAD_ACTION_CLEAR;
+        renderPassDesc.depthStencil.stencilLoadOp = Blast::LOAD_ACTION_CLEAR;
+        mRenderPass = mContext->createRenderPass(renderPassDesc);
+    }
+
+    Attachment Renderer::getColor() {
+        return mColors[mFrameIndex];
+    }
+
+    Attachment Renderer::getDepthStencil() {
+        return mDepthStencils[mFrameIndex];
     }
 
     void Renderer::resize(uint32_t width, uint32_t height) {
-        mQueue->waitIdle();
         if (width == 0 || height == 0) {
             return;
         }
+        mQueue->waitIdle();
         Blast::GfxSwapchain* oldSwapchain = mSwapchain;
         Blast::GfxSwapchainDesc swapchainDesc;
         swapchainDesc.width = width;
@@ -62,7 +91,9 @@ namespace gear {
         SAFE_DELETE_ARRAY(mRenderCompleteFences);
         SAFE_DELETE_ARRAY(mImageAcquiredSemaphores);
         SAFE_DELETE_ARRAY(mRenderCompleteSemaphores);
-        SAFE_DELETE_ARRAY(mRenderPasses);
+        SAFE_DELETE_ARRAY(mFramebuffers);
+        SAFE_DELETE_ARRAY(mColors);
+        SAFE_DELETE_ARRAY(mDepthStencils);
 
         mImageCount = mSwapchain->getImageCount();
 
@@ -70,25 +101,36 @@ namespace gear {
         mImageAcquiredSemaphores = new Blast::GfxSemaphore*[mImageCount];
         mRenderCompleteSemaphores = new Blast::GfxSemaphore*[mImageCount];
         mCmds = new Blast::GfxCommandBuffer*[mImageCount];
-        mRenderPasses = new Blast::GfxRenderPass*[mImageCount];
+        mFramebuffers = new Blast::GfxFramebuffer*[mImageCount];
+        mColors = new Attachment[mImageCount];
+        mDepthStencils = new Attachment[mImageCount];
         for (int i = 0; i < mImageCount; ++i) {
             // sync
             mRenderCompleteFences[i] = mContext->createFence();
             mImageAcquiredSemaphores[i] = mContext->createSemaphore();
             mRenderCompleteSemaphores[i] = mContext->createSemaphore();
 
-            // renderPassws
-            Blast::GfxRenderPassDesc renderPassDesc;
-            renderPassDesc.numColorAttachments = 1;
-            renderPassDesc.colors[0].target = mSwapchain->getColorRenderTarget(i);
-            renderPassDesc.colors[0].loadOp = Blast::LOAD_ACTION_CLEAR;
-            renderPassDesc.hasDepthStencil = true;
-            renderPassDesc.depthStencil.target = mSwapchain->getDepthRenderTarget(i);
-            renderPassDesc.depthStencil.depthLoadOp = Blast::LOAD_ACTION_CLEAR;
-            renderPassDesc.depthStencil.stencilLoadOp = Blast::LOAD_ACTION_CLEAR;
-            renderPassDesc.width = width;
-            renderPassDesc.height = height;
-            mRenderPasses[i] = mContext->createRenderPass(renderPassDesc);
+            // fbs
+            Blast::GfxFramebufferDesc framebufferDesc;
+            framebufferDesc.renderPass = mRenderPass;
+            framebufferDesc.numColorAttachments = 1;
+            framebufferDesc.colors[0].target = mSwapchain->getColorRenderTarget(i);
+            framebufferDesc.hasDepthStencil = true;
+            framebufferDesc.depthStencil.target = mSwapchain->getDepthRenderTarget(i);
+            framebufferDesc.width = width;
+            framebufferDesc.height = height;
+            mFramebuffers[i] = mContext->createFramebuffer(framebufferDesc);
+
+            // attachments
+            mColors[i].level = 0;
+            mColors[i].layer = 0;
+            mColors[i].texture = mSwapchain->getColorRenderTarget(i);
+            mColors[i].format = mSurface->getFormat();
+
+            mDepthStencils[i].level = 0;
+            mDepthStencils[i].layer = 0;
+            mDepthStencils[i].texture = mSwapchain->getDepthRenderTarget(i);
+            mDepthStencils[i].format = Blast::FORMAT_D24_UNORM_S8_UINT;
 
             // cmd
             mCmds[i] = mCmdPool->allocBuf(false);
@@ -147,7 +189,9 @@ namespace gear {
             barriers[1].newState = Blast::RESOURCE_STATE_DEPTH_WRITE;
             mCmds[mFrameIndex]->setBarrier(0, nullptr, 2, barriers);
         }
-        // 渲染UI
+
+        // Render View
+
         {
             // 设置交换链RT为显示状态
             Blast::GfxTextureBarrier barriers[2];

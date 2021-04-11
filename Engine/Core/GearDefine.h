@@ -17,3 +17,6 @@
         delete[] x; \
         x = nullptr; \
     }
+
+// MRT的个数
+#define TARGET_COUNT 4
