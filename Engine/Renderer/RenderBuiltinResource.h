@@ -17,9 +17,12 @@ namespace gear {
         Blast::GfxBuffer* getQuadVertexBuffer() { return mQuadVertexBuffer; }
         Blast::GfxBuffer* getQuadIndexBuffer() { return mQuadIndexBuffer; }
     private:
+        void createCustomRootSignature();
         void createQuadBuffer();
     private:
+        friend Renderer;
         Renderer* mRenderer;
+        Blast::GfxRootSignature* mCustomRootSignature = nullptr;
         Blast::GfxBuffer* mQuadVertexBuffer;
         Blast::GfxBuffer* mQuadIndexBuffer;
     };

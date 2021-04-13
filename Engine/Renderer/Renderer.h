@@ -22,8 +22,15 @@ namespace Blast {
 
 namespace gear {
     struct Attachment;
+    struct RenderTargetDesc;
+    class RenderTarget;
     class CopyEngine;
     class RenderBuiltinResource;
+    class RenderView;
+    class RenderScene;
+    class RenderPassCache;
+    class FramebufferCache;
+    class GraphicsPipelineCache;
     class Renderer {
     public:
         Renderer();
@@ -35,12 +42,17 @@ namespace gear {
         Blast::GfxContext* getContext() { return mContext; }
         Blast::GfxQueue* getQueue() { return mQueue; }
         CopyEngine* getCopyEngine() { return mCopyEngine; }
+        RenderScene* getScene() { return mScene; }
         RenderBuiltinResource* getRenderBuiltinResource() { return mRenderBuiltinResource; }
+        RenderTarget* createRenderTarget(const RenderTargetDesc& desc);
+    private:
         Attachment getColor();
         Attachment getDepthStencil();
+        void render(RenderView* view, Blast::GfxCommandBuffer* cmd);
     private:
         friend CopyEngine;
         friend RenderBuiltinResource;
+        friend RenderTarget;
         CopyEngine* mCopyEngine;
         RenderBuiltinResource* mRenderBuiltinResource;
         std::function<void(int*, int*)> mGetSurfaceSizeFunc;
@@ -58,6 +70,11 @@ namespace gear {
         Blast::GfxCommandBuffer** mCmds = nullptr;
         Attachment* mColors = nullptr;
         Attachment* mDepthStencils = nullptr;
+        RenderTarget* mDefaultRenderTarget = nullptr;
+        RenderScene* mScene = nullptr;
+        RenderPassCache* mRenderPassCache = nullptr;
+        FramebufferCache* mFramebufferCache = nullptr;
+        GraphicsPipelineCache* mGraphicsPipelineCache = nullptr;
         uint32_t mFrameIndex = 0;
         uint32_t mImageCount = 0;
     };

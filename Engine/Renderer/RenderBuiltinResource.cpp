@@ -3,16 +3,19 @@
 
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Gfx/GfxBuffer.h>
+#include <Blast/Gfx/GfxPipeline.h>
 
 namespace gear {
     RenderBuiltinResource::RenderBuiltinResource(Renderer* renderer) {
         mRenderer = renderer;
+        createCustomRootSignature();
         createQuadBuffer();
     }
 
     RenderBuiltinResource::~RenderBuiltinResource() {
         SAFE_DELETE(mQuadVertexBuffer);
         SAFE_DELETE(mQuadIndexBuffer);
+        SAFE_DELETE(mCustomRootSignature);
     }
 
     void RenderBuiltinResource::createQuadBuffer() {
@@ -40,5 +43,17 @@ namespace gear {
         bufferDesc.usage = Blast::RESOURCE_USAGE_CPU_TO_GPU;
         mQuadIndexBuffer = context->createBuffer(bufferDesc);
         mQuadIndexBuffer->writeData(0, sizeof(indices), indices);
+    }
+
+    void RenderBuiltinResource::createCustomRootSignature() {
+        Blast::GfxRootSignatureDesc rootSignatureDesc;
+        rootSignatureDesc.stages = Blast::SHADER_STAGE_VERT | Blast::SHADER_STAGE_FRAG;
+        Blast::GfxShaderReflection vertex;
+        vertex.stage = Blast::SHADER_STAGE_VERT;
+        Blast::GfxShaderReflection pixel;
+        pixel.stage = Blast::SHADER_STAGE_FRAG;
+        rootSignatureDesc.vertex = vertex;
+        rootSignatureDesc.pixel = pixel;
+        mCustomRootSignature = mRenderer->getContext()->createRootSignature(rootSignatureDesc);
     }
 }

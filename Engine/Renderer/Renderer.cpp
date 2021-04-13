@@ -2,8 +2,9 @@
 #include "CopyEngine.h"
 #include "RenderBuiltinResource.h"
 #include "RenderTarget.h"
+#include "RenderScene.h"
+#include "RenderCache.h"
 #include "Utility/FileSystem.h"
-
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Gfx/GfxBuffer.h>
 #include <Blast/Gfx/GfxTexture.h>
@@ -28,10 +29,20 @@ namespace gear {
         mCmdPool = mContext->createCommandBufferPool(cmdPoolDesc);
         mCopyEngine = new CopyEngine(this);
         mRenderBuiltinResource = new RenderBuiltinResource(this);
+        mDefaultRenderTarget = new RenderTarget(this);
+        mScene = new RenderScene(this);
+        mRenderPassCache = new RenderPassCache(this);
+        mFramebufferCache = new FramebufferCache(this);
+        mGraphicsPipelineCache = new GraphicsPipelineCache(this);
     }
 
     Renderer::~Renderer() {
         mQueue->waitIdle();
+        SAFE_DELETE(mScene);
+        SAFE_DELETE(mRenderPassCache);
+        SAFE_DELETE(mFramebufferCache);
+        SAFE_DELETE(mGraphicsPipelineCache);
+        SAFE_DELETE(mDefaultRenderTarget);
         SAFE_DELETE(mCopyEngine);
         SAFE_DELETE_ARRAY(mCmds);
         SAFE_DELETE_ARRAY(mRenderCompleteFences);
@@ -63,6 +74,10 @@ namespace gear {
         renderPassDesc.depthStencil.depthLoadOp = Blast::LOAD_ACTION_CLEAR;
         renderPassDesc.depthStencil.stencilLoadOp = Blast::LOAD_ACTION_CLEAR;
         mRenderPass = mContext->createRenderPass(renderPassDesc);
+    }
+
+    RenderTarget* Renderer::createRenderTarget(const RenderTargetDesc& desc) {
+        return new RenderTarget(this, desc);
     }
 
     Attachment Renderer::getColor() {
@@ -191,6 +206,9 @@ namespace gear {
         }
 
         // Render View
+        for (int i = 0; i < mScene->mViews.size(); ++i) {
+            render(mScene->mViews[i], mCmds[mFrameIndex]);
+        }
 
         {
             // 设置交换链RT为显示状态
