@@ -1,7 +1,7 @@
 #include "CopyEngine.h"
 #include "Renderer.h"
-#include <Gfx/GfxContext.h>
-#include <Gfx/GfxCommandBuffer.h>
+#include <Blast/Gfx/GfxContext.h>
+#include <Blast/Gfx/GfxCommandBuffer.h>
 
 namespace gear {
     CopyEngine::CopyEngine(Renderer* renderer) {

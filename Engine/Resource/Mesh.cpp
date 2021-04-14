@@ -2,10 +2,8 @@
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/CopyEngine.h"
-#include "Renderer/RenderResourcePool.h"
-
-#include <Gfx/GfxContext.h>
-#include <Gfx/GfxBuffer.h>
+#include <Blast/Gfx/GfxContext.h>
+#include <Blast/Gfx/GfxBuffer.h>
 
 namespace gear {
 
@@ -83,7 +81,7 @@ namespace gear {
     }
 
     uint32_t Mesh::getIndexBufferSize() {
-        mNumIndices * sizeof(uint32_t);
+        return mNumIndices * sizeof(uint32_t);
     }
 
     void Mesh::setIndexes(void* data, uint32_t size) {

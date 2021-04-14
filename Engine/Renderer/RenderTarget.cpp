@@ -1,5 +1,6 @@
 #include "RenderTarget.h"
 #include "Renderer.h"
+#include <Blast/Gfx/GfxTexture.h>
 
 namespace gear {
     RenderTarget::RenderTarget(Renderer* renderer) {
@@ -25,6 +26,20 @@ namespace gear {
     }
 
     RenderTarget::~RenderTarget() {
+    }
+
+    uint32_t RenderTarget::getWidth() {
+        if (!mOffscreen) {
+            return mRenderer->getColor().texture->getWidth();
+        }
+        return mWidth;
+    }
+
+    uint32_t RenderTarget::getHeight() {
+        if (!mOffscreen) {
+            return mRenderer->getColor().texture->getHeight();
+        }
+        return mHeight;
     }
 
     uint32_t RenderTarget::getColorTargetCount() {
