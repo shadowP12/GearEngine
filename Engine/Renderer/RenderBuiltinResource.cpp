@@ -52,6 +52,8 @@ namespace gear {
         vertex.stage = Blast::SHADER_STAGE_VERT;
         Blast::GfxShaderReflection pixel;
         pixel.stage = Blast::SHADER_STAGE_FRAG;
+
+
         rootSignatureDesc.vertex = vertex;
         rootSignatureDesc.pixel = pixel;
         mCustomRootSignature = mRenderer->getContext()->createRootSignature(rootSignatureDesc);

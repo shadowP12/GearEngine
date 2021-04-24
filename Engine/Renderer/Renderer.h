@@ -44,6 +44,7 @@ namespace gear {
         CopyEngine* getCopyEngine() { return mCopyEngine; }
         RenderScene* getScene() { return mScene; }
         RenderBuiltinResource* getRenderBuiltinResource() { return mRenderBuiltinResource; }
+        Blast::ShaderCompiler* getShaderCompiler() { return mShaderCompiler; }
         RenderTarget* createRenderTarget(const RenderTargetDesc& desc);
     private:
         Attachment getColor();

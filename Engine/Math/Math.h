@@ -12,6 +12,7 @@
 #define INV_PI 0.31830988618f
 #define INV_TWO_PI 0.15915494309f
 
+/*
 inline glm::vec3 vectorLerp(const glm::vec3& from, const glm::vec3& to, float t)
 {
     return from+(to-from)*t;
@@ -306,3 +307,4 @@ inline glm::vec3 quatToEuler(const glm::quat& rot)
     glm::mat4 matRot = glm::toMat4(rot);
     return matToEuler(matRot);
 }
+*/

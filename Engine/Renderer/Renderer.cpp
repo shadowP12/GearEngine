@@ -17,6 +17,7 @@
 #include <Blast/Gfx/Vulkan/VulkanContext.h>
 #include <Blast/Utility/ShaderCompiler.h>
 #include <Blast/Utility/VulkanShaderCompiler.h>
+#include <assert.h>
 
 namespace gear {
     Renderer::Renderer() {

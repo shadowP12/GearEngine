@@ -16,13 +16,17 @@ file(GLOB_RECURSE UTILITY_INC CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/Utilit
 file(GLOB_RECURSE UTILITY_SRC CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/Utility/*.cpp)
 target_sources(GearEngine PRIVATE ${UTILITY_INC} ${UTILITY_SRC})
 
+file(GLOB_RECURSE MATERIAL_COMPILER_INC CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/MaterialCompiler/*.h)
+file(GLOB_RECURSE MATERIAL_COMPILER_SRC CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/MaterialCompiler/*.cpp)
+target_sources(GearEngine PRIVATE ${MATERIAL_COMPILER_INC} ${MATERIAL_COMPILER_SRC})
+
 target_compile_definitions(GearEngine PRIVATE GEAR_EXPORTS)
 target_compile_definitions(GearEngine PRIVATE CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON)
 target_compile_definitions(GearEngine PRIVATE BUILD_SHARED_LIBS=TRUE)
 
 # blast
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../External/Blast Blast.out)
-target_link_libraries(GearEngine PRIVATE Blast)
+target_link_libraries(GearEngine PUBLIC Blast)
 
 # window's uuid
 target_link_libraries(GearEngine PUBLIC rpcrt4)

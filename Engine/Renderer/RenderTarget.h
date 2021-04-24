@@ -35,7 +35,7 @@ namespace gear {
         uint32_t getColorTargetCount();
         Attachment getColor(int idx);
         Attachment getDepthStencil();
-        bool hasDepthStencil() { return mDepthStencil.texture != nullptr; }
+        bool hasDepthStencil();
     private:
         Renderer* mRenderer = nullptr;
         bool mOffscreen = false;

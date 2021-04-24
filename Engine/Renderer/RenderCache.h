@@ -1,9 +1,10 @@
 #pragma once
 #include "Core/GearDefine.h"
+#include "Utility/Hash.h"
 #include <Blast/Gfx/GfxDefine.h>
 #include <Blast/Gfx/GfxRenderTarget.h>
 #include <Blast/Gfx/GfxPipeline.h>
-#include <map>
+#include <unordered_map>
 
 namespace gear {
     class Renderer;
@@ -17,7 +18,7 @@ namespace gear {
             bool operator()(const Blast::GfxRenderPassDesc& desc1, const Blast::GfxRenderPassDesc& desc2) const;
         };
         Renderer* mRenderer = nullptr;
-        std::map<Blast::GfxRenderPassDesc, Blast::GfxRenderPass*, RenderPassEq> mRenderPasses;
+        std::unordered_map<Blast::GfxRenderPassDesc, Blast::GfxRenderPass*, MurmurHash<Blast::GfxRenderPassDesc>, RenderPassEq> mRenderPasses;
     };
 
     class FramebufferCache {
@@ -30,7 +31,7 @@ namespace gear {
             bool operator()(const Blast::GfxFramebufferDesc& desc1, const Blast::GfxFramebufferDesc& desc2) const;
         };
         Renderer* mRenderer = nullptr;
-        std::map<Blast::GfxFramebufferDesc, Blast::GfxFramebuffer*, FramebufferEq> mFrambuffers;
+        std::unordered_map<Blast::GfxFramebufferDesc, Blast::GfxFramebuffer*, MurmurHash<Blast::GfxFramebufferDesc>, FramebufferEq> mFrambuffers;
     };
 
     class GraphicsPipelineCache {
@@ -43,7 +44,7 @@ namespace gear {
             bool operator()(const Blast::GfxGraphicsPipelineDesc& desc1, const Blast::GfxGraphicsPipelineDesc& desc2) const;
         };
         Renderer* mRenderer = nullptr;
-        std::map<Blast::GfxGraphicsPipelineDesc, Blast::GfxGraphicsPipeline*, PipelineEq> mPipelines;
+        std::unordered_map<Blast::GfxGraphicsPipelineDesc, Blast::GfxGraphicsPipeline*, MurmurHash<Blast::GfxGraphicsPipelineDesc>, PipelineEq> mPipelines;
     };
 
 }

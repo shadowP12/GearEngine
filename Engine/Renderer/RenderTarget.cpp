@@ -62,6 +62,13 @@ namespace gear {
         return mRenderer->getColor();
     }
 
+    bool RenderTarget::hasDepthStencil() {
+        if (mOffscreen) {
+            return mDepthStencil.texture != nullptr;
+        }
+        return mRenderer->getDepthStencil().texture != nullptr;
+    }
+
     Attachment RenderTarget::getDepthStencil() {
         if (mOffscreen) {
             return mDepthStencil;

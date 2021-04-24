@@ -33,6 +33,7 @@ namespace gear {
 
         Blast::GfxRenderPass* renderPass = mRenderer->getContext()->createRenderPass(desc);
         mRenderPasses[desc] = renderPass;
+        return renderPass;
     }
 
     FramebufferCache::FramebufferCache(Renderer* renderer) {
@@ -67,6 +68,7 @@ namespace gear {
 
         Blast::GfxFramebuffer* framebuffer = mRenderer->getContext()->createFramebuffer(desc);
         mFrambuffers[desc] = framebuffer;
+        return framebuffer;
     }
 
     GraphicsPipelineCache::GraphicsPipelineCache(Renderer* renderer) {
@@ -146,5 +148,6 @@ namespace gear {
 
         Blast::GfxGraphicsPipeline* pipeline = mRenderer->getContext()->createGraphicsPipeline(desc);
         mPipelines[desc] = pipeline;
+        return pipeline;
     }
 }

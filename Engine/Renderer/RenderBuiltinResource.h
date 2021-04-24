@@ -25,6 +25,8 @@ namespace gear {
         Blast::GfxRootSignature* mCustomRootSignature = nullptr;
         Blast::GfxBuffer* mQuadVertexBuffer;
         Blast::GfxBuffer* mQuadIndexBuffer;
+        Blast::GfxBuffer* mDefaultBuffer = nullptr;
+        Blast::GfxTexture* mDefaultTexture = nullptr;
     };
 }
 

@@ -113,7 +113,7 @@ namespace gear {
             pipelineDesc.rasterizerState = rasterizerState;
             Blast::GfxGraphicsPipeline* pipeline = mGraphicsPipelineCache->getPipeline(pipelineDesc);
             cmd->bindGraphicsPipeline(pipeline);
-            cmd->bindRootSignature(mRenderBuiltinResource->mCustomRootSignature);
+            // cmd->bindRootSignature(mRenderBuiltinResource->mCustomRootSignature);
             cmd->bindVertexBuffer(mScene->mPrimitives[i]->vertexBuffer, 0);
             cmd->bindIndexBuffer(mScene->mPrimitives[i]->indexBuffer, 0, Blast::INDEX_TYPE_UINT32);
             cmd->drawIndexed(6, 1, 0, 0, 0);
