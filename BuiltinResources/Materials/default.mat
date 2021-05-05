@@ -1,0 +1,26 @@
+states {
+    culling : none,
+    depthCulling: false
+}
+
+uniforms {
+    float p0,
+    float p1
+}
+
+samplers {
+    sampler2D s0,
+    sampler2D s1
+}
+
+vertex {
+    void materialVertex(inout vertexInputs material) {
+
+    }
+}
+
+fragment {
+    void materialFragment(inout fragmentInputs material) {
+        
+    }
+}

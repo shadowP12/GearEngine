@@ -13,7 +13,7 @@ for shader_name in shader_names:
     shader_path = os.path.join(shaders_dir, shader_name)
     with open(shader_path, 'r') as f:
         file_data = f.read()
-        shader_datas[data_name] = file_data.replace("\n", "")
+        shader_datas[data_name] = file_data.replace("\n", "\\n")
 
 content = ''
 content = content + '#pragma once\n'
