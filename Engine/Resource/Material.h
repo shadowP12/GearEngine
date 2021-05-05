@@ -26,6 +26,7 @@ namespace gear {
     static constexpr size_t MATERIAL_VARIANT_COUNT = 2;
     struct MaterialVariant {
     public:
+        MaterialVariant(uint8_t key) : key(key) { }
         static constexpr uint8_t SKINNING_OR_MORPHING   = 0x01; // 使用GPU蒙皮
         static constexpr uint8_t VERTEX_MASK = SKINNING_OR_MORPHING;
         static constexpr uint8_t FRAGMENT_MASK = 0;

@@ -5,8 +5,9 @@
 
 namespace gear {
     struct MaterialVariantInfo {
-        Blast::ShaderStage stage;
+        MaterialVariantInfo(uint8_t v, Blast::ShaderStage s) : variant(v), stage(s) {}
         uint8_t variant;
+        Blast::ShaderStage stage;
     };
 
     struct MaterialBuildInfo {

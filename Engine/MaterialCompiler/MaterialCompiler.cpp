@@ -5,6 +5,7 @@
 #include "ParamParser.h"
 #include "CodeGenerator.h"
 #include "Utility/FileSystem.h"
+#include "Utility/Log.h"
 namespace gear {
     static std::vector<MaterialVariantInfo> getSurfaceVariants() {
         std::vector<MaterialVariantInfo> variants;
@@ -56,18 +57,73 @@ namespace gear {
                 buildInfo.samplers.push_back(std::make_pair(samplerParams[i].type, samplerParams[i].name));
             }
         }
+        // 处理自定义shader代码块
+        std::string materialVertexCode;
+        if (chunks.find("vertex") != chunks.end()) {
+            materialVertexCode = chunks["vertex"];
+        } else {
+            materialVertexCode = "void materialVertex(inout MaterialVertexInputs material) {}\n";
+        }
+
+        std::string materialFragmentCode;
+        if (chunks.find("fragment") != chunks.end()) {
+            materialFragmentCode = chunks["fragment"];
+        } else {
+            materialFragmentCode = "void materialFragment(inout MaterialFragmentInputs material) {}\n";
+        }
+
         // TODO: 后续补充管线状态解析
 
         // 生成所有可用的变体
         const auto variants = getSurfaceVariants();
         for (const auto& v : variants) {
+            // 设置顶点属性布局
+            MaterialVariant variant(v.variant);
+            Blast::ShaderSemantic attributes = Blast::ShaderSemantic::SEMANTIC_POSITION;
+            attributes |= Blast::ShaderSemantic::SEMANTIC_NORMAL;
+            attributes |= Blast::ShaderSemantic::SEMANTIC_TANGENT;
+            attributes |= Blast::ShaderSemantic::SEMANTIC_BITANGENT;
+            attributes |= Blast::ShaderSemantic::SEMANTIC_COLOR;
+            attributes |= Blast::ShaderSemantic::SEMANTIC_TEXCOORD0;
+
             if (v.stage == Blast::ShaderStage::SHADER_STAGE_VERT) {
                 std::stringstream vs;
                 CodeGenerator cg;
+                if (variant.hasSkinningOrMorphing()) {
+                    attributes |= Blast::ShaderSemantic::SEMANTIC_JOINTS;
+                    attributes |= Blast::ShaderSemantic::SEMANTIC_WEIGHTS;
+                    cg.generateDefine(vs, "HAS_SKINNING_OR_MORPHING");
+                }
+                cg.generateShaderAttributes(vs, v.stage, attributes);
+                cg.generateShaderInput(vs, v.stage);
+                cg.generateCommonData(vs);
+                cg.generateUniforms(vs, v.stage, buildInfo.uniforms);
+                cg.generateSamplers(vs, v.stage, buildInfo.samplers);
+                cg.generateCommonMaterial(vs, v.stage);
+                vs << materialVertexCode << "\n";
+                cg.generateShaderMain(vs, v.stage);
+                cg.generateEpilog(vs);
+                LOGI("begin-------------------\n");
+                LOGI("vs variant : %d\n", v.variant);
+                LOGI("%s\n", vs.str().c_str());
+                LOGI("end-------------------\n");
             }
             if (v.stage == Blast::ShaderStage::SHADER_STAGE_FRAG) {
                 std::stringstream fs;
                 CodeGenerator cg;
+                cg.generateShaderAttributes(fs, v.stage, attributes);
+                cg.generateShaderInput(fs, v.stage);
+                cg.generateCommonData(fs);
+                cg.generateUniforms(fs, v.stage, buildInfo.uniforms);
+                cg.generateSamplers(fs, v.stage, buildInfo.samplers);
+                cg.generateCommonMaterial(fs, v.stage);
+                fs << materialFragmentCode << "\n";
+                cg.generateShaderMain(fs, v.stage);
+                cg.generateEpilog(fs);
+                LOGI("begin-------------------\n");
+                LOGI("fs variant : %d\n", v.variant);
+                LOGI("%s\n", fs.str().c_str());
+                LOGI("end-------------------\n");
             }
         }
 

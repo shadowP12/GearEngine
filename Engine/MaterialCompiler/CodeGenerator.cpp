@@ -83,6 +83,11 @@ namespace gear {
         return out;
     }
 
+    std::stringstream& CodeGenerator::generateCommonData(std::stringstream& out) const {
+        out << COMMON_DATA_FS_DATA << "\n";
+        return out;
+    }
+
     std::stringstream& CodeGenerator::generateCommonMaterial(std::stringstream& out, Blast::ShaderStage stage) const {
         if (stage == Blast::SHADER_STAGE_VERT) {
             out << MATERIAL_INPUTS_VS_DATA << "\n";
@@ -102,10 +107,21 @@ namespace gear {
     }
 
     std::stringstream& CodeGenerator::generateUniforms(std::stringstream& out, Blast::ShaderStage, const std::vector<std::pair<std::string, std::string>>& params) const {
-
+        // 从0开始
+        out << "layout(std140, set = 0, binding = 0) uniform " << "materialUniforms" << " {\n";
+        for (int i = 0; i < params.size(); ++i) {
+            out << "    " << params[i].first << " " << params[i].second<< ";\n";
+        }
+        out << "};\n";
+        return out;
     }
 
     std::stringstream& CodeGenerator::generateSamplers(std::stringstream& out, Blast::ShaderStage, const std::vector<std::pair<std::string, std::string>>& params) const {
-
+        // 从4开始
+        for (int i = 0; i < params.size(); ++i) {
+            out << "layout(set = 1, binding = " << 4 + i << ") ";
+            out << "uniform " << params[i].first << " " << params[i].second<< ";\n";
+        }
+        return out;
     }
 }

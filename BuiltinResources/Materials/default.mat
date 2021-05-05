@@ -14,13 +14,13 @@ samplers {
 }
 
 vertex {
-    void materialVertex(inout vertexInputs material) {
+    void materialVertex(inout MaterialVertexInputs material) {
 
     }
 }
 
 fragment {
-    void materialFragment(inout fragmentInputs material) {
+    void materialFragment(inout MaterialFragmentInputs material) {
         
     }
 }

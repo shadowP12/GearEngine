@@ -7,10 +7,7 @@
 #include <Engine/GearEngine.h>
 #include <Engine/Renderer/Renderer.h>
 #include <Engine/Renderer/RenderScene.h>
-#include <Engine/MaterialCompiler/ChunkLexer.h>
-#include <Engine/MaterialCompiler/ChunkParser.h>
-#include <Engine/MaterialCompiler/CommonLexer.h>
-#include <Engine/MaterialCompiler/ParamParser.h>
+#include <Engine/MaterialCompiler/MaterialCompiler.h>
 #include <Utility/Log.h>
 #include <iostream>
 #include <fstream>
@@ -48,14 +45,8 @@ int main()
 {
     // 测试材质编辑器
     std::string materialCode = readFileData("./BuiltinResources/Materials/default.mat");
-    gear::ChunkLexer chunkLexer;
-    chunkLexer.lex(materialCode.c_str(), materialCode.size());
-    gear::ChunkParser chunkParser(chunkLexer.getLexemes());
-    std::unordered_map<std::string, std::string> chunks = chunkParser.parse();
-    gear::CommonLexer commonLexer;
-    commonLexer.lex(chunks["uniforms"].c_str(), chunks["uniforms"].size());
-    gear::ParamParser uniformParamParser(commonLexer.getLexemes());
-    std::vector<gear::ParamParseValue> uniformParams = uniformParamParser.parse();
+    gear::MaterialCompiler materialCompiler;
+    materialCompiler.compile("./BuiltinResources/Materials/default.mat");
     return 0;
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
