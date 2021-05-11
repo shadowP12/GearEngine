@@ -63,15 +63,4 @@ namespace gear {
         return texture;
     }
 
-    std::shared_ptr<Material> ResourceManager::createMaterial(const std::string& id, const MaterialDesc& desc) {
-        if (desc.type == MaterialType::PBR) {
-            std::shared_ptr<PBRMaterial> material = std::make_shared<PBRMaterial>();
-            material->mId = id;
-            material->mUUID = generateUUID();
-            addRes(material);
-            return material;
-        }
-        return nullptr;
-    }
-
 }

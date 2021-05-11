@@ -25,7 +25,6 @@ namespace gear {
         void removeRes(std::shared_ptr<Resource> res);
         std::shared_ptr<Mesh> createMesh(const std::string& id, const MeshDesc& desc);
         std::shared_ptr<Texture> createTexture(const std::string& id, const TextureDesc& desc);
-        std::shared_ptr<Material> createMaterial(const std::string& id, const MaterialDesc& desc);
     private:
         std::map<std::string, std::shared_ptr<Resource>> mResources;
     };

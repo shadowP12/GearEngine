@@ -6,6 +6,11 @@
 #include "CodeGenerator.h"
 #include "Utility/FileSystem.h"
 #include "Utility/Log.h"
+#include "Renderer/Renderer.h"
+#include "GearEngine.h"
+#include <Blast/Gfx/GfxContext.h>
+#include <Blast/Utility/ShaderCompiler.h>
+#include <Blast/Utility/VulkanShaderCompiler.h>
 namespace gear {
     static std::vector<MaterialVariantInfo> getSurfaceVariants() {
         std::vector<MaterialVariantInfo> variants;
@@ -22,15 +27,18 @@ namespace gear {
         return variants;
     }
 
-
     MaterialCompiler::MaterialCompiler() {
+        mShaderCompiler = new Blast::VulkanShaderCompiler();
     }
 
     MaterialCompiler::~MaterialCompiler() {
+        SAFE_DELETE(mShaderCompiler);
     }
 
     Material* MaterialCompiler::compile(const std::string& path) {
+        Blast::GfxContext* context = gEngine.getRenderer()->getContext();
         // 解析材质文件内容
+        Material* material = new Material();
         MaterialBuildInfo buildInfo;
         std::string materialCode = readFileData(path);
         gear::ChunkLexer chunkLexer;
@@ -58,6 +66,7 @@ namespace gear {
             }
         }
         // 处理自定义shader代码块
+        // TODO: 处理缩进
         std::string materialVertexCode;
         if (chunks.find("vertex") != chunks.end()) {
             materialVertexCode = chunks["vertex"];
@@ -74,6 +83,8 @@ namespace gear {
 
         // TODO: 后续补充管线状态解析
 
+        // 材质参数只需要初始化一次
+        bool initMaterialParams = false;
         // 生成所有可用的变体
         const auto variants = getSurfaceVariants();
         for (const auto& v : variants) {
@@ -103,10 +114,39 @@ namespace gear {
                 vs << materialVertexCode << "\n";
                 cg.generateShaderMain(vs, v.stage);
                 cg.generateEpilog(vs);
-                LOGI("begin-------------------\n");
-                LOGI("vs variant : %d\n", v.variant);
-                LOGI("%s\n", vs.str().c_str());
-                LOGI("end-------------------\n");
+
+                Blast::ShaderCompileDesc compileDesc;
+                compileDesc.code = vs.str();
+                compileDesc.stage = Blast::SHADER_STAGE_VERT;
+                Blast::ShaderCompileResult compileResult = mShaderCompiler->compile(compileDesc);
+
+                Blast::GfxShaderDesc shaderDesc;
+                shaderDesc.stage = Blast::SHADER_STAGE_VERT;
+                shaderDesc.bytes = compileResult.bytes;
+                Blast::GfxShader* vertShader = context->createShader(shaderDesc);
+                material->mVertShaderCache[v.variant] = vertShader;
+
+                if (!initMaterialParams) {
+                    initMaterialParams = true;
+                    int resIdx = -1;
+                    for (int i = 0; i < compileResult.resources.size(); ++i) {
+                        if (compileResult.resources[i].set == 0) {
+                            material->mResources.push_back(compileResult.resources[i]);
+                            resIdx = i;
+                        } else if (compileResult.resources[i].set == 1 && compileResult.resources[i].reg >= 4) {
+                            material->mResources.push_back(compileResult.resources[i]);
+                        }
+                    }
+
+                    if (resIdx != -1) {
+                        for (int i = 0; i < compileResult.variables.size(); i++) {
+                            if (compileResult.variables[i].parentIndex == resIdx) {
+                                material->mVariables.push_back(compileResult.variables[i]);
+                            }
+                        }
+                    }
+
+                }
             }
             if (v.stage == Blast::ShaderStage::SHADER_STAGE_FRAG) {
                 std::stringstream fs;
@@ -120,13 +160,20 @@ namespace gear {
                 fs << materialFragmentCode << "\n";
                 cg.generateShaderMain(fs, v.stage);
                 cg.generateEpilog(fs);
-                LOGI("begin-------------------\n");
-                LOGI("fs variant : %d\n", v.variant);
-                LOGI("%s\n", fs.str().c_str());
-                LOGI("end-------------------\n");
+
+                Blast::ShaderCompileDesc compileDesc;
+                compileDesc.code = fs.str();
+                compileDesc.stage = Blast::SHADER_STAGE_FRAG;
+                Blast::ShaderCompileResult compileResult = mShaderCompiler->compile(compileDesc);
+
+                Blast::GfxShaderDesc shaderDesc;
+                shaderDesc.stage = Blast::SHADER_STAGE_FRAG;
+                shaderDesc.bytes = compileResult.bytes;
+                Blast::GfxShader* fragShader = context->createShader(shaderDesc);
+                material->mFragShaderCache[v.variant] = fragShader;
             }
         }
 
-        return nullptr;
+        return material;
     }
 }

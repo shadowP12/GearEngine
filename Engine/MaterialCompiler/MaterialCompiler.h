@@ -3,6 +3,10 @@
 #include <Blast/Gfx/GfxDefine.h>
 #include <string>
 
+namespace Blast {
+    class ShaderCompiler;
+}
+
 namespace gear {
     struct MaterialVariantInfo {
         MaterialVariantInfo(uint8_t v, Blast::ShaderStage s) : variant(v), stage(s) {}
@@ -23,6 +27,6 @@ namespace gear {
     private:
 
     private:
-
+        Blast::ShaderCompiler* mShaderCompiler = nullptr;
     };
 }

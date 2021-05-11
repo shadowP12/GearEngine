@@ -3,9 +3,13 @@
 #include "Core/GearDefine.h"
 #include "Math/Math.h"
 #include "Resource/Resource.h"
-
+#include <Blast/Utility/ShaderCompiler.h>
 #include <string>
 #include <unordered_map>
+
+namespace Blast {
+    class GfxShader;
+}
 
 namespace gear {
     class Texture;
@@ -52,29 +56,31 @@ namespace gear {
         uint8_t key = 0;
     };
 
-    enum class MaterialType {
-        None,
-        PBR
+    struct MaterialDesc {
     };
 
-    struct MaterialDesc {
-        MaterialType type;
-    };
+    class MaterialInstance;
 
     class Material : public Resource {
     public:
         Material() {}
         ~Material() {}
+        MaterialInstance* createInstance();
     protected:
-        ResourceType mType = ResourceType::MATERIAL;
-        MaterialType mMaterialType = MaterialType::None;
+        friend class MaterialCompiler;
+        friend class MaterialInstance;
+        std::vector<Blast::GfxShaderResource> mResources;
+        std::vector<Blast::GfxShaderVariable> mVariables;
+        std::unordered_map<uint8_t, Blast::GfxShader*> mVertShaderCache;
+        std::unordered_map<uint8_t, Blast::GfxShader*> mFragShaderCache;
     };
 
-    class PBRMaterial : public Material {
+    class MaterialInstance {
     public:
-        PBRMaterial() {}
-        ~PBRMaterial() {}
-    protected:
-        MaterialType mMaterialType = MaterialType::PBR;
+        MaterialInstance(Material* material);
+        ~MaterialInstance();
+    private:
+        Material* mMaterial = nullptr;
+
     };
 }

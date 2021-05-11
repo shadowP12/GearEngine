@@ -71,6 +71,7 @@ namespace gear {
         cmd->setViewport(0.0, 0.0, presentRT->getWidth(), presentRT->getHeight());
         cmd->setScissor(0, 0, presentRT->getWidth(), presentRT->getHeight());
         for (int i = 0; i < mScene->mPrimitives.size(); ++i) {
+
             Blast::GfxGraphicsPipelineDesc pipelineDesc;
             Blast::GfxVertexLayout vertexLayout = {};
             vertexLayout.attribCount = 2;

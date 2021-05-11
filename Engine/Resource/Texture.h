@@ -19,7 +19,7 @@ namespace gear {
     };
 
     /*
-     * todo: 提供生成mipmap接口
+     * TODO: 提供生成mipmap接口
      */
     class Texture : public Resource {
     public:
@@ -30,6 +30,7 @@ namespace gear {
         Blast::GfxTexture* getInternel() { return mInternelTexture; }
         void updateRenderData();
     private:
+        friend class MaterialInstance;
         ResourceType mType = ResourceType::TEXTURE;
         uint32_t mWidth;
         uint32_t mHeight;
