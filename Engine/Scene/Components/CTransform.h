@@ -19,11 +19,9 @@ namespace gear {
 
         Entity* getParent();
 
-        std::vector<Entity*> getChildren();
+        const std::vector<Entity*>& getChildren();
 
         void setTransform(const glm::mat4& localTransform);
-
-        void getTransform(const glm::mat4& localTransform);
 
         const glm::mat4& getTransform();
 
@@ -36,5 +34,9 @@ namespace gear {
         glm::mat4 mLocal;
 
         glm::mat4 mWorld;
+
+        Entity* mParent = nullptr;
+
+        std::vector<Entity*> mChildren;
     };
 }

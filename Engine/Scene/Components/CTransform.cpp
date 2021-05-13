@@ -7,6 +7,71 @@ namespace gear {
     }
 
     CTransform::~CTransform() {
+        setParent(nullptr);
+
+        for (int i = 0; i < mChildren.size(); ++i) {
+            mChildren[i]->getComponent<CTransform>()->setParent(nullptr);
+        }
+        mChildren.clear();
     }
 
+    void CTransform::setParent(Entity* newParent) {
+        Entity* oldParent = mParent;
+        CTransform* oldParentTransform = oldParent->getComponent<CTransform>();
+        CTransform* newParentTransform = newParent->getComponent<CTransform>();
+
+        if (oldParent == newParent)
+            return;
+
+        if (oldParent) {
+            for (auto iter = oldParentTransform->mChildren.begin(); iter != oldParentTransform->mChildren.end();) {
+                if (iter == oldParentTransform->mChildren.end()) {
+                    break;
+                }
+
+                if (*iter == this->mEntity) {
+                    oldParentTransform->mChildren.erase(iter);
+                    break;
+                }
+            }
+        }
+
+        mParent = newParent;
+        if (newParent) {
+            newParentTransform->mChildren.push_back(this->mEntity);
+        }
+
+        updateTransform();
+    }
+
+    Entity* CTransform::getParent() {
+        return mParent;
+    }
+
+    const std::vector<Entity*>& CTransform::getChildren() {
+        return mChildren;
+    }
+
+    void CTransform::setTransform(const glm::mat4& localTransform) {
+        mLocal = localTransform;
+        updateTransform();
+    }
+
+    const glm::mat4& CTransform::getTransform() {
+        return mLocal;
+    }
+
+    const glm::mat4& CTransform::getWorldTransform() {
+        return mWorld;
+    }
+
+    void CTransform::updateTransform() {
+        if (mParent) {
+            mWorld = mParent->getComponent<CTransform>()->mWorld * mLocal;
+        }
+
+        for (int i = 0; i < mChildren.size(); ++i) {
+            mChildren[i]->getComponent<CTransform>()->updateTransform();
+        }
+    }
 }
