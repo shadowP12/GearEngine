@@ -9,7 +9,7 @@ namespace gear {
         CRenderable(Entity* entity);
 
         virtual ~CRenderable();
-        
+
         static ComponentType getClassType() { return ComponentType::Renderable; }
 
         ComponentType getType() override { return ComponentType::Renderable; }

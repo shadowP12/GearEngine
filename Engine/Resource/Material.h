@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Core/GearDefine.h"
 #include "Math/Math.h"
 #include "Resource/Resource.h"
