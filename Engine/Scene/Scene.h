@@ -11,6 +11,7 @@ namespace gear {
         Entity* createEntity();
         void destroyEntity(Entity* entity);
     private:
+        friend class RenderScene;
         std::vector<Entity*> mEntities;
     };
 }

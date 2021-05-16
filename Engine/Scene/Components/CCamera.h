@@ -4,8 +4,8 @@
 
 namespace gear {
     class RenderTarget;
+    class UniformBuffer;
     class Entity;
-    // TODO: 设置相机UniformBuffer
     class CCamera : public Component {
     public:
         CCamera(Entity* entity);
@@ -18,6 +18,12 @@ namespace gear {
 
         void setRenderTarget(RenderTarget* target);
     private:
+        void updateCameraBuffer();
+    private:
+        friend class RenderScene;
         RenderTarget* mRenderTarget = nullptr;
+        UniformBuffer* mCameraUniformBuffer = nullptr;
+        // 因为灯光需要根据每个相机进行排序，所以灯光的UniformBuffer放在此处管理
+        UniformBuffer* mLightUniformBuffer = nullptr;
     };
 }

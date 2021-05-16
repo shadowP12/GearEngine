@@ -49,10 +49,8 @@ namespace gear {
         SAFE_DELETE_ARRAY(mRenderCompleteFences);
         SAFE_DELETE_ARRAY(mImageAcquiredSemaphores);
         SAFE_DELETE_ARRAY(mRenderCompleteSemaphores);
-        SAFE_DELETE_ARRAY(mFramebuffers);
         SAFE_DELETE_ARRAY(mColors);
         SAFE_DELETE_ARRAY(mDepthStencils);
-        SAFE_DELETE(mRenderPass)
         SAFE_DELETE(mCmdPool);
         SAFE_DELETE(mQueue);
         SAFE_DELETE(mSurface);
@@ -65,16 +63,6 @@ namespace gear {
         Blast::GfxSurfaceDesc surfaceDesc;
         surfaceDesc.originSurface = surface;
         mSurface = mContext->createSurface(surfaceDesc);
-
-        Blast::GfxRenderPassDesc renderPassDesc;
-        renderPassDesc.numColorAttachments = 1;
-        renderPassDesc.colors[0].format = mSurface->getFormat();
-        renderPassDesc.colors[0].loadOp = Blast::LOAD_ACTION_CLEAR;
-        renderPassDesc.hasDepthStencil = true;
-        renderPassDesc.depthStencil.format = Blast::FORMAT_D24_UNORM_S8_UINT;
-        renderPassDesc.depthStencil.depthLoadOp = Blast::LOAD_ACTION_CLEAR;
-        renderPassDesc.depthStencil.stencilLoadOp = Blast::LOAD_ACTION_CLEAR;
-        mRenderPass = mContext->createRenderPass(renderPassDesc);
     }
 
     RenderTarget* Renderer::createRenderTarget(const RenderTargetDesc& desc) {
@@ -107,7 +95,6 @@ namespace gear {
         SAFE_DELETE_ARRAY(mRenderCompleteFences);
         SAFE_DELETE_ARRAY(mImageAcquiredSemaphores);
         SAFE_DELETE_ARRAY(mRenderCompleteSemaphores);
-        SAFE_DELETE_ARRAY(mFramebuffers);
         SAFE_DELETE_ARRAY(mColors);
         SAFE_DELETE_ARRAY(mDepthStencils);
 
@@ -117,7 +104,6 @@ namespace gear {
         mImageAcquiredSemaphores = new Blast::GfxSemaphore*[mImageCount];
         mRenderCompleteSemaphores = new Blast::GfxSemaphore*[mImageCount];
         mCmds = new Blast::GfxCommandBuffer*[mImageCount];
-        mFramebuffers = new Blast::GfxFramebuffer*[mImageCount];
         mColors = new Attachment[mImageCount];
         mDepthStencils = new Attachment[mImageCount];
         for (int i = 0; i < mImageCount; ++i) {
@@ -125,17 +111,6 @@ namespace gear {
             mRenderCompleteFences[i] = mContext->createFence();
             mImageAcquiredSemaphores[i] = mContext->createSemaphore();
             mRenderCompleteSemaphores[i] = mContext->createSemaphore();
-
-            // fbs
-            Blast::GfxFramebufferDesc framebufferDesc;
-            framebufferDesc.renderPass = mRenderPass;
-            framebufferDesc.numColorAttachments = 1;
-            framebufferDesc.colors[0].target = mSwapchain->getColorRenderTarget(i);
-            framebufferDesc.hasDepthStencil = true;
-            framebufferDesc.depthStencil.target = mSwapchain->getDepthRenderTarget(i);
-            framebufferDesc.width = width;
-            framebufferDesc.height = height;
-            mFramebuffers[i] = mContext->createFramebuffer(framebufferDesc);
 
             // attachments
             mColors[i].level = 0;
@@ -178,14 +153,16 @@ namespace gear {
         mQueue->waitIdle();
     }
 
-    void Renderer::render() {
+    void Renderer::beginFrame(uint32_t width, uint32_t height) {
+        if (mFrameWidth != width || mFrameHeight != height) {
+            mFrameWidth = width;
+            mFrameHeight = height;
+            resize(mFrameWidth, mFrameHeight);
+        }
+
         uint32_t swapchainImageIndex;
         mContext->acquireNextImage(mSwapchain, mImageAcquiredSemaphores[mFrameIndex], nullptr, &swapchainImageIndex);
         if (swapchainImageIndex == -1) {
-            // note: resize
-            int width, height;
-            mGetSurfaceSizeFunc(&width, &height);
-            resize(width, height);
             return;
         }
 
@@ -206,9 +183,12 @@ namespace gear {
             mCmds[mFrameIndex]->setBarrier(0, nullptr, 2, barriers);
         }
 
-        // Render View
-        for (int i = 0; i < mScene->mViews.size(); ++i) {
-            render(mScene->mViews[i], mCmds[mFrameIndex]);
+        // 初始化渲染器场景
+        mScene->prepare();
+
+        // 绘制每一个RenderView
+        for (int i = 0; i < mScene->mViewCount; ++i) {
+            render(&mScene->mViews[i], mCmds[mFrameIndex]);
         }
 
         {
@@ -237,7 +217,12 @@ namespace gear {
         presentInfo.index = swapchainImageIndex;
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.waitSemaphores = &mRenderCompleteSemaphores[mFrameIndex];
-        int ret = mQueue->present(presentInfo);
+        mQueue->present(presentInfo);
         mFrameIndex = (mFrameIndex + 1) % mImageCount;
     }
+
+    void Renderer::prepare() {
+
+    }
+
 }

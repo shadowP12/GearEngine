@@ -11,6 +11,10 @@ namespace gear {
     CRenderable::~CRenderable() {
     }
 
+    void CRenderable::setPrimitive(RenderPrimitive primitive) {
+        mPrimitive = primitive;
+    }
+
     void CRenderable::setVertexBuffer(VertexBuffer* buffer) {
         mVertexBuffer = buffer;
     }
@@ -21,6 +25,10 @@ namespace gear {
 
     void CRenderable::setMaterialInstance(MaterialInstance* instance) {
         mMaterialInstance = instance;
+    }
+
+    void CRenderable::updateRenderableBuffer() {
+        // TODO: 添加RenderableBuffer
     }
 
 }

@@ -2,6 +2,7 @@
 #include "Core/GearDefine.h"
 #include "Math/Math.h"
 #include "Resource/Resource.h"
+#include <Blast/Gfx/GfxSampler.h>
 #include <Blast/Utility/ShaderCompiler.h>
 #include <string>
 #include <unordered_map>
@@ -55,16 +56,15 @@ namespace gear {
         uint8_t key = 0;
     };
 
-    struct MaterialDesc {
-    };
-
     class MaterialInstance;
 
     class Material : public Resource {
     public:
-        Material() {}
-        ~Material() {}
+        ~Material();
+
         MaterialInstance* createInstance();
+    private:
+        Material();
     protected:
         friend class MaterialCompiler;
         friend class MaterialInstance;
@@ -74,12 +74,28 @@ namespace gear {
         std::unordered_map<uint8_t, Blast::GfxShader*> mFragShaderCache;
     };
 
+    struct SamplerInfo {
+        Texture* texture;
+        Blast::GfxSamplerDesc params;
+    };
+
+    class UniformBuffer;
     class MaterialInstance {
     public:
-        MaterialInstance(Material* material);
         ~MaterialInstance();
+
+        void setParameter(const char* name, void* data, uint32_t offset, uint32_t size);
+
+        void setParameter(const char* name, Texture* texture, Blast::GfxSamplerDesc params);
     private:
+        MaterialInstance(Material* material);
+    private:
+        friend class Material;
         Material* mMaterial = nullptr;
-        
+        uint8_t mStorage[128];
+        uint32_t mUniformBufferSize;
+        bool mBufferDirty = false;
+        UniformBuffer* mUniformBuffer;
+        std::unordered_map<uint32_t, SamplerInfo> mSamplerGroup;
     };
 }

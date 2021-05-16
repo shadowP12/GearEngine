@@ -10,46 +10,41 @@
 #include <vector>
 
 namespace gear {
-    struct RenderPrimitive {
-        Blast::GfxBuffer* vertexBuffer = nullptr;
-        Blast::GfxBuffer* indexBuffer = nullptr;
-        Blast::GfxShader* vertexShader = nullptr;
-        Blast::GfxShader* pixelShader = nullptr;
+    class VertexBuffer;
+    class IndexBuffer;
+    class UniformBuffer;
+    class MaterialInstance;
+    class RenderTarget;
+    struct Renderable {
+        VertexBuffer* vertexBuffer = nullptr;
+        IndexBuffer* indexBuffer = nullptr;
+        UniformBuffer* renderableUB = nullptr;
+        UniformBuffer* boneUB = nullptr;
+        MaterialInstance* materialInstance = nullptr;
+        Blast::PrimitiveTopology type = Blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_STRIP;
         uint32_t offset = 0;
+        uint32_t count = 0;
     };
 
-    class RenderView {
-    public:
-        RenderView(Renderer* renderer);
-        ~RenderView();
-        void prepare();
-        RenderTarget* getRenderTarget() { return mRenderTarget; }
-        void setRenderTarget(RenderTarget* renderTarget) { mRenderTarget = renderTarget; }
-        Blast::GfxBuffer* getViewBuffer() { return mViewBuffer; }
-        struct ViewBufferDesc {
-            glm::mat4 viewMatrix;
-            glm::mat4 projMatrix;
-        };
-        ViewBufferDesc& getViewBufferDesc() { return mViewBufferDesc; }
-    private:
-        Renderer* mRenderer = nullptr;
-        RenderTarget* mRenderTarget = nullptr;
-        Blast::GfxBuffer* mViewBuffer = nullptr;
-        ViewBufferDesc mViewBufferDesc = {};
+    struct RenderView {
+        UniformBuffer* cameraUB = nullptr;
+        UniformBuffer* lightUB = nullptr;
+        RenderTarget* renderTarget = nullptr;
     };
 
     class RenderScene {
     public:
         RenderScene(Renderer* renderer);
+
         ~RenderScene();
-        RenderView* genView();
-        RenderPrimitive* genPrimitive();
-        void deleteView(RenderView* view);
-        void deletePrimitive(RenderPrimitive* primitive);
+
+        void prepare();
     private:
         friend Renderer;
         Renderer* mRenderer = nullptr;
-        std::vector<RenderView*> mViews;
-        std::vector<RenderPrimitive*> mPrimitives;
+        uint32_t mViewCount = 0;
+        std::vector<RenderView> mViews;
+        uint32_t mRenderableCount = 0;
+        std::vector<Renderable> mRenderables;
     };
 }
