@@ -11,4 +11,16 @@ namespace gear {
     CRenderable::~CRenderable() {
     }
 
+    void CRenderable::setVertexBuffer(VertexBuffer* buffer) {
+        mVertexBuffer = buffer;
+    }
+
+    void CRenderable::setIndexBuffer(IndexBuffer* buffer) {
+        mIndexBufferr = buffer;
+    }
+
+    void CRenderable::setMaterialInstance(MaterialInstance* instance) {
+        mMaterialInstance = instance;
+    }
+
 }

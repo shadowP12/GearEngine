@@ -80,6 +80,6 @@ namespace gear {
         ~MaterialInstance();
     private:
         Material* mMaterial = nullptr;
-
+        
     };
 }
