@@ -221,6 +221,10 @@ namespace gear {
         mFrameIndex = (mFrameIndex + 1) % mImageCount;
     }
 
+    void Renderer::endFrame() {
+
+    }
+
     void Renderer::prepare() {
 
     }

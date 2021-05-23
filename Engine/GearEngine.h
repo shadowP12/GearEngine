@@ -3,7 +3,6 @@
 namespace gear {
     class Scene;
     class Renderer;
-    class ResourceManager;
     class GearEngine {
     public:
         GearEngine();
@@ -14,11 +13,9 @@ namespace gear {
 
         Renderer* getRenderer();
 
-        ResourceManager* getResourceManager();
     private:
         Scene* mScene = nullptr;
         Renderer* mRenderer = nullptr;
-        ResourceManager* mResourceManager = nullptr;
     };
 
     extern GearEngine gEngine;

@@ -8,6 +8,10 @@ namespace gear {
     }
 
     RenderPassCache::~RenderPassCache() {
+        for (auto iter = mRenderPasses.begin(); iter != mRenderPasses.end(); ++iter) {
+            SAFE_DELETE(iter->second);
+        }
+        mRenderPasses.clear();
     }
 
     bool RenderPassCache::RenderPassEq::operator()(const Blast::GfxRenderPassDesc& desc1, const Blast::GfxRenderPassDesc& desc2) const {
@@ -41,6 +45,10 @@ namespace gear {
     }
 
     FramebufferCache::~FramebufferCache() {
+        for (auto iter = mFrambuffers.begin(); iter != mFrambuffers.end(); ++iter) {
+            SAFE_DELETE(iter->second);
+        }
+        mFrambuffers.clear();
     }
 
     bool FramebufferCache::FramebufferEq::operator()(const Blast::GfxFramebufferDesc& desc1, const Blast::GfxFramebufferDesc& desc2) const {
@@ -76,6 +84,10 @@ namespace gear {
     }
 
     GraphicsPipelineCache::~GraphicsPipelineCache() {
+        for (auto iter = mPipelines.begin(); iter != mPipelines.end(); ++iter) {
+            SAFE_DELETE(iter->second);
+        }
+        mPipelines.clear();
     }
 
     bool GraphicsPipelineCache::PipelineEq::operator()(const Blast::GfxGraphicsPipelineDesc& desc1, const Blast::GfxGraphicsPipelineDesc& desc2) const {

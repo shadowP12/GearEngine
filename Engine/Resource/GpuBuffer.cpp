@@ -105,6 +105,9 @@ namespace gear {
         }
     }
 
+    VertexBuffer::~VertexBuffer() {
+    }
+
     void IndexBuffer::Builder::indexType(Blast::IndexType type) {
         mIndexType = type;
     }

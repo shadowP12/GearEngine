@@ -3,7 +3,6 @@
 #include "Resource/Texture.h"
 namespace gear {
     Material::Material() {
-
     }
 
     Material::~Material() {
@@ -14,6 +13,16 @@ namespace gear {
         for (auto& fs : mVertShaderCache) {
             SAFE_DELETE(fs.second);
         }
+    }
+
+    Blast::GfxShader* Material::getVertShader(uint8_t variant) {
+        uint8_t key = MaterialVariant::filterVariantVertex(variant);
+        return mVertShaderCache[key];
+    }
+
+    Blast::GfxShader* Material::getFragShader(uint8_t variant) {
+        uint8_t key = MaterialVariant::filterVariantFragment(variant);
+        return mFragShaderCache[key];
     }
 
     MaterialInstance* Material::createInstance() {

@@ -15,6 +15,8 @@ namespace gear {
     class UniformBuffer;
     class MaterialInstance;
     class RenderTarget;
+
+    // TODO: 包围盒
     struct Renderable {
         VertexBuffer* vertexBuffer = nullptr;
         IndexBuffer* indexBuffer = nullptr;

@@ -18,4 +18,7 @@ namespace gear {
     void CCamera::setRenderTarget(RenderTarget* target) {
         mRenderTarget = target;
     }
+
+    void CCamera::updateCameraBuffer() {
+    }
 }

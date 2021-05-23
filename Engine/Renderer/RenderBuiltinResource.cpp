@@ -46,16 +46,8 @@ namespace gear {
     }
 
     void RenderBuiltinResource::createCustomRootSignature() {
+        // TODO: 规划Root Signature布局
         Blast::GfxRootSignatureDesc rootSignatureDesc;
-        rootSignatureDesc.stages = Blast::SHADER_STAGE_VERT | Blast::SHADER_STAGE_FRAG;
-        Blast::GfxShaderReflection vertex;
-        vertex.stage = Blast::SHADER_STAGE_VERT;
-        Blast::GfxShaderReflection pixel;
-        pixel.stage = Blast::SHADER_STAGE_FRAG;
-
-
-        rootSignatureDesc.vertex = vertex;
-        rootSignatureDesc.pixel = pixel;
         mCustomRootSignature = mRenderer->getContext()->createRootSignature(rootSignatureDesc);
     }
 }

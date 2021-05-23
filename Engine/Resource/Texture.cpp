@@ -2,7 +2,6 @@
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/CopyEngine.h"
-
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Gfx/GfxBuffer.h>
 #include <Blast/Gfx/GfxTexture.h>
@@ -62,14 +61,14 @@ namespace gear {
             offset += imageSize;
         }
 
-        CopySet* copySet = gEngine.getRenderer()->getCopyEngine()->getActiveSet();
-        copySet->cmd->begin();
+        CopyCommand* copyCommand = gEngine.getRenderer()->getCopyEngine()->getActiveCommand();
+        copyCommand->cmd->begin();
         {
             // 设置纹理为读写状态
             Blast::GfxTextureBarrier barrier;
             barrier.texture = mInternelTexture;
             barrier.newState = Blast::RESOURCE_STATE_COPY_DEST;
-            copySet->cmd->setBarrier(0, nullptr, 1, &barrier);
+            copyCommand->cmd->setBarrier(0, nullptr, 1, &barrier);
         }
 
         offset = 0;
@@ -81,7 +80,7 @@ namespace gear {
             helper.bufferOffset = offset;
             helper.layer = i;
             helper.level = 0;
-            copySet->cmd->copyToImage(stagingBuffer, mInternelTexture, helper);
+            copyCommand->cmd->copyToImage(stagingBuffer, mInternelTexture, helper);
             offset += imageSize;
         }
 
@@ -90,14 +89,14 @@ namespace gear {
             Blast::GfxTextureBarrier barrier;
             barrier.texture = mInternelTexture;
             barrier.newState = Blast::RESOURCE_STATE_SHADER_RESOURCE;
-            copySet->cmd->setBarrier(0, nullptr, 1, &barrier);
+            copyCommand->cmd->setBarrier(0, nullptr, 1, &barrier);
         }
-        copySet->cmd->end();
+        copyCommand->cmd->end();
 
         Blast::GfxSubmitInfo submitInfo;
         submitInfo.cmdBufCount = 1;
-        submitInfo.cmdBufs = &copySet->cmd;
-        submitInfo.signalFence = copySet->fence;
+        submitInfo.cmdBufs = &copyCommand->cmd;
+        submitInfo.signalFence = copyCommand->fence;
         submitInfo.waitSemaphoreCount = 0;
         submitInfo.waitSemaphores = nullptr;
         submitInfo.signalSemaphoreCount = 0;

@@ -1,6 +1,7 @@
 #pragma once
 #include "Scene/Components/Component.h"
 #include "Math/Math.h"
+#include <Blast/Gfx/GfxDefine.h>
 
 namespace gear {
     class Entity;
@@ -14,6 +15,8 @@ namespace gear {
         RenderPrimitive(Blast::PrimitiveTopology type, uint32_t offset, uint32_t count)
         : type(type), offset(offset), count(count) {
         }
+
+        RenderPrimitive() = default;
 
         ~RenderPrimitive() = default;
     public:

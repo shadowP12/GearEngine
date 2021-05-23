@@ -27,7 +27,9 @@ namespace gear {
             }
         }
         CopyCommand* newCommand = new CopyCommand();
+        // 创建完fence后需要手动重置fence状态
         newCommand->fence = mRenderer->mContext->createFence();
+        newCommand->fence->reset();
         newCommand->cmd = mRenderer->mCmdPool->allocBuf(false);
         mCommands.push_back(newCommand);
         return newCommand;

@@ -9,6 +9,7 @@ namespace Blast {
 
 namespace gear {
     class Renderer;
+
     struct Attachment {
         Blast::Format format;
         Blast::GfxTexture* texture = nullptr;
@@ -44,5 +45,12 @@ namespace gear {
         Blast::SampleCount mSamples;
         Attachment mColor[TARGET_COUNT] = {};
         Attachment mDepthStencil = {};
+    };
+
+    /**
+     * 该结构用于描述如何使用RT
+     */
+    struct RenderTargetParams {
+
     };
 }

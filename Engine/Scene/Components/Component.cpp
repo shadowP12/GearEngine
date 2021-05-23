@@ -1,13 +1,12 @@
-#include "Scene/Components/Component.h"
+#include "Component.h"
 #include "Scene/Scene.h"
-EFFECTS_NAMESPACE_BEGIN
 
-Component::Component(SceneNode* node) {
-    mType = ComponentType::None;
-    mNode = node;
+namespace gear {
+    Component::Component(Entity* entity) {
+        mEntity = entity;
+        mType = ComponentType::None;
+    }
+
+    Component::~Component() {
+    }
 }
-
-Component::~Component()
-{}
-
-EFFECTS_NAMESPACE_END

@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/GearDefine.h"
+#include <Blast/Gfx/GfxPipeline.h>
 #include <functional>
 
 namespace Blast {
@@ -23,6 +24,7 @@ namespace Blast {
 namespace gear {
     struct Attachment;
     struct RenderTargetDesc;
+    struct RenderTargetParams;
     class RenderTarget;
     class CopyEngine;
     class RenderBuiltinResource;
@@ -35,11 +37,20 @@ namespace gear {
     class Renderer {
     public:
         /**
-         * 渲染命令
+         * 基础绘制单位
          */
-        using CommandKey = uint64_t;
+        using DrawCallKey = uint64_t;
 
-        
+        struct DrawCall {
+            DrawCallKey key = 0;
+            uint32_t index;
+            uint8_t variant;
+            // RenderState
+            Blast::GfxBlendState blendState;
+            Blast::GfxDepthState depthState;
+            Blast::GfxRasterizerState rasterizerState;
+            bool operator < (DrawCall const& rhs) { return key < rhs.key; }
+        };
 
         Renderer();
 
@@ -48,6 +59,8 @@ namespace gear {
         void initSurface(void* surface);
 
         void beginFrame(uint32_t width, uint32_t height);
+
+        void endFrame();
 
         Blast::GfxContext* getContext() { return mContext; }
 
@@ -74,6 +87,13 @@ namespace gear {
         void prepare();
 
         void render(RenderView* view, Blast::GfxCommandBuffer* cmd);
+
+        void bindRenderTarget(RenderTarget* rt, RenderTargetParams* params);
+
+        void unbindRenderTarget();
+
+        void executeDrawCall(DrawCall* dc);
+
     private:
         friend CopyEngine;
         friend RenderBuiltinResource;
@@ -101,5 +121,21 @@ namespace gear {
         uint32_t mImageCount = 0;
         uint32_t mFrameWidth = 0;
         uint32_t mFrameHeight = 0;
+
+        /**
+         * 当前图形管线绑定的相关变量
+         */
+         Blast::GfxRenderPass* mBindRenderPass = nullptr;
+
+        /**
+         * DrawCall相关变量
+         */
+        DrawCall mDrawCalls[10240];
+        uint32_t mDrawCallHead = 0;
+
+         /**
+          * Render Pass相关变量
+          */
+
     };
 }

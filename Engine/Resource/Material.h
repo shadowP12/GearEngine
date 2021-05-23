@@ -3,6 +3,7 @@
 #include "Math/Math.h"
 #include "Resource/Resource.h"
 #include <Blast/Gfx/GfxSampler.h>
+#include <Blast/Gfx/GfxPipeline.h>
 #include <Blast/Utility/ShaderCompiler.h>
 #include <string>
 #include <unordered_map>
@@ -58,16 +59,25 @@ namespace gear {
 
     class MaterialInstance;
 
+    // TODO: Material ID
     class Material : public Resource {
     public:
         ~Material();
+
+        Blast::GfxShader* getVertShader(uint8_t variant);
+
+        Blast::GfxShader* getFragShader(uint8_t variant);
 
         MaterialInstance* createInstance();
     private:
         Material();
     protected:
+        friend class Renderer;
         friend class MaterialCompiler;
         friend class MaterialInstance;
+        Blast::GfxBlendState mBlendState;
+        Blast::GfxDepthState mDepthState;
+        Blast::GfxRasterizerState mRasterizerState;
         std::vector<Blast::GfxShaderResource> mResources;
         std::vector<Blast::GfxShaderVariable> mVariables;
         std::unordered_map<uint8_t, Blast::GfxShader*> mVertShaderCache;
@@ -80,9 +90,13 @@ namespace gear {
     };
 
     class UniformBuffer;
+
+    // TODO: MaterialInsrance ID
     class MaterialInstance {
     public:
         ~MaterialInstance();
+
+        Material* getMaterial() { return mMaterial; }
 
         void setParameter(const char* name, void* data, uint32_t offset, uint32_t size);
 
@@ -90,6 +104,7 @@ namespace gear {
     private:
         MaterialInstance(Material* material);
     private:
+        friend class Renderer;
         friend class Material;
         Material* mMaterial = nullptr;
         uint8_t mStorage[128];

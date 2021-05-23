@@ -63,12 +63,12 @@ namespace gear {
             generateDefine(out, "LOCATION_UV1", "6");
             generateDefine(out, "LOCATION_BONE_INDICES", "7");
             generateDefine(out, "LOCATION_BONE_WEIGHTS", "8");
-            generateDefine(out, "HAS_ATTRIBUTE_CUSTOM0", "9");
-            generateDefine(out, "HAS_ATTRIBUTE_CUSTOM1", "10");
-            generateDefine(out, "HAS_ATTRIBUTE_CUSTOM2", "11");
-            generateDefine(out, "HAS_ATTRIBUTE_CUSTOM3", "12");
-            generateDefine(out, "HAS_ATTRIBUTE_CUSTOM4", "13");
-            generateDefine(out, "HAS_ATTRIBUTE_CUSTOM5", "14");
+            generateDefine(out, "LOCATION_CUSTOM0", "9");
+            generateDefine(out, "LOCATION_CUSTOM1", "10");
+            generateDefine(out, "LOCATION_CUSTOM2", "11");
+            generateDefine(out, "LOCATION_CUSTOM3", "12");
+            generateDefine(out, "LOCATION_CUSTOM4", "13");
+            generateDefine(out, "LOCATION_CUSTOM5", "14");
         } else if (stage == Blast::SHADER_STAGE_FRAG) {
         }
         return out;

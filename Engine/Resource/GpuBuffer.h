@@ -11,6 +11,8 @@ namespace gear {
 
         virtual ~GpuBuffer();
 
+        Blast::GfxBuffer* getBuffer() { return mBuffer; }
+
         void update(void* data, uint32_t offset, uint32_t size);
     protected:
         Blast::GfxBuffer* mBuffer = nullptr;
@@ -38,6 +40,8 @@ namespace gear {
         };
 
         ~VertexBuffer();
+
+        Blast::GfxVertexLayout getVertexLayout() { return mLayout; }
     private:
         VertexBuffer(Builder* builder);
 
@@ -66,6 +70,8 @@ namespace gear {
         };
 
         ~IndexBuffer();
+
+        Blast::IndexType getIndexType() { return mIndexType; }
     private:
         IndexBuffer(Builder* builder);
     private:

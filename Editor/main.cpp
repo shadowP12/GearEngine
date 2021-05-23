@@ -6,7 +6,13 @@
 #include <Blast/Utility/ShaderCompiler.h>
 #include <Engine/GearEngine.h>
 #include <Engine/Renderer/Renderer.h>
-#include <Engine/Renderer/RenderScene.h>
+#include <Engine/Resource/Material.h>
+#include <Engine/Resource/GpuBuffer.h>
+#include <Engine/Scene/Scene.h>
+#include <Engine/Scene/Entity.h>
+#include <Engine/Scene/Components/CCamera.h>
+#include <Engine/Scene/Components/CTransform.h>
+#include <Engine/Scene/Components/CRenderable.h>
 #include <Engine/MaterialCompiler/MaterialCompiler.h>
 #include <Utility/Log.h>
 #include <iostream>
@@ -28,85 +34,94 @@ unsigned int indices[] = {
         0, 1, 2, 2, 3, 0
 };
 
-Blast::GfxShader* vertShader = nullptr;
-Blast::GfxShader* fragShader = nullptr;
-Blast::GfxBuffer* meshIndexBuffer = nullptr;
-Blast::GfxBuffer* meshVertexBuffer = nullptr;
 
 GLFWwindow* gWindowPtr = nullptr;
-
-void getSurfaceSize(int* w, int* h) {
-    glfwGetFramebufferSize(gWindowPtr, w, h);
-}
+uint32_t gWidth = 800;
+uint32_t gHeight = 600;
+gear::Material* gDefaultMat = nullptr;
+gear::MaterialInstance* gDefaultMatIns = nullptr;
+gear::VertexBuffer* gVB = nullptr;
+gear::IndexBuffer* gIB = nullptr;
+gear::Entity* gCamera = nullptr;
+gear::Entity* gPawn = nullptr;
 
 static std::string readFileData(const std::string& path);
 
+static void resizeCB(GLFWwindow* window, int width, int height) {
+    gWidth = width;
+    gHeight = height;
+}
+
+void createTestScene() {
+    // 初始化测试资源
+    gear::MaterialCompiler materialCompiler;
+    gDefaultMat = materialCompiler.compile("./BuiltinResources/Materials/default.mat");
+    gDefaultMatIns = gDefaultMat->createInstance();
+
+    gear::VertexBuffer::Builder vbBuilder;
+    vbBuilder.vertexCount(4);
+    vbBuilder.attribute(Blast::SEMANTIC_POSITION, Blast::FORMAT_R32G32B32_FLOAT);
+    vbBuilder.attribute(Blast::SEMANTIC_TEXCOORD0, Blast::FORMAT_R32G32_FLOAT);
+    gVB = vbBuilder.build();
+    gVB->update(vertices, 0, sizeof(vertices));
+
+    gear::IndexBuffer::Builder ibBuilder;
+    ibBuilder.indexCount(6);
+    ibBuilder.indexType(Blast::INDEX_TYPE_UINT32);
+    gIB = ibBuilder.build();
+    gIB->update(indices, 0, sizeof(indices));
+
+    // 初始化相机
+    {
+        gCamera = gear::gEngine.getScene()->createEntity();
+        gear::CTransform* ct = gCamera->addComponent<gear::CTransform>();
+        ct->setTransform(glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0)));
+
+        gear::CCamera* cc = gCamera->addComponent<gear::CCamera>();
+    }
+
+    // 初始化Pawn
+    {
+        gPawn = gear::gEngine.getScene()->createEntity();
+        gear::CTransform* ct = gPawn->addComponent<gear::CTransform>();
+        ct->setTransform(glm::mat4(1.0));
+
+        gear::CRenderable* cr = gPawn->addComponent<gear::CRenderable>();
+        cr->setPrimitive({Blast::PRIMITIVE_TOPO_TRI_LIST , 0, 6});
+        cr->setVertexBuffer(gVB);
+        cr->setIndexBuffer(gIB);
+        cr->setMaterialInstance(gDefaultMatIns);
+    }
+}
+
+void destroyTestScene() {
+    SAFE_DELETE(gDefaultMat);
+    SAFE_DELETE(gDefaultMatIns);
+    SAFE_DELETE(gVB);
+    SAFE_DELETE(gIB);
+    gear::gEngine.getScene()->destroyEntity(gCamera);
+    gear::gEngine.getScene()->destroyEntity(gPawn);
+}
+
 int main()
 {
-    // 测试材质编辑器
-    std::string materialCode = readFileData("./BuiltinResources/Materials/default.mat");
-    gear::MaterialCompiler materialCompiler;
-    materialCompiler.compile("./BuiltinResources/Materials/default.mat");
-    return 0;
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    gWindowPtr = glfwCreateWindow(800, 600, "GearEditor", nullptr, nullptr);
+    gWindowPtr = glfwCreateWindow(gWidth, gHeight, "GearEditor", nullptr, nullptr);
     glfwSetWindowUserPointer(gWindowPtr, nullptr);
+    glfwSetFramebufferSizeCallback(gWindowPtr, resizeCB);
+
     gear::gEngine.getRenderer()->initSurface(glfwGetWin32Window(gWindowPtr));
-    gear::gEngine.getRenderer()->setSurfaceSizeFunc(getSurfaceSize);
-    gear::gEngine.getRenderer()->resize(800, 600);
 
-    gear::RenderView* mainView = gear::gEngine.getRenderer()->getScene()->genView();
+    createTestScene();
 
-    Blast::GfxBufferDesc bufferDesc;
-    bufferDesc.size = sizeof(Vertex) * 4;
-    bufferDesc.type = Blast::RESOURCE_TYPE_VERTEX_BUFFER;
-    bufferDesc.usage = Blast::RESOURCE_USAGE_CPU_TO_GPU;
-    meshVertexBuffer = gear::gEngine.getRenderer()->getContext()->createBuffer(bufferDesc);
-    meshVertexBuffer->writeData(0,sizeof(vertices), vertices);
-
-    bufferDesc.size = sizeof(unsigned int) * 6;
-    bufferDesc.type = Blast::RESOURCE_TYPE_INDEX_BUFFER;
-    bufferDesc.usage = Blast::RESOURCE_USAGE_CPU_TO_GPU;
-    meshIndexBuffer = gear::gEngine.getRenderer()->getContext()->createBuffer(bufferDesc);
-    meshIndexBuffer->writeData(0, sizeof(indices), indices);
-
-
-    {
-        Blast::ShaderCompileDesc compileDesc;
-        compileDesc.code = readFileData("./Resource/Shaders/triangle.vert");
-        compileDesc.stage = Blast::SHADER_STAGE_VERT;
-        Blast::ShaderCompileResult compileResult = gear::gEngine.getRenderer()->getShaderCompiler()->compile(compileDesc);
-
-        Blast::GfxShaderDesc shaderDesc;
-        shaderDesc.stage = Blast::SHADER_STAGE_VERT;
-        shaderDesc.bytes = compileResult.bytes;
-        vertShader = gear::gEngine.getRenderer()->getContext()->createShader(shaderDesc);
-    }
-
-    {
-        Blast::ShaderCompileDesc compileDesc;
-        compileDesc.code = readFileData("./Resource/Shaders/triangle.frag");
-        compileDesc.stage = Blast::SHADER_STAGE_FRAG;
-        Blast::ShaderCompileResult compileResult = gear::gEngine.getRenderer()->getShaderCompiler()->compile(compileDesc);
-
-        Blast::GfxShaderDesc shaderDesc;
-        shaderDesc.stage = Blast::SHADER_STAGE_FRAG;
-        shaderDesc.bytes = compileResult.bytes;
-        fragShader = gear::gEngine.getRenderer()->getContext()->createShader(shaderDesc);
-    }
-
-    gear::RenderPrimitive* p = gear::gEngine.getRenderer()->getScene()->genPrimitive();
-    p->vertexBuffer = meshVertexBuffer;
-    p->indexBuffer = meshIndexBuffer;
-    p->offset = 0;
-    p->vertexShader = vertShader;
-    p->pixelShader = fragShader;
     while (!glfwWindowShouldClose(gWindowPtr)) {
-        gear::gEngine.getRenderer()->render();
+        gear::gEngine.getRenderer()->beginFrame(gWidth, gHeight);
+        gear::gEngine.getRenderer()->endFrame();
         glfwPollEvents();
     }
-    gear::gEngine.getRenderer()->getScene()->deleteView(mainView);
+
+    destroyTestScene();
 
     glfwDestroyWindow(gWindowPtr);
     glfwTerminate();

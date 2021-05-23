@@ -55,7 +55,11 @@ namespace gear {
                 cc->updateCameraBuffer();
                 mViews[mViewCount].cameraUB = cc->mCameraUniformBuffer;
                 mViews[mViewCount].lightUB = cc->mLightUniformBuffer;
-                mViews[mViewCount].renderTarget = cc->mRenderTarget;
+                if (cc->mRenderTarget == nullptr) {
+                    mViews[mViewCount].renderTarget = mRenderer->getRenderTarget();
+                } else {
+                    mViews[mViewCount].renderTarget = cc->mRenderTarget;
+                }
                 mViewCount++;
             }
         }
