@@ -15,6 +15,12 @@ namespace Blast {
 namespace gear {
     class Texture;
 
+    // 着色模型
+    enum class Shading {
+        UNLIT,
+        LIT,
+    };
+
     // 材质应用的范围
     enum class MaterialDomain {
         SURFACE = 0,
@@ -75,6 +81,7 @@ namespace gear {
         friend class Renderer;
         friend class MaterialCompiler;
         friend class MaterialInstance;
+        Shading mShading;
         Blast::GfxBlendState mBlendState;
         Blast::GfxDepthState mDepthState;
         Blast::GfxRasterizerState mRasterizerState;

@@ -1,6 +1,11 @@
 states {
+    shadingModel : unlit,
     culling : none,
     depthCulling: false
+}
+
+requires {
+    uv0
 }
 
 uniforms {

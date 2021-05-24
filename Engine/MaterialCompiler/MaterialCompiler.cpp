@@ -3,6 +3,8 @@
 #include "ChunkParser.h"
 #include "CommonLexer.h"
 #include "ParamParser.h"
+#include "ArrayParser.h"
+#include "DictParser.h"
 #include "CodeGenerator.h"
 #include "Utility/FileSystem.h"
 #include "Utility/Log.h"
@@ -12,6 +14,12 @@
 #include <Blast/Utility/ShaderCompiler.h>
 #include <Blast/Utility/VulkanShaderCompiler.h>
 namespace gear {
+    struct MaterialVariantInfo {
+        MaterialVariantInfo(uint8_t v, Blast::ShaderStage s) : variant(v), stage(s) {}
+        uint8_t variant;
+        Blast::ShaderStage stage;
+    };
+
     static std::vector<MaterialVariantInfo> getSurfaceVariants() {
         std::vector<MaterialVariantInfo> variants;
         for (uint8_t k = 0; k < MATERIAL_VARIANT_COUNT; k++) {
@@ -29,23 +37,71 @@ namespace gear {
 
     MaterialCompiler::MaterialCompiler() {
         mShaderCompiler = new Blast::VulkanShaderCompiler();
+        // 处理函数回调
+        mParameters["shadingModel"] = &processShading;
     }
 
     MaterialCompiler::~MaterialCompiler() {
         SAFE_DELETE(mShaderCompiler);
     }
 
-    Material* MaterialCompiler::compile(const std::string& path) {
+    Material* MaterialCompiler::compile(const std::string& code) {
         Blast::GfxContext* context = gEngine.getRenderer()->getContext();
         // 解析材质文件内容
         Material* material = new Material();
         MaterialBuildInfo buildInfo;
-        std::string materialCode = readFileData(path);
+        std::string materialCode = code;
         gear::ChunkLexer chunkLexer;
         chunkLexer.lex(materialCode.c_str(), materialCode.size());
         gear::ChunkParser chunkParser(chunkLexer.getLexemes());
         std::unordered_map<std::string, std::string> chunks = chunkParser.parse();
 
+        // 解析material states
+        if (chunks.find("states") != chunks.end()) {
+            gear::CommonLexer stateLexer;
+            stateLexer.lex(chunks["states"].c_str(), chunks["states"].size());
+            gear::DictParser stateParser(stateLexer.getLexemes());
+            std::unordered_map<std::string, std::string> stateParams = stateParser.parse();
+            for(const auto& iter : stateParams) {
+                const std::string& key = iter.first;
+                const std::string& value = iter.second;
+                if (mParameters.find(key) == mParameters.end()) {
+                    continue;
+                }
+                mParameters[key](material, value);
+            }
+        }
+
+        // 解析vertex requires
+        if (chunks.find("requires") != chunks.end()) {
+            gear::CommonLexer requireLexer;
+            requireLexer.lex(chunks["requires"].c_str(), chunks["requires"].size());
+            gear::ArrayParser requireParser(requireLexer.getLexemes());
+            std::vector<std::string> requireParams = requireParser.parse();
+
+            static const std::unordered_map<std::string, Blast::ShaderSemantic> strToEnum {
+                { "color", Blast::SEMANTIC_COLOR },
+                { "position", Blast::SEMANTIC_POSITION },
+                { "tangents", Blast::SEMANTIC_NORMAL },
+                { "uv0", Blast::SEMANTIC_TEXCOORD0 },
+                { "uv1", Blast::SEMANTIC_TEXCOORD1 },
+                { "custom0", Blast::SEMANTIC_CUSTOM0 },
+                { "custom1", Blast::SEMANTIC_CUSTOM1 },
+                { "custom2", Blast::SEMANTIC_CUSTOM2 },
+                { "custom3", Blast::SEMANTIC_CUSTOM3 },
+                { "custom4", Blast::SEMANTIC_CUSTOM4 },
+                { "custom5", Blast::SEMANTIC_CUSTOM5 },
+            };
+
+            for(const auto& iter : requireParams) {
+                if (strToEnum.find(iter) == strToEnum.end()) {
+                    continue;
+                }
+                buildInfo.semantics |= strToEnum.at(iter);
+            }
+        }
+
+        // 解析uniform block
         if (chunks.find("uniforms") != chunks.end()) {
             gear::CommonLexer uniformLexer;
             uniformLexer.lex(chunks["uniforms"].c_str(), chunks["uniforms"].size());
@@ -56,6 +112,7 @@ namespace gear {
             }
         }
 
+        // 解析sampler block
         if (chunks.find("samplers") != chunks.end()) {
             gear::CommonLexer samplerLexer;
             samplerLexer.lex(chunks["samplers"].c_str(), chunks["samplers"].size());
@@ -81,8 +138,6 @@ namespace gear {
             materialFragmentCode = "void materialFragment(inout MaterialFragmentInputs material) {}\n";
         }
 
-        // TODO: 后续补充管线状态解析
-
         // 材质参数只需要初始化一次
         bool initMaterialParams = false;
         // 生成所有可用的变体
@@ -90,19 +145,25 @@ namespace gear {
         for (const auto& v : variants) {
             // 设置顶点属性布局
             MaterialVariant variant(v.variant);
-            Blast::ShaderSemantic attributes = Blast::ShaderSemantic::SEMANTIC_POSITION;
-            attributes |= Blast::ShaderSemantic::SEMANTIC_NORMAL;
-            attributes |= Blast::ShaderSemantic::SEMANTIC_TANGENT;
-            attributes |= Blast::ShaderSemantic::SEMANTIC_BITANGENT;
-            attributes |= Blast::ShaderSemantic::SEMANTIC_COLOR;
-            attributes |= Blast::ShaderSemantic::SEMANTIC_TEXCOORD0;
-
+            Blast::ShaderSemantic attributes = buildInfo.semantics;
+            attributes |= Blast::ShaderSemantic::SEMANTIC_POSITION;
+            if (material->mShading != Shading::UNLIT) {
+                attributes |= Blast::ShaderSemantic::SEMANTIC_NORMAL;
+                attributes |= Blast::ShaderSemantic::SEMANTIC_TANGENT;
+                attributes |= Blast::ShaderSemantic::SEMANTIC_BITANGENT;
+            }
+            if (attributes & Blast::ShaderSemantic::SEMANTIC_NORMAL) {
+                attributes |= Blast::ShaderSemantic::SEMANTIC_TANGENT;
+                attributes |= Blast::ShaderSemantic::SEMANTIC_BITANGENT;
+            }
+            if (variant.hasSkinningOrMorphing()) {
+                attributes |= Blast::ShaderSemantic::SEMANTIC_JOINTS;
+                attributes |= Blast::ShaderSemantic::SEMANTIC_WEIGHTS;
+            }
             if (v.stage == Blast::ShaderStage::SHADER_STAGE_VERT) {
                 std::stringstream vs;
                 CodeGenerator cg;
                 if (variant.hasSkinningOrMorphing()) {
-                    attributes |= Blast::ShaderSemantic::SEMANTIC_JOINTS;
-                    attributes |= Blast::ShaderSemantic::SEMANTIC_WEIGHTS;
                     cg.generateDefine(vs, "HAS_SKINNING_OR_MORPHING");
                 }
                 cg.generateShaderAttributes(vs, v.stage, attributes);
@@ -160,7 +221,7 @@ namespace gear {
                 fs << materialFragmentCode << "\n";
                 cg.generateShaderMain(fs, v.stage);
                 cg.generateEpilog(fs);
-
+                LOGI("%s\n", fs.str().c_str());
                 Blast::ShaderCompileDesc compileDesc;
                 compileDesc.code = fs.str();
                 compileDesc.stage = Blast::SHADER_STAGE_FRAG;
@@ -175,5 +236,16 @@ namespace gear {
         }
 
         return material;
+    }
+
+    void MaterialCompiler::processShading(Material* mat, const std::string& value) {
+        static const std::unordered_map<std::string, Shading> strToEnum {
+            { "lit", Shading::LIT },
+            { "unlit", Shading::UNLIT },
+        };
+        if (strToEnum.find(value) == strToEnum.end()) {
+            return;
+        }
+        mat->mShading = strToEnum.at(value);
     }
 }

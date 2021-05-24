@@ -8,13 +8,8 @@ namespace Blast {
 }
 
 namespace gear {
-    struct MaterialVariantInfo {
-        MaterialVariantInfo(uint8_t v, Blast::ShaderStage s) : variant(v), stage(s) {}
-        uint8_t variant;
-        Blast::ShaderStage stage;
-    };
-
     struct MaterialBuildInfo {
+        Blast::ShaderSemantic semantics = Blast::SEMANTIC_UNDEFINED;
         std::vector<std::pair<std::string, std::string>> uniforms;
         std::vector<std::pair<std::string, std::string>> samplers;
     };
@@ -22,11 +17,17 @@ namespace gear {
     class MaterialCompiler {
     public:
         MaterialCompiler();
+
         ~MaterialCompiler();
+
         Material* compile(const std::string& path);
+
     private:
+        static void processShading(Material* mat, const std::string& value);
 
     private:
         Blast::ShaderCompiler* mShaderCompiler = nullptr;
+        using Callback = void(*)(Material*, const std::string&);
+        std::unordered_map<std::string, Callback> mParameters;
     };
 }

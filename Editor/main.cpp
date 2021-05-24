@@ -55,7 +55,8 @@ static void resizeCB(GLFWwindow* window, int width, int height) {
 void createTestScene() {
     // 初始化测试资源
     gear::MaterialCompiler materialCompiler;
-    gDefaultMat = materialCompiler.compile("./BuiltinResources/Materials/default.mat");
+    std::string materialCode = readFileData("./BuiltinResources/Materials/default.mat");
+    gDefaultMat = materialCompiler.compile(materialCode);
     gDefaultMatIns = gDefaultMat->createInstance();
 
     gear::VertexBuffer::Builder vbBuilder;
