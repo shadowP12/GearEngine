@@ -4,7 +4,13 @@
 namespace gear {
     Scene::Scene() {}
 
-    Scene::~Scene() {}
+    Scene::~Scene() {
+        for (auto iter = mEntities.begin(); iter != mEntities.end();) {
+            delete *iter;
+            *iter = nullptr;
+        }
+        mEntities.clear();
+    }
 
     Entity* Scene::createEntity() {
         Entity* entity = new Entity();

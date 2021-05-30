@@ -16,6 +16,7 @@ namespace gear {
         ~RenderBuiltinResource();
         Blast::GfxBuffer* getQuadVertexBuffer() { return mQuadVertexBuffer; }
         Blast::GfxBuffer* getQuadIndexBuffer() { return mQuadIndexBuffer; }
+        Blast::GfxRootSignature* getRootSignature() { return mCustomRootSignature; }
     private:
         void createCustomRootSignature();
         void createQuadBuffer();

@@ -21,7 +21,6 @@
 
 namespace gear {
     Renderer::Renderer() {
-        mShaderCompiler = new Blast::VulkanShaderCompiler();
         mContext = new Blast::VulkanContext();
         mQueue = mContext->getQueue(Blast::QUEUE_TYPE_GRAPHICS);
         Blast::GfxCommandBufferPoolDesc cmdPoolDesc;
@@ -35,28 +34,61 @@ namespace gear {
         mRenderPassCache = new RenderPassCache(this);
         mFramebufferCache = new FramebufferCache(this);
         mGraphicsPipelineCache = new GraphicsPipelineCache(this);
+        mDescriptorCache = new DescriptorCache(this);
+
+        for (int i = 0; i < UBUFFER_BINDING_COUNT; ++i) {
+            mDescriptorKey.uniformBuffers[i] = nullptr;
+            mDescriptorKey.uniformBufferOffsets[i] = 0;
+            mDescriptorKey.uniformBufferOffsets[i] = 0;
+        }
+
+        for (int i = 0; i < SAMPLER_BINDING_COUNT; ++i) {
+            mDescriptorKey.textures[i] = nullptr;
+            mDescriptorKey.samplers[i] = nullptr;
+        }
     }
 
     Renderer::~Renderer() {
         mQueue->waitIdle();
+        SAFE_DELETE(mRenderBuiltinResource);
         SAFE_DELETE(mScene);
         SAFE_DELETE(mRenderPassCache);
         SAFE_DELETE(mFramebufferCache);
         SAFE_DELETE(mGraphicsPipelineCache);
+        SAFE_DELETE(mDescriptorCache);
         SAFE_DELETE(mDefaultRenderTarget);
         SAFE_DELETE(mCopyEngine);
+
+        for (int i = 0; i < mImageCount; ++i) {
+            SAFE_DELETE(mCmds[i]);
+        }
         SAFE_DELETE_ARRAY(mCmds);
+
+        for (int i = 0; i < mImageCount; ++i) {
+            SAFE_DELETE(mRenderCompleteFences[i]);
+        }
         SAFE_DELETE_ARRAY(mRenderCompleteFences);
+
+        for (int i = 0; i < mImageCount; ++i) {
+            SAFE_DELETE(mImageAcquiredSemaphores[i]);
+        }
         SAFE_DELETE_ARRAY(mImageAcquiredSemaphores);
+
+        for (int i = 0; i < mImageCount; ++i) {
+            SAFE_DELETE(mRenderCompleteSemaphores[i]);
+        }
         SAFE_DELETE_ARRAY(mRenderCompleteSemaphores);
+
         SAFE_DELETE_ARRAY(mColors);
         SAFE_DELETE_ARRAY(mDepthStencils);
         SAFE_DELETE(mCmdPool);
-        SAFE_DELETE(mQueue);
-        SAFE_DELETE(mSurface);
         SAFE_DELETE(mSwapchain);
+        SAFE_DELETE(mSurface);
         SAFE_DELETE(mContext);
-        SAFE_DELETE(mShaderCompiler);
+    }
+
+    void Renderer::terminate() {
+        mQueue->waitIdle();
     }
 
     void Renderer::initSurface(void* surface) {
@@ -91,11 +123,29 @@ namespace gear {
         mSwapchain = mContext->createSwapchain(swapchainDesc);
 
         SAFE_DELETE(oldSwapchain);
+
+        for (int i = 0; i < mImageCount; ++i) {
+            SAFE_DELETE(mCmds[i]);
+        }
         SAFE_DELETE_ARRAY(mCmds);
+
+        for (int i = 0; i < mImageCount; ++i) {
+            SAFE_DELETE(mRenderCompleteFences[i]);
+        }
         SAFE_DELETE_ARRAY(mRenderCompleteFences);
+
+        for (int i = 0; i < mImageCount; ++i) {
+            SAFE_DELETE(mImageAcquiredSemaphores[i]);
+        }
         SAFE_DELETE_ARRAY(mImageAcquiredSemaphores);
+
+        for (int i = 0; i < mImageCount; ++i) {
+            SAFE_DELETE(mRenderCompleteSemaphores[i]);
+        }
         SAFE_DELETE_ARRAY(mRenderCompleteSemaphores);
+
         SAFE_DELETE_ARRAY(mColors);
+
         SAFE_DELETE_ARRAY(mDepthStencils);
 
         mImageCount = mSwapchain->getImageCount();
@@ -167,7 +217,6 @@ namespace gear {
         }
 
         mRenderCompleteFences[mFrameIndex]->waitForComplete();
-        mRenderCompleteFences[mFrameIndex]->reset();
 
         Blast::GfxTexture* colorRT = mSwapchain->getColorRenderTarget(mFrameIndex);
         Blast::GfxTexture* depthRT = mSwapchain->getDepthRenderTarget(mFrameIndex);
@@ -222,7 +271,7 @@ namespace gear {
     }
 
     void Renderer::endFrame() {
-
+        mCopyEngine->update();
     }
 
     void Renderer::prepare() {

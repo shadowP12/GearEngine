@@ -48,6 +48,23 @@ namespace gear {
     void RenderBuiltinResource::createCustomRootSignature() {
         // TODO: 规划Root Signature布局
         Blast::GfxRootSignatureDesc rootSignatureDesc;
+        for (int i = 0; i < UBUFFER_BINDING_COUNT; ++i) {
+            Blast::GfxRegisterInfo registerInfo;
+            registerInfo.set = 0;
+            registerInfo.reg = i;
+            registerInfo.size = 1;
+            registerInfo.type = Blast::RESOURCE_TYPE_UNIFORM_BUFFER;
+            rootSignatureDesc.registers.push_back(registerInfo);
+        }
+
+        for (int i = 0; i < SAMPLER_BINDING_COUNT; ++i) {
+            Blast::GfxRegisterInfo registerInfo;
+            registerInfo.set = 1;
+            registerInfo.reg = i;
+            registerInfo.size = 1;
+            registerInfo.type = Blast::RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER;
+            rootSignatureDesc.registers.push_back(registerInfo);
+        }
         mCustomRootSignature = mRenderer->getContext()->createRootSignature(rootSignatureDesc);
     }
 }

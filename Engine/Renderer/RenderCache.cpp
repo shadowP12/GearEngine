@@ -1,5 +1,6 @@
 #include "RenderCache.h"
 #include "Renderer.h"
+#include "RenderBuiltinResource.h"
 #include <Blast/Gfx/GfxContext.h>
 
 namespace gear {
@@ -161,5 +162,57 @@ namespace gear {
         Blast::GfxGraphicsPipeline* pipeline = mRenderer->getContext()->createGraphicsPipeline(desc);
         mPipelines[desc] = pipeline;
         return pipeline;
+    }
+
+    bool DescriptorCache::DescriptorEq::operator()(const DescriptorKey& key1, const DescriptorKey& key2) const {
+        for (int i = 0; i < UBUFFER_BINDING_COUNT; ++i) {
+            if (key1.uniformBuffers[i] != key2.uniformBuffers[i]) return false;
+            if (key1.uniformBufferOffsets[i] != key2.uniformBufferOffsets[i]) return false;
+            if (key1.uniformBufferSizes[i] != key2.uniformBufferSizes[i]) return false;
+        }
+
+        for (int i = 0; i < SAMPLER_BINDING_COUNT; ++i) {
+            if (key1.textures[i] != key2.textures[i]) return false;
+            if (key1.samplers[i] != key2.samplers[i]) return false;
+        }
+        return true;
+    }
+
+    DescriptorCache::DescriptorCache(Renderer* renderer) {
+        mRenderer = renderer;
+    }
+
+    DescriptorCache::~DescriptorCache() {
+        for (auto iter = mDescriptors.begin(); iter != mDescriptors.end(); ++iter) {
+            SAFE_DELETE(iter->second.handles[0]);
+            SAFE_DELETE(iter->second.handles[1]);
+        }
+        mDescriptors.clear();
+    }
+
+    DescriptorBundle DescriptorCache::getDescriptor(const DescriptorKey& key) {
+        auto iter = mDescriptors.find(key);
+        if (iter != mDescriptors.end()) {
+            return iter->second;
+        }
+
+        DescriptorBundle bundle;
+        bundle.handles[0] = mRenderer->getRenderBuiltinResource()->getRootSignature()->allocateSet(0);
+        bundle.handles[1] = mRenderer->getRenderBuiltinResource()->getRootSignature()->allocateSet(1);
+
+        for (int i = 0; i < UBUFFER_BINDING_COUNT; ++i) {
+            if (key.uniformBuffers[i] != nullptr) {
+                bundle.handles[0]->setUniformBuffer(i, key.uniformBuffers[i], key.uniformBufferSizes[i], key.uniformBufferOffsets[i]);
+            }
+        }
+
+        for (int i = 0; i < SAMPLER_BINDING_COUNT; ++i) {
+            if (key.textures[i] != nullptr) {
+                bundle.handles[1]->setCombinedSampler(i, key.textures[i], key.samplers[i]);
+            }
+        }
+
+        mDescriptors[key] = bundle;
+        return bundle;
     }
 }

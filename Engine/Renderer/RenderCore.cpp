@@ -44,10 +44,10 @@ namespace gear {
 
         // TODO: 设置RenderTarget相关参数
         Blast::GfxClearValue clearValue;
-        clearValue.color[0] = 1.0f;
+        clearValue.color[0] = 0.0f;
         clearValue.color[1] = 0.0f;
         clearValue.color[2] = 0.0f;
-        clearValue.color[3] = 1.0f;
+        clearValue.color[3] = 0.0f;
         clearValue.depth = 1.0f;
         clearValue.stencil = 0;
         cmd->bindRenderTarget(rp, fb, clearValue);
@@ -69,6 +69,26 @@ namespace gear {
 
         Blast::GfxGraphicsPipelineDesc pipelineDesc;
 
+        dc->blendState.srcFactors[0] = Blast::BLEND_ONE;
+        dc->blendState.dstFactors[0] = Blast::BLEND_ZERO;
+        dc->blendState.srcAlphaFactors[0] = Blast::BLEND_ONE;
+        dc->blendState.dstAlphaFactors[0] = Blast::BLEND_ZERO;
+        dc->blendState.masks[0] = 0xf;
+        // TODO: material ub
+        mDescriptorKey.uniformBuffers[2] = rb->renderableUB->getBuffer();
+        mDescriptorKey.uniformBufferSizes[2] = sizeof(ObjectUniforms);
+        mDescriptorKey.uniformBufferOffsets[2] = 0;
+
+        DescriptorBundle descriptorBundle = mDescriptorCache->getDescriptor(mDescriptorKey);
+
+//        dc->depthState.depthTest = true;
+//        dc->depthState.depthWrite = true;
+
+//        dc->rasterizerState.cullMode = Blast::CULL_MODE_BACK;
+//        dc->rasterizerState.frontFace = Blast::FRONT_FACE_CW; // 不再使用gl默认的ccw
+//        dc->rasterizerState.fillMode = Blast::FILL_MODE_SOLID;
+//        dc->rasterizerState.primitiveTopo = Blast::PRIMITIVE_TOPO_TRI_LIST;
+
         pipelineDesc.renderPass = mBindRenderPass;
         pipelineDesc.rootSignature = mRenderBuiltinResource->mCustomRootSignature;
         pipelineDesc.vertexShader = rb->materialInstance->getMaterial()->getVertShader(0);
@@ -79,7 +99,8 @@ namespace gear {
         pipelineDesc.rasterizerState = dc->rasterizerState;
         Blast::GfxGraphicsPipeline* pipeline = mGraphicsPipelineCache->getPipeline(pipelineDesc);
         cmd->bindGraphicsPipeline(pipeline);
-        // cmd->bindRootSignature(mRenderBuiltinResource->mCustomRootSignature);
+        cmd->bindRootSignature(mRenderBuiltinResource->mCustomRootSignature);
+        cmd->bindDescriptorSets(2, descriptorBundle.handles);
         cmd->bindVertexBuffer(rb->vertexBuffer->getBuffer(), 0);
         cmd->bindIndexBuffer(rb->indexBuffer->getBuffer(), 0, rb->indexBuffer->getIndexType());
         cmd->drawIndexed(rb->count, 1, 0, 0, 0);

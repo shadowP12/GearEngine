@@ -1,9 +1,9 @@
-layout(location = LOCATION_POSITION) in vec4 mesh_position;
+layout(location = LOCATION_POSITION) in vec3 mesh_position;
 
 #if defined(HAS_ATTRIBUTE_NORMAL)
-layout(location = LOCATION_NORMAL) in vec4 mesh_normal;
-layout(location = LOCATION_TANGENT) in vec4 mesh_tangent;
-layout(location = LOCATION_BITANGENT) in vec4 mesh_bitangent;
+layout(location = LOCATION_NORMAL) in vec3 mesh_normal;
+layout(location = LOCATION_TANGENT) in vec3 mesh_tangent;
+layout(location = LOCATION_BITANGENT) in vec3 mesh_bitangent;
 #endif
 
 #if defined(HAS_ATTRIBUTE_COLOR)

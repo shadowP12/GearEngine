@@ -10,7 +10,7 @@ namespace gear {
             SAFE_DELETE(vs.second);
         }
 
-        for (auto& fs : mVertShaderCache) {
+        for (auto& fs : mFragShaderCache) {
             SAFE_DELETE(fs.second);
         }
     }

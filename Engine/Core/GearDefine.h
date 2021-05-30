@@ -9,6 +9,10 @@
 // MRT的个数
 #define TARGET_COUNT 4
 
+#define UBUFFER_BINDING_COUNT 3
+
+#define SAMPLER_BINDING_COUNT 8
+
 #define SAFE_DELETE(x) \
     { \
         delete x; \

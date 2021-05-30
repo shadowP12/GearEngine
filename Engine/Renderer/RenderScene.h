@@ -16,6 +16,18 @@ namespace gear {
     class MaterialInstance;
     class RenderTarget;
 
+    // BEGIN: Shader里面的数据结构
+    struct FrameUniforms {
+        glm::mat4 viewMatrix;
+        glm::mat4 projMatrix;
+    };
+
+    struct ObjectUniforms {
+        glm::mat4 modelMatrix;
+        glm::mat4 normalMatrix;
+    };
+    // END
+
     // TODO: 包围盒
     struct Renderable {
         VertexBuffer* vertexBuffer = nullptr;

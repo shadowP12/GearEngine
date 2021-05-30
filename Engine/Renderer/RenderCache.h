@@ -47,4 +47,28 @@ namespace gear {
         std::unordered_map<Blast::GfxGraphicsPipelineDesc, Blast::GfxGraphicsPipeline*, MurmurHash<Blast::GfxGraphicsPipelineDesc>, PipelineEq> mPipelines;
     };
 
+    struct DescriptorKey {
+        Blast::GfxBuffer* uniformBuffers[3];
+        uint32_t uniformBufferOffsets[3];
+        uint32_t uniformBufferSizes[3];
+        Blast::GfxTexture* textures[8];
+        Blast::GfxSampler* samplers[8];
+    };
+
+    struct DescriptorBundle {
+        Blast::GfxDescriptorSet* handles[2];
+    };
+
+    class DescriptorCache {
+    public:
+        DescriptorCache(Renderer* renderer);
+        ~DescriptorCache();
+        DescriptorBundle getDescriptor(const DescriptorKey& key);
+    private:
+        struct DescriptorEq {
+            bool operator()(const DescriptorKey& key1, const DescriptorKey& key2) const;
+        };
+        Renderer* mRenderer = nullptr;
+        std::unordered_map<DescriptorKey, DescriptorBundle, MurmurHash<DescriptorKey>, DescriptorEq> mDescriptors;
+    };
 }

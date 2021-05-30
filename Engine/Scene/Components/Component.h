@@ -15,7 +15,7 @@ namespace gear {
     {
     public:
         Component(Entity* node);
-        ~Component();
+        virtual ~Component();
         virtual void initialized() {}
         virtual void update(float dt) {}
         virtual void destroyed() {}

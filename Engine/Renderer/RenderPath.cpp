@@ -4,6 +4,7 @@
 #include "RenderTarget.h"
 #include "RenderScene.h"
 #include "RenderCache.h"
+#include "Resource/GpuBuffer.h"
 #include "Utility/FileSystem.h"
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Gfx/GfxBuffer.h>
@@ -28,6 +29,9 @@ namespace gear {
     void Renderer::render(RenderView* view, Blast::GfxCommandBuffer* cmd) {
         // 在渲染开始前清空所有渲染命令缓存
         mDrawCallHead = 0;
+        mDescriptorKey.uniformBuffers[1] = view->cameraUB->getBuffer();
+        mDescriptorKey.uniformBufferSizes[1] = sizeof(FrameUniforms);
+        mDescriptorKey.uniformBufferOffsets[1] = 0;
 
         // 填充
         uint32_t colorDrawCallCount = 0;

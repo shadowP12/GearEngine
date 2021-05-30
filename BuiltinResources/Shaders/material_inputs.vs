@@ -18,9 +18,6 @@ struct MaterialVertexInputs {
 #endif
 };
 
-vec4 getWorldPosition(const MaterialVertexInputs material) {
-    return material.world_position;
-}
-
 void initMaterialVertex(out MaterialVertexInputs material) {
+    material.world_position = frame_uniforms.proj_matrix * frame_uniforms.view_matrix * object_uniforms.model_matrix * vec4(mesh_position, 1.0);
 }

@@ -17,13 +17,12 @@ namespace gear {
 
     void CTransform::setParent(Entity* newParent) {
         Entity* oldParent = mParent;
-        CTransform* oldParentTransform = oldParent->getComponent<CTransform>();
-        CTransform* newParentTransform = newParent->getComponent<CTransform>();
 
         if (oldParent == newParent)
             return;
 
         if (oldParent) {
+            CTransform* oldParentTransform = oldParent->getComponent<CTransform>();
             for (auto iter = oldParentTransform->mChildren.begin(); iter != oldParentTransform->mChildren.end();) {
                 if (iter == oldParentTransform->mChildren.end()) {
                     break;
@@ -38,6 +37,7 @@ namespace gear {
 
         mParent = newParent;
         if (newParent) {
+            CTransform* newParentTransform = newParent->getComponent<CTransform>();
             newParentTransform->mChildren.push_back(this->mEntity);
         }
 

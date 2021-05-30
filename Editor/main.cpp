@@ -25,7 +25,7 @@ struct Vertex {
 
 float vertices[] = {
         -0.5f,  -0.5f, 0.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, 1.0f, 1.0f, 0.0f,
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
         0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
         -0.5f, 0.5f, 0.0f, 0.0f, 1.0f
 };
@@ -121,7 +121,8 @@ int main()
         gear::gEngine.getRenderer()->endFrame();
         glfwPollEvents();
     }
-
+    // 确保渲染器结束所有的工作
+    gear::gEngine.getRenderer()->terminate();
     destroyTestScene();
 
     glfwDestroyWindow(gWindowPtr);

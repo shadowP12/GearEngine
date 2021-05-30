@@ -2,6 +2,7 @@
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/CopyEngine.h"
+#include "Utility/Log.h"
 #include <Blast/Gfx/GfxCommandBuffer.h>
 #include <unordered_map>
 namespace gear {
@@ -41,6 +42,12 @@ namespace gear {
         copyCmd->cmd->setBarrier(1, &barrier, 0, nullptr);
         copyCmd->cmd->end();
 
+        copyEngine->acquireStage(1);
+        copyCmd->callbacks.push_back([stagingBuffer, copyEngine]() {
+            copyEngine->releaseStage(nullptr);
+            delete stagingBuffer;
+        });
+
         Blast::GfxSubmitInfo submitInfo;
         submitInfo.cmdBufCount = 1;
         submitInfo.cmdBufs = &copyCmd->cmd;
@@ -50,7 +57,6 @@ namespace gear {
         submitInfo.signalSemaphoreCount = 0;
         submitInfo.signalSemaphores = nullptr;
         queue->submit(submitInfo);
-        SAFE_DELETE(stagingBuffer);
     }
 
     void VertexBuffer::Builder::vertexCount(uint32_t count) {
