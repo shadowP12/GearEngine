@@ -24,10 +24,10 @@ struct Vertex {
 };
 
 float vertices[] = {
-        -0.5f,  -0.5f, 0.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
-        -0.5f, 0.5f, 0.0f, 0.0f, 1.0f
+        -0.5f,  -0.5f, -5.f, 0.0f, 0.0f,
+        0.5f, -0.5f, -5.f, 1.0f, 0.0f,
+        0.5f, 0.5f, -5.f, 1.0f, 1.0f,
+        -0.5f, 0.5f, -5.f, 0.0f, 1.0f
 };
 
 unsigned int indices[] = {
@@ -45,11 +45,100 @@ gear::IndexBuffer* gIB = nullptr;
 gear::Entity* gCamera = nullptr;
 gear::Entity* gPawn = nullptr;
 
+class CameraController {
+public:
+    CameraController() {
+        mEye = glm::vec3(0.0);
+        mEuler.x = 0.0;
+        mEuler.y = 0.0;
+        mEuler.z = 0.0;
+    }
+
+    ~CameraController() = default;
+
+    void begin(int x, int y) {
+        mGrabbing = true;
+        mStartPoint = glm::vec2(x, y);
+    }
+
+    void end() {
+        mGrabbing = false;
+    }
+
+    void update(int x, int y) {
+        if (!mGrabbing) {
+            return;
+        }
+        glm::vec2 del = mStartPoint - glm::vec2(x, y);
+        mStartPoint = glm::vec2(x, y);
+        mEuler.x += del.y * 0.002f;
+        mEuler.y += del.x * 0.002f;
+    }
+
+    void scroll(float delta) {
+        glm::mat4 R;
+        R = glm::toMat4(glm::quat(mEuler));
+        glm::vec3(R[2][0], R[2][1], R[2][2]);
+        mEye += glm::normalize(glm::vec3(R[2][0], R[2][1], R[2][2])) * delta * -0.2f;
+    }
+
+    glm::mat4 getCameraMatrix() {
+        glm::mat4 R, T;
+        R = glm::toMat4(glm::quat(mEuler));
+        T = glm::translate(glm::mat4(1.0), mEye);
+        return T * R;
+    }
+
+private:
+    void updateTarget(float pitch, float yaw) {
+        mTarget = mEye + glm::vec3(glm::eulerAngleYXZ(yaw, pitch, 0.0f) * glm::vec4(0.0, 0.0, 1.0, 0.0));
+        glm::vec3 dir = glm::vec3(mTarget - mEye);
+    }
+
+private:
+    bool mGrabbing = false;
+    glm::vec3 mEye;
+    glm::vec3 mTarget;
+    // 只考虑pitch还有yaw
+    glm::vec3 mEuler;
+    glm::vec2 mStartPoint;
+};
+CameraController* gCamController = nullptr;
+
 static std::string readFileData(const std::string& path);
 
 static void resizeCB(GLFWwindow* window, int width, int height) {
     gWidth = width;
     gHeight = height;
+}
+
+void cursorPositionCB(GLFWwindow * window, double posX, double posY) {
+    gCamController->update(posX, posY);
+}
+
+void mouseButtonCB(GLFWwindow * window, int button, int action, int mods) {
+    double x, y;
+    glfwGetCursorPos(window, &x, &y);
+    switch (action) {
+        case 0:
+            // Button Up
+            if (button == 1) {
+                gCamController->end();
+            }
+            break;
+        case 1:
+            // Button Down
+            if (button == 1) {
+                gCamController->begin(x, y);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void mouseScrollCB(GLFWwindow * window, double offsetX, double offsetY) {
+    gCamController->scroll(offsetY);
 }
 
 void createTestScene() {
@@ -76,8 +165,7 @@ void createTestScene() {
     {
         gCamera = gear::gEngine.getScene()->createEntity();
         gear::CTransform* ct = gCamera->addComponent<gear::CTransform>();
-        ct->setTransform(glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec3(0, 1, 0)));
-
+        ct->setTransform(glm::mat4(1.0));
         gear::CCamera* cc = gCamera->addComponent<gear::CCamera>();
     }
 
@@ -111,12 +199,22 @@ int main()
     gWindowPtr = glfwCreateWindow(gWidth, gHeight, "GearEditor", nullptr, nullptr);
     glfwSetWindowUserPointer(gWindowPtr, nullptr);
     glfwSetFramebufferSizeCallback(gWindowPtr, resizeCB);
+    glfwSetMouseButtonCallback(gWindowPtr, mouseButtonCB);
+    glfwSetCursorPosCallback(gWindowPtr, cursorPositionCB);
+    glfwSetScrollCallback(gWindowPtr, mouseScrollCB);
 
     gear::gEngine.getRenderer()->initSurface(glfwGetWin32Window(gWindowPtr));
 
+    gCamController = new CameraController();
     createTestScene();
 
     while (!glfwWindowShouldClose(gWindowPtr)) {
+        // 更新相机
+//        glm::vec3 eye, target, up;
+//        gCamController->getLookAt(&eye, &target, &up);
+        gear::CTransform* ct = gCamera->getComponent<gear::CTransform>();
+        ct->setTransform(gCamController->getCameraMatrix()); // glm::lookAt(eye, target, up)
+
         gear::gEngine.getRenderer()->beginFrame(gWidth, gHeight);
         gear::gEngine.getRenderer()->endFrame();
         glfwPollEvents();
@@ -124,7 +222,7 @@ int main()
     // 确保渲染器结束所有的工作
     gear::gEngine.getRenderer()->terminate();
     destroyTestScene();
-
+    delete gCamController;
     glfwDestroyWindow(gWindowPtr);
     glfwTerminate();
     return 0;

@@ -66,6 +66,7 @@ namespace gear {
     }
 
     void CTransform::updateTransform() {
+        mWorld = mLocal;
         if (mParent) {
             mWorld = mParent->getComponent<CTransform>()->mWorld * mLocal;
         }

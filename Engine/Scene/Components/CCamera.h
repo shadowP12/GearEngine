@@ -25,5 +25,6 @@ namespace gear {
         UniformBuffer* mCameraUniformBuffer = nullptr;
         // 因为灯光需要根据每个相机进行排序，所以灯光的UniformBuffer放在此处管理
         UniformBuffer* mLightUniformBuffer = nullptr;
+        glm::mat4 mProjMatrix;
     };
 }

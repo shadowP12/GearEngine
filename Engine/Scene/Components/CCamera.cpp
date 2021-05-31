@@ -1,4 +1,5 @@
 #include "CCamera.h"
+#include "CTransform.h"
 #include "GearEngine.h"
 #include "Scene/Scene.h"
 #include "Scene/Entity.h"
@@ -12,6 +13,9 @@ namespace gear {
         Renderer* renderer = gEngine.getRenderer();
         mRenderTarget = renderer->getRenderTarget();
         mCameraUniformBuffer = new UniformBuffer(sizeof(FrameUniforms));
+        // TODO: 硬编码投影矩阵
+        mProjMatrix = glm::perspective(glm::radians(45.0), 800.0 / 600.0, 0.1, 100.0);
+        mProjMatrix[1][1] *= -1;
     }
 
     CCamera::~CCamera() {
@@ -25,10 +29,10 @@ namespace gear {
     }
 
     void CCamera::updateCameraBuffer() {
-        // TODO
+        glm::mat4 modelMatrix = mEntity->getComponent<CTransform>()->getWorldTransform();
         FrameUniforms ub;
-        ub.viewMatrix = glm::mat4(1.0);
-        ub.projMatrix = glm::mat4(1.0);
+        ub.viewMatrix = glm::inverse(modelMatrix);
+        ub.projMatrix = mProjMatrix;
         mCameraUniformBuffer->update(&ub, 0, sizeof(FrameUniforms));
     }
 }
