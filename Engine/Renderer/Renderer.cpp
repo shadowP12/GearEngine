@@ -31,6 +31,7 @@ namespace gear {
         mRenderBuiltinResource = new RenderBuiltinResource(this);
         mDefaultRenderTarget = new RenderTarget(this);
         mScene = new RenderScene(this);
+        mSamplerCache = new SamplerCache(this);
         mRenderPassCache = new RenderPassCache(this);
         mFramebufferCache = new FramebufferCache(this);
         mGraphicsPipelineCache = new GraphicsPipelineCache(this);
@@ -52,6 +53,7 @@ namespace gear {
         mQueue->waitIdle();
         SAFE_DELETE(mRenderBuiltinResource);
         SAFE_DELETE(mScene);
+        SAFE_DELETE(mSamplerCache);
         SAFE_DELETE(mRenderPassCache);
         SAFE_DELETE(mFramebufferCache);
         SAFE_DELETE(mGraphicsPipelineCache);

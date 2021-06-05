@@ -5,6 +5,7 @@
 #include "RenderBuiltinResource.h"
 #include "Resource/GpuBuffer.h"
 #include "Resource/Material.h"
+#include "Resource/Texture.h"
 #include <Blast/Gfx/GfxRenderTarget.h>
 #include <Blast/Gfx/GfxCommandBuffer.h>
 namespace gear {
@@ -74,10 +75,24 @@ namespace gear {
         dc->blendState.srcAlphaFactors[0] = Blast::BLEND_ONE;
         dc->blendState.dstAlphaFactors[0] = Blast::BLEND_ZERO;
         dc->blendState.masks[0] = 0xf;
-        // TODO: material ub
+
+        // 绑定materialUB
+        if (rb->materialInstance->mUniformBuffer) {
+            mDescriptorKey.uniformBuffers[0] = rb->materialInstance->mUniformBuffer->getBuffer();
+            mDescriptorKey.uniformBufferSizes[0] = rb->materialInstance->mUniformBufferSize;
+            mDescriptorKey.uniformBufferOffsets[0] = 0;
+        }
+
+        // 绑定renderableUB
         mDescriptorKey.uniformBuffers[2] = rb->renderableUB->getBuffer();
         mDescriptorKey.uniformBufferSizes[2] = sizeof(ObjectUniforms);
         mDescriptorKey.uniformBufferOffsets[2] = 0;
+
+        // 绑定materialSamplers
+        for(auto iter = rb->materialInstance->mSamplerGroup.begin(); iter != rb->materialInstance->mSamplerGroup.end(); iter++) {
+            mDescriptorKey.textures[iter->first] = iter->second.texture->getTexture();
+            mDescriptorKey.samplers[iter->first] = mSamplerCache->getSampler(iter->second.params);
+        }
 
         DescriptorBundle descriptorBundle = mDescriptorCache->getDescriptor(mDescriptorKey);
 

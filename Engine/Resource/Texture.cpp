@@ -8,13 +8,36 @@
 #include <Blast/Gfx/GfxCommandBuffer.h>
 
 namespace gear {
+    void Texture::Builder::width(uint32_t width) {
+        mWidth = width;
+    }
 
-    Texture::Texture(const TextureDesc& desc) {
-        mWidth = desc.width;
-        mHeight = desc.height;
-        mDepth = desc.depth;
-        mArray = desc.array;
-        mFormat = desc.format;
+    void Texture::Builder::height(uint32_t height) {
+        mHeight = height;
+    }
+
+    void Texture::Builder::depth(uint32_t depth) {
+        mDepth = depth;
+    }
+
+    void Texture::Builder::array(uint32_t array) {
+        mArray = array;
+    }
+
+    void Texture::Builder::format(Blast::Format format) {
+        mFormat = format;
+    }
+
+    Texture * Texture::Builder::build() {
+        return new Texture(this);
+    }
+
+    Texture::Texture(Builder* builder) {
+        mWidth = builder->mWidth;
+        mHeight = builder->mHeight;
+        mDepth = builder->mDepth;
+        mArray = builder->mArray;
+        mFormat = builder->mFormat;
         for (int i = 0; i < mArray; ++i) {
             Blast::GfxContext* context = gEngine.getRenderer()->getContext();
             uint8_t* data = new uint8_t[mWidth * mHeight * mDepth * context->getFormatStride(mFormat)];
@@ -44,9 +67,7 @@ namespace gear {
         uint8_t* dst = mDatas[i];
         uint8_t* src = (uint8_t*)data;
         memcpy(dst, src, size);
-    }
 
-    void Texture::updateRenderData() {
         Blast::GfxContext* context = gEngine.getRenderer()->getContext();
         uint32_t imageSize = mWidth * mHeight * mDepth * context->getFormatStride(mFormat);
         uint32_t totalSize = imageSize * mArray;
@@ -61,7 +82,8 @@ namespace gear {
             offset += imageSize;
         }
 
-        CopyCommand* copyCommand = gEngine.getRenderer()->getCopyEngine()->getActiveCommand();
+        CopyEngine* copyEngine = gEngine.getRenderer()->getCopyEngine();
+        CopyCommand* copyCommand = copyEngine->getActiveCommand();
         copyCommand->cmd->begin();
         {
             // 设置纹理为读写状态
@@ -93,6 +115,11 @@ namespace gear {
         }
         copyCommand->cmd->end();
 
+        copyCommand->callbacks.push_back([stagingBuffer, copyEngine]() {
+            copyEngine->releaseStage(nullptr);
+            delete stagingBuffer;
+        });
+
         Blast::GfxSubmitInfo submitInfo;
         submitInfo.cmdBufCount = 1;
         submitInfo.cmdBufs = &copyCommand->cmd;
@@ -102,6 +129,5 @@ namespace gear {
         submitInfo.signalSemaphoreCount = 0;
         submitInfo.signalSemaphores = nullptr;
         gEngine.getRenderer()->getQueue()->submit(submitInfo);
-        SAFE_DELETE(stagingBuffer);
     }
 }

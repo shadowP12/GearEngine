@@ -2,12 +2,26 @@
 #include "Core/GearDefine.h"
 #include "Utility/Hash.h"
 #include <Blast/Gfx/GfxDefine.h>
+#include <Blast/Gfx/GfxSampler.h>
 #include <Blast/Gfx/GfxRenderTarget.h>
 #include <Blast/Gfx/GfxPipeline.h>
 #include <unordered_map>
 
 namespace gear {
     class Renderer;
+    class SamplerCache {
+    public:
+        SamplerCache(Renderer* renderer);
+        ~SamplerCache();
+        Blast::GfxSampler* getSampler(const Blast::GfxSamplerDesc& desc);
+    private:
+        struct SamplerCacheEq {
+            bool operator()(const Blast::GfxSamplerDesc& desc1, const Blast::GfxSamplerDesc& desc2) const;
+        };
+        Renderer* mRenderer = nullptr;
+        std::unordered_map<Blast::GfxSamplerDesc, Blast::GfxSampler*, MurmurHash<Blast::GfxSamplerDesc>, SamplerCacheEq> mSamplers;
+    };
+
     class RenderPassCache {
     public:
         RenderPassCache(Renderer* renderer);

@@ -175,7 +175,7 @@ namespace gear {
                 vs << materialVertexCode << "\n";
                 cg.generateShaderMain(vs, v.stage);
                 cg.generateEpilog(vs);
-                // LOGI("%s\n", vs.str().c_str());
+                LOGI("%s\n", vs.str().c_str());
                 Blast::ShaderCompileDesc compileDesc;
                 compileDesc.code = vs.str();
                 compileDesc.stage = Blast::SHADER_STAGE_VERT;
@@ -221,7 +221,7 @@ namespace gear {
                 fs << materialFragmentCode << "\n";
                 cg.generateShaderMain(fs, v.stage);
                 cg.generateEpilog(fs);
-                // LOGI("%s\n", fs.str().c_str());
+                LOGI("%s\n", fs.str().c_str());
                 Blast::ShaderCompileDesc compileDesc;
                 compileDesc.code = fs.str();
                 compileDesc.stage = Blast::SHADER_STAGE_FRAG;

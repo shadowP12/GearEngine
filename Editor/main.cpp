@@ -8,6 +8,7 @@
 #include <Engine/Renderer/Renderer.h>
 #include <Engine/Resource/Material.h>
 #include <Engine/Resource/GpuBuffer.h>
+#include <Engine/Resource/Texture.h>
 #include <Engine/Scene/Scene.h>
 #include <Engine/Scene/Entity.h>
 #include <Engine/Scene/Components/CCamera.h>
@@ -17,6 +18,8 @@
 #include <Utility/Log.h>
 #include <iostream>
 #include <fstream>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 struct Vertex {
     float pos[3];
@@ -24,10 +27,10 @@ struct Vertex {
 };
 
 float vertices[] = {
-        -0.5f,  -0.5f, -5.f, 0.0f, 0.0f,
-        0.5f, -0.5f, -5.f, 1.0f, 0.0f,
-        0.5f, 0.5f, -5.f, 1.0f, 1.0f,
-        -0.5f, 0.5f, -5.f, 0.0f, 1.0f
+        -0.5f,  0.5f, -5.f, 0.0f, 0.0f,
+        0.5f, 0.5f, -5.f, 1.0f, 0.0f,
+        0.5f, -0.5f, -5.f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -5.f, 0.0f, 1.0f
 };
 
 unsigned int indices[] = {
@@ -39,9 +42,12 @@ GLFWwindow* gWindowPtr = nullptr;
 uint32_t gWidth = 800;
 uint32_t gHeight = 600;
 gear::Material* gDefaultMat = nullptr;
+gear::Material* gUIMat = nullptr;
 gear::MaterialInstance* gDefaultMatIns = nullptr;
+gear::MaterialInstance* gUIMatIns = nullptr;
 gear::VertexBuffer* gVB = nullptr;
 gear::IndexBuffer* gIB = nullptr;
+gear::Texture* gTestTex = nullptr;
 gear::Entity* gCamera = nullptr;
 gear::Entity* gPawn = nullptr;
 
@@ -78,7 +84,7 @@ public:
     void scroll(float delta) {
         glm::mat4 R;
         R = glm::toMat4(glm::quat(mEuler));
-        glm::vec3(R[2][0], R[2][1], R[2][2]);
+        glm::vec3 e = glm::vec3(R[2][0], R[2][1], R[2][2]);
         mEye += glm::normalize(glm::vec3(R[2][0], R[2][1], R[2][2])) * delta * -0.2f;
     }
 
@@ -145,8 +151,12 @@ void createTestScene() {
     // 初始化测试资源
     gear::MaterialCompiler materialCompiler;
     std::string materialCode = readFileData("./BuiltinResources/Materials/default.mat");
-    gDefaultMat = materialCompiler.compile(materialCode);
-    gDefaultMatIns = gDefaultMat->createInstance();
+//    gDefaultMat = materialCompiler.compile(materialCode);
+//    gDefaultMatIns = gDefaultMat->createInstance();
+
+    materialCode = readFileData("./BuiltinResources/Materials/ui.mat");
+    gUIMat = materialCompiler.compile(materialCode);
+    gUIMatIns = gUIMat->createInstance();
 
     gear::VertexBuffer::Builder vbBuilder;
     vbBuilder.vertexCount(4);
@@ -179,15 +189,34 @@ void createTestScene() {
         cr->setPrimitive({Blast::PRIMITIVE_TOPO_TRI_LIST , 0, 6});
         cr->setVertexBuffer(gVB);
         cr->setIndexBuffer(gIB);
-        cr->setMaterialInstance(gDefaultMatIns);
+        cr->setMaterialInstance(gUIMatIns);
     }
+
+    // 加载测试纹理
+    int texWidth, texHeight, texChannels;
+    std::string imagePath = "./BuiltinResources/Textures/test.png";
+    unsigned char* pixels = stbi_load(imagePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    uint32_t imageSize = texWidth * texHeight * texChannels;
+    gear::Texture::Builder texBuild;
+    texBuild.width(texWidth);
+    texBuild.height(texHeight);
+    texBuild.format(Blast::FORMAT_R8G8B8A8_UNORM);
+    gTestTex = texBuild.build();
+    gTestTex->setData(0, pixels, imageSize);
+    stbi_image_free(pixels);
+
+    Blast::GfxSamplerDesc samplerDesc;
+    gUIMatIns->setParameter("albedo_texture", gTestTex, samplerDesc);
 }
 
 void destroyTestScene() {
     SAFE_DELETE(gDefaultMat);
     SAFE_DELETE(gDefaultMatIns);
+    SAFE_DELETE(gUIMat);
+    SAFE_DELETE(gUIMatIns);
     SAFE_DELETE(gVB);
     SAFE_DELETE(gIB);
+    SAFE_DELETE(gTestTex);
     gear::gEngine.getScene()->destroyEntity(gCamera);
     gear::gEngine.getScene()->destroyEntity(gPawn);
 }
@@ -210,10 +239,8 @@ int main()
 
     while (!glfwWindowShouldClose(gWindowPtr)) {
         // 更新相机
-//        glm::vec3 eye, target, up;
-//        gCamController->getLookAt(&eye, &target, &up);
         gear::CTransform* ct = gCamera->getComponent<gear::CTransform>();
-        ct->setTransform(gCamController->getCameraMatrix()); // glm::lookAt(eye, target, up)
+        ct->setTransform(gCamController->getCameraMatrix());
 
         gear::gEngine.getRenderer()->beginFrame(gWidth, gHeight);
         gear::gEngine.getRenderer()->endFrame();

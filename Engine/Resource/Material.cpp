@@ -35,7 +35,11 @@ namespace gear {
         for (int i = 0; i < mMaterial->mVariables.size(); i++) {
             mUniformBufferSize += mMaterial->mVariables[i].size;
         }
-        mUniformBuffer = new UniformBuffer(mUniformBufferSize);
+        if (mUniformBufferSize > 0) {
+            mUniformBuffer = new UniformBuffer(mUniformBufferSize);
+        } else {
+            mUniformBuffer = nullptr;
+        }
     }
 
     MaterialInstance::~MaterialInstance() {
@@ -58,7 +62,7 @@ namespace gear {
                 SamplerInfo info;
                 info.texture = texture;
                 info.params = params;
-                mSamplerGroup[mMaterial->mResources[i].set] = info;
+                mSamplerGroup[mMaterial->mResources[i].reg] = info;
                 break;
             }
         }

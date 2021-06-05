@@ -1,0 +1,19 @@
+states {
+    shadingModel : unlit,
+    culling : none,
+    depthCulling: false
+}
+
+requires {
+    uv0
+}
+
+samplers {
+    sampler2D albedo_texture
+}
+
+fragment {
+    void materialFragment(inout MaterialFragmentInputs material) {
+        material.base_color = texture(albedo_texture, vertex_uv01.xy);
+    }
+}

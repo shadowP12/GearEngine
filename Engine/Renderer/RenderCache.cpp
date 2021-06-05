@@ -4,6 +4,38 @@
 #include <Blast/Gfx/GfxContext.h>
 
 namespace gear {
+    bool SamplerCache::SamplerCacheEq::operator()(const Blast::GfxSamplerDesc& desc1, const Blast::GfxSamplerDesc& desc2) const {
+        if (desc1.addressU != desc2.addressU) return false;
+        if (desc1.addressV != desc2.addressV) return false;
+        if (desc1.addressW != desc2.addressW) return false;
+        if (desc1.minFilter != desc2.minFilter) return false;
+        if (desc1.magFilter != desc2.magFilter) return false;
+        if (desc1.mipmapMode != desc2.mipmapMode) return false;
+        return true;
+    }
+
+    SamplerCache::SamplerCache(Renderer* renderer) {
+        mRenderer = renderer;
+    }
+
+    SamplerCache::~SamplerCache() {
+        for (auto iter = mSamplers.begin(); iter != mSamplers.end(); ++iter) {
+            SAFE_DELETE(iter->second);
+        }
+        mSamplers.clear();
+    }
+
+    Blast::GfxSampler * SamplerCache::getSampler(const Blast::GfxSamplerDesc& desc) {
+        auto iter = mSamplers.find(desc);
+        if (iter != mSamplers.end()) {
+            return iter->second;
+        }
+
+        Blast::GfxSampler* sampler = mRenderer->getContext()->createSampler(desc);
+        mSamplers[desc] = sampler;
+        return sampler;
+    }
+
     RenderPassCache::RenderPassCache(Renderer* renderer) {
         mRenderer = renderer;
     }

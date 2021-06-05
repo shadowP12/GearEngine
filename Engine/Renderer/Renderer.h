@@ -118,6 +118,7 @@ namespace gear {
         Attachment* mDepthStencils = nullptr;
         RenderTarget* mDefaultRenderTarget = nullptr;
         RenderScene* mScene = nullptr;
+        SamplerCache* mSamplerCache = nullptr;
         RenderPassCache* mRenderPassCache = nullptr;
         FramebufferCache* mFramebufferCache = nullptr;
         GraphicsPipelineCache* mGraphicsPipelineCache = nullptr;
