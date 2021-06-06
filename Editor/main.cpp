@@ -19,6 +19,7 @@
 #include <iostream>
 #include <fstream>
 #define STB_IMAGE_IMPLEMENTATION
+#define STBIR_FLAG_ALPHA_PREMULTIPLIED
 #include <stb_image.h>
 
 struct Vertex {
@@ -196,6 +197,19 @@ void createTestScene() {
     int texWidth, texHeight, texChannels;
     std::string imagePath = "./BuiltinResources/Textures/test.png";
     unsigned char* pixels = stbi_load(imagePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+
+    // 做预乘处理
+    for (int i = 0; i < texWidth; ++i) {
+        for (int j = 0; j < texHeight; ++j) {
+            unsigned bytePerPixel = texChannels;
+            unsigned char* pixelOffset = pixels + (i + texWidth * j) * bytePerPixel;
+            float alpha = pixelOffset[3] / 255.0f;
+            pixelOffset[0] *= alpha;
+            pixelOffset[1] *= alpha;
+            pixelOffset[2] *= alpha;
+        }
+    }
+
     uint32_t imageSize = texWidth * texHeight * texChannels;
     gear::Texture::Builder texBuild;
     texBuild.width(texWidth);

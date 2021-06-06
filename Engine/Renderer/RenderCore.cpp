@@ -70,12 +70,6 @@ namespace gear {
 
         Blast::GfxGraphicsPipelineDesc pipelineDesc;
 
-        dc->blendState.srcFactors[0] = Blast::BLEND_ONE;
-        dc->blendState.dstFactors[0] = Blast::BLEND_ZERO;
-        dc->blendState.srcAlphaFactors[0] = Blast::BLEND_ONE;
-        dc->blendState.dstAlphaFactors[0] = Blast::BLEND_ZERO;
-        dc->blendState.masks[0] = 0xf;
-
         // 绑定materialUB
         if (rb->materialInstance->mUniformBuffer) {
             mDescriptorKey.uniformBuffers[0] = rb->materialInstance->mUniformBuffer->getBuffer();
@@ -95,14 +89,6 @@ namespace gear {
         }
 
         DescriptorBundle descriptorBundle = mDescriptorCache->getDescriptor(mDescriptorKey);
-
-//        dc->depthState.depthTest = true;
-//        dc->depthState.depthWrite = true;
-
-//        dc->rasterizerState.cullMode = Blast::CULL_MODE_BACK;
-//        dc->rasterizerState.frontFace = Blast::FRONT_FACE_CW; // 不再使用gl默认的ccw
-//        dc->rasterizerState.fillMode = Blast::FILL_MODE_SOLID;
-//        dc->rasterizerState.primitiveTopo = Blast::PRIMITIVE_TOPO_TRI_LIST;
 
         pipelineDesc.renderPass = mBindRenderPass;
         pipelineDesc.rootSignature = mRenderBuiltinResource->mCustomRootSignature;

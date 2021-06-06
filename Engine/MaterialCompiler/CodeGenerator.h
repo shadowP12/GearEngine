@@ -1,9 +1,9 @@
 #pragma once
 #include <Blast/Gfx/GfxDefine.h>
-#include "MaterialBlock.h"
 #include <iosfwd>
 #include <string>
 #include <sstream>
+#include <vector>
 
 namespace gear {
     class CodeGenerator {

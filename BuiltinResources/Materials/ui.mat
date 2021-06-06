@@ -1,7 +1,7 @@
 states {
     shadingModel : unlit,
-    culling : none,
-    depthCulling: false
+    depthWrite : true,
+    blendingMode : transparent
 }
 
 requires {

@@ -5,6 +5,8 @@
 #include "RenderScene.h"
 #include "RenderCache.h"
 #include "Resource/GpuBuffer.h"
+#include "Resource/Material.h"
+#include "Resource/Texture.h"
 #include "Utility/FileSystem.h"
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Gfx/GfxBuffer.h>
@@ -36,6 +38,10 @@ namespace gear {
         // 填充
         uint32_t colorDrawCallCount = 0;
         for (int i = 0; i < mScene->mRenderableCount; ++i) {
+            Renderable* rb = &mScene->mRenderables[i];
+            mDrawCalls[mDrawCallHead + colorDrawCallCount].blendState = rb->materialInstance->getMaterial()->mBlendState;
+            mDrawCalls[mDrawCallHead + colorDrawCallCount].depthState = rb->materialInstance->getMaterial()->mDepthState;
+            mDrawCalls[mDrawCallHead + colorDrawCallCount].rasterizerState = rb->materialInstance->getMaterial()->mRasterizerState;
             mDrawCalls[mDrawCallHead + colorDrawCallCount].index = i;
             colorDrawCallCount++;
         }

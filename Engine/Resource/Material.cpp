@@ -2,7 +2,54 @@
 #include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
 namespace gear {
-    Material::Material() {
+    void Material::Builder::shading(Shading shading) {
+        mShading = shading;
+    }
+
+    void Material::Builder::blendingMode(BlendingMode blendingMode) {
+        mBlendingMode = blendingMode;
+    }
+
+    void Material::Builder::depthWrite(bool enable) {
+        mDepthWrite = enable;
+    }
+
+    Material * Material::Builder::build() {
+        return new Material(this);
+    }
+
+    Material::Material(Builder* builder) {
+        mShading = builder->mShading;
+        mBlendingMode = builder->mBlendingMode;
+        mDepthWrite = builder->mDepthWrite;
+
+        if (mBlendingMode == BlendingMode::BLENDING_MODE_OPAQUE) {
+            mBlendState.srcFactors[0] = Blast::BLEND_ONE;
+            mBlendState.dstFactors[0] = Blast::BLEND_ZERO;
+            mBlendState.srcAlphaFactors[0] = Blast::BLEND_ONE;
+            mBlendState.dstAlphaFactors[0] = Blast::BLEND_ZERO;
+            mBlendState.masks[0] = 0xf;
+        } else if (mBlendingMode == BlendingMode::BLENDING_MODE_TRANSPARENT) {
+            // 预乘使用的混合方程
+            mBlendState.srcFactors[0] = Blast::BLEND_ONE;
+            mBlendState.dstFactors[0] = Blast::BLEND_ONE_MINUS_SRC_ALPHA;
+            mBlendState.srcAlphaFactors[0] = Blast::BLEND_ONE;
+            mBlendState.dstAlphaFactors[0] = Blast::BLEND_ONE_MINUS_SRC_ALPHA;
+            mBlendState.masks[0] = 0xf;
+        } else if (mBlendingMode == BlendingMode::BLENDING_MODE_MASKED) {
+            mBlendState.srcFactors[0] = Blast::BLEND_ONE;
+            mBlendState.dstFactors[0] = Blast::BLEND_ZERO;
+            mBlendState.srcAlphaFactors[0] = Blast::BLEND_ZERO;
+            mBlendState.dstAlphaFactors[0] = Blast::BLEND_ONE;
+            mBlendState.masks[0] = 0xf;
+        }
+
+        if (mBlendingMode == BlendingMode::BLENDING_MODE_TRANSPARENT) {
+            // 半透材质不应该写入深度缓存
+            mDepthWrite = false;
+        }
+        mDepthState.depthTest = true;
+        mDepthState.depthWrite = mDepthWrite;
     }
 
     Material::~Material() {

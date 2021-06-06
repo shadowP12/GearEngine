@@ -27,6 +27,13 @@ namespace gear {
         POST_PROCESS = 1,
     };
 
+    // 混合模式
+    enum class BlendingMode {
+        BLENDING_MODE_OPAQUE,
+        BLENDING_MODE_TRANSPARENT,
+        BLENDING_MODE_MASKED,
+    };
+
     // 材质属性
     static constexpr size_t MATERIAL_PROPERTIES_COUNT = 1;
     enum class MaterialProperty {
@@ -68,6 +75,29 @@ namespace gear {
     // TODO: Material ID
     class Material : public Resource {
     public:
+        class Builder {
+        public:
+            Builder() = default;
+
+            ~Builder() = default;
+
+            void shading(Shading);
+
+            void blendingMode(BlendingMode);
+
+            void depthWrite(bool);
+
+            Material* build();
+
+        private:
+            friend class Material;
+            Shading mShading = Shading::UNLIT;
+            BlendingMode mBlendingMode = BlendingMode::BLENDING_MODE_OPAQUE;
+            bool mDepthWrite = false;
+            std::unordered_map<uint8_t, Blast::GfxShader*> mVertShaderCache;
+            std::unordered_map<uint8_t, Blast::GfxShader*> mFragShaderCache;
+        };
+
         ~Material();
 
         Blast::GfxShader* getVertShader(uint8_t variant);
@@ -75,13 +105,17 @@ namespace gear {
         Blast::GfxShader* getFragShader(uint8_t variant);
 
         MaterialInstance* createInstance();
+
     private:
-        Material();
+        Material(Builder*);
+
     protected:
         friend class Renderer;
         friend class MaterialCompiler;
         friend class MaterialInstance;
         Shading mShading;
+        BlendingMode mBlendingMode;
+        bool mDepthWrite = false;
         Blast::GfxBlendState mBlendState;
         Blast::GfxDepthState mDepthState;
         Blast::GfxRasterizerState mRasterizerState;

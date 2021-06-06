@@ -39,6 +39,8 @@ namespace gear {
         mShaderCompiler = new Blast::VulkanShaderCompiler();
         // 处理函数回调
         mParameters["shadingModel"] = &processShading;
+        mParameters["blendingMode"] = &processBlending;
+        mParameters["depthWrite"] = &processDepthWrite;
     }
 
     MaterialCompiler::~MaterialCompiler() {
@@ -48,7 +50,7 @@ namespace gear {
     Material* MaterialCompiler::compile(const std::string& code) {
         Blast::GfxContext* context = gEngine.getRenderer()->getContext();
         // 解析材质文件内容
-        Material* material = new Material();
+        Material::Builder builder;
         MaterialBuildInfo buildInfo;
         std::string materialCode = code;
         gear::ChunkLexer chunkLexer;
@@ -68,7 +70,7 @@ namespace gear {
                 if (mParameters.find(key) == mParameters.end()) {
                     continue;
                 }
-                mParameters[key](material, value);
+                mParameters[key](&builder, value);
             }
         }
 
@@ -138,6 +140,7 @@ namespace gear {
             materialFragmentCode = "void materialFragment(inout MaterialFragmentInputs material) {}\n";
         }
 
+        Material* material = builder.build();
         // 材质参数只需要初始化一次
         bool initMaterialParams = false;
         // 生成所有可用的变体
@@ -238,7 +241,7 @@ namespace gear {
         return material;
     }
 
-    void MaterialCompiler::processShading(Material* mat, const std::string& value) {
+    void MaterialCompiler::processShading(Material::Builder* builder, const std::string& value) {
         static const std::unordered_map<std::string, Shading> strToEnum {
             { "lit", Shading::LIT },
             { "unlit", Shading::UNLIT },
@@ -246,6 +249,28 @@ namespace gear {
         if (strToEnum.find(value) == strToEnum.end()) {
             return;
         }
-        mat->mShading = strToEnum.at(value);
+        builder->shading(strToEnum.at(value));
+    }
+
+    void MaterialCompiler::processBlending(Material::Builder* builder, const std::string& value) {
+        static const std::unordered_map<std::string, BlendingMode> strToEnum {
+                { "opaque", BlendingMode::BLENDING_MODE_OPAQUE },
+                { "transparent", BlendingMode::BLENDING_MODE_TRANSPARENT },
+                { "masked", BlendingMode::BLENDING_MODE_MASKED },
+        };
+        if (strToEnum.find(value) == strToEnum.end()) {
+            return;
+        }
+        builder->blendingMode(strToEnum.at(value));
+    }
+
+    void MaterialCompiler::processDepthWrite(Material::Builder* builder, const std::string& value) {
+        if (value == "true") {
+            builder->depthWrite(true);
+            return;
+        } else if (value == "false") {
+            builder->depthWrite(false);
+            return;
+        }
     }
 }
