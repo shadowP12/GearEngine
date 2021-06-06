@@ -14,5 +14,9 @@ add_library(cgltf INTERFACE)
 target_include_directories(filesystem INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../External/cgltf)
 target_link_libraries(GearEditor PRIVATE cgltf)
 
+# imgui
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../External/imgui EXCLUDE_FROM_ALL imgui.out)
+target_link_libraries(GearEditor PRIVATE imgui)
+
 # builtin resources
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../BuiltinResources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

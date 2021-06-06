@@ -1,6 +1,5 @@
 states {
     shadingModel : unlit,
-    depthWrite : true,
     blendingMode : transparent
 }
 
