@@ -6,6 +6,7 @@
 #include <Blast/Utility/ShaderCompiler.h>
 #include <Engine/GearEngine.h>
 #include <Engine/Renderer/Renderer.h>
+#include <Engine/Renderer/RenderScene.h>
 #include <Engine/Resource/Material.h>
 #include <Engine/Resource/GpuBuffer.h>
 #include <Engine/Resource/Texture.h>
@@ -21,6 +22,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STBIR_FLAG_ALPHA_PREMULTIPLIED
 #include <stb_image.h>
+//#include <imgui.h>
+//#include "ImGuiBackend.h"
 
 struct Vertex {
     float pos[3];
@@ -28,10 +31,10 @@ struct Vertex {
 };
 
 float vertices[] = {
-        -0.5f,  0.5f, -5.f, 0.0f, 0.0f,
-        0.5f, 0.5f, -5.f, 1.0f, 0.0f,
-        0.5f, -0.5f, -5.f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -5.f, 0.0f, 1.0f
+        -0.5f,  0.5f, 0.0f, 0.0f,
+        0.5f, 0.5f, 1.0f, 0.0f,
+        0.5f, -0.5f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 0.0f, 1.0f
 };
 
 unsigned int indices[] = {
@@ -161,7 +164,7 @@ void createTestScene() {
 
     gear::VertexBuffer::Builder vbBuilder;
     vbBuilder.vertexCount(4);
-    vbBuilder.attribute(Blast::SEMANTIC_POSITION, Blast::FORMAT_R32G32B32_FLOAT);
+    vbBuilder.attribute(Blast::SEMANTIC_POSITION, Blast::FORMAT_R32G32_FLOAT);
     vbBuilder.attribute(Blast::SEMANTIC_TEXCOORD0, Blast::FORMAT_R32G32_FLOAT);
     gVB = vbBuilder.build();
     gVB->update(vertices, 0, sizeof(vertices));
@@ -186,11 +189,15 @@ void createTestScene() {
         gear::CTransform* ct = gPawn->addComponent<gear::CTransform>();
         ct->setTransform(glm::mat4(1.0));
 
+        gear::RenderPrimitive primitive;
+        primitive.count = 6;
+        primitive.offset = 0;
+        primitive.type = Blast::PRIMITIVE_TOPO_TRI_LIST;
+        primitive.materialInstance = gUIMatIns;
         gear::CRenderable* cr = gPawn->addComponent<gear::CRenderable>();
-        cr->setPrimitive({Blast::PRIMITIVE_TOPO_TRI_LIST , 0, 6});
+        cr->addPrimitive(primitive);
         cr->setVertexBuffer(gVB);
         cr->setIndexBuffer(gIB);
-        cr->setMaterialInstance(gUIMatIns);
     }
 
     // 加载测试纹理
@@ -237,6 +244,7 @@ void destroyTestScene() {
 
 int main()
 {
+    // 初始化glfw
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     gWindowPtr = glfwCreateWindow(gWidth, gHeight, "GearEditor", nullptr, nullptr);
@@ -245,6 +253,11 @@ int main()
     glfwSetMouseButtonCallback(gWindowPtr, mouseButtonCB);
     glfwSetCursorPosCallback(gWindowPtr, cursorPositionCB);
     glfwSetScrollCallback(gWindowPtr, mouseScrollCB);
+
+//    // 初始化imgui
+//    IMGUI_CHECKVERSION();
+//    ImGui::CreateContext();
+//    ImGui_ImplGlfw_Init(gWindowPtr, true);
 
     gear::gEngine.getRenderer()->initSurface(glfwGetWin32Window(gWindowPtr));
 
@@ -256,6 +269,9 @@ int main()
         gear::CTransform* ct = gCamera->getComponent<gear::CTransform>();
         ct->setTransform(gCamController->getCameraMatrix());
 
+        // 每一帧的开始都需要获取当前屏幕信息
+        // ImGui_ImplGlfw_NewFrame();
+
         gear::gEngine.getRenderer()->beginFrame(gWidth, gHeight);
         gear::gEngine.getRenderer()->endFrame();
         glfwPollEvents();
@@ -264,7 +280,12 @@ int main()
     gear::gEngine.getRenderer()->terminate();
     destroyTestScene();
     delete gCamController;
-    glfwDestroyWindow(gWindowPtr);
+
+//    // 销毁imgui
+//    ImGui::DestroyContext();
+//    ImGui_ImplGlfw_Shutdown();
+
+    // 销毁glfw
     glfwTerminate();
     return 0;
 }

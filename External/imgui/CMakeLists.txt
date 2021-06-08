@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(imgui)
 
+message(eeeee)
+message(${CMAKE_CURRENT_SOURCE_DIR})
+
 set(IMGUI_INC
     ${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui.h
@@ -15,8 +18,11 @@ set(IMGUI_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui_demo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui_draw.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui_widgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui_tables.cpp
 )
 
-add_library(imgui STATIC ${IMGUI_INC} ${IMGUI_SRC})
+add_library(imgui STATIC)
 
 target_include_directories(imgui PUBLIC ${IMGUI_INC})
+
+target_sources(imgui PUBLIC ${IMGUI_INC} ${IMGUI_SRC})

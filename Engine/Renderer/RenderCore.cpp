@@ -66,24 +66,23 @@ namespace gear {
 
     void Renderer::executeDrawCall(DrawCall* dc) {
         Blast::GfxCommandBuffer* cmd = mCmds[mFrameIndex];
-        Renderable* rb = &mScene->mRenderables[dc->index];
 
         Blast::GfxGraphicsPipelineDesc pipelineDesc;
 
         // 绑定materialUB
-        if (rb->materialInstance->mUniformBuffer) {
-            mDescriptorKey.uniformBuffers[0] = rb->materialInstance->mUniformBuffer->getBuffer();
-            mDescriptorKey.uniformBufferSizes[0] = rb->materialInstance->mUniformBufferSize;
+        if (dc->materialInstance->mUniformBuffer) {
+            mDescriptorKey.uniformBuffers[0] = dc->materialInstance->mUniformBuffer->getBuffer();
+            mDescriptorKey.uniformBufferSizes[0] = dc->materialInstance->mUniformBufferSize;
             mDescriptorKey.uniformBufferOffsets[0] = 0;
         }
 
         // 绑定renderableUB
-        mDescriptorKey.uniformBuffers[2] = rb->renderableUB->getBuffer();
+        mDescriptorKey.uniformBuffers[2] = dc->renderableUB->getBuffer();
         mDescriptorKey.uniformBufferSizes[2] = sizeof(ObjectUniforms);
         mDescriptorKey.uniformBufferOffsets[2] = 0;
 
         // 绑定materialSamplers
-        for(auto iter = rb->materialInstance->mSamplerGroup.begin(); iter != rb->materialInstance->mSamplerGroup.end(); iter++) {
+        for(auto iter = dc->materialInstance->mSamplerGroup.begin(); iter != dc->materialInstance->mSamplerGroup.end(); iter++) {
             mDescriptorKey.textures[iter->first] = iter->second.texture->getTexture();
             mDescriptorKey.samplers[iter->first] = mSamplerCache->getSampler(iter->second.params);
         }
@@ -92,9 +91,9 @@ namespace gear {
 
         pipelineDesc.renderPass = mBindRenderPass;
         pipelineDesc.rootSignature = mRenderBuiltinResource->mCustomRootSignature;
-        pipelineDesc.vertexShader = rb->materialInstance->getMaterial()->getVertShader(0);
-        pipelineDesc.pixelShader = rb->materialInstance->getMaterial()->getFragShader(0);
-        pipelineDesc.vertexLayout = rb->vertexBuffer->getVertexLayout();
+        pipelineDesc.vertexShader = dc->materialInstance->getMaterial()->getVertShader(0);
+        pipelineDesc.pixelShader = dc->materialInstance->getMaterial()->getFragShader(0);
+        pipelineDesc.vertexLayout = dc->vertexBuffer->getVertexLayout();
         pipelineDesc.blendState = dc->blendState;
         pipelineDesc.depthState = dc->depthState;
         pipelineDesc.rasterizerState = dc->rasterizerState;
@@ -102,8 +101,8 @@ namespace gear {
         cmd->bindGraphicsPipeline(pipeline);
         cmd->bindRootSignature(mRenderBuiltinResource->mCustomRootSignature);
         cmd->bindDescriptorSets(2, descriptorBundle.handles);
-        cmd->bindVertexBuffer(rb->vertexBuffer->getBuffer(), 0);
-        cmd->bindIndexBuffer(rb->indexBuffer->getBuffer(), 0, rb->indexBuffer->getIndexType());
-        cmd->drawIndexed(rb->count, 1, 0, 0, 0);
+        cmd->bindVertexBuffer(dc->vertexBuffer->getBuffer(), 0);
+        cmd->bindIndexBuffer(dc->indexBuffer->getBuffer(), 0, dc->indexBuffer->getIndexType());
+        cmd->drawIndexed(dc->count, 1, 0, 0, 0);
     }
 }

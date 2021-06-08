@@ -37,13 +37,24 @@ namespace gear {
 
         // 填充
         uint32_t colorDrawCallCount = 0;
-        for (int i = 0; i < mScene->mRenderableCount; ++i) {
-            Renderable* rb = &mScene->mRenderables[i];
-            mDrawCalls[mDrawCallHead + colorDrawCallCount].blendState = rb->materialInstance->getMaterial()->mBlendState;
-            mDrawCalls[mDrawCallHead + colorDrawCallCount].depthState = rb->materialInstance->getMaterial()->mDepthState;
-            mDrawCalls[mDrawCallHead + colorDrawCallCount].rasterizerState = rb->materialInstance->getMaterial()->mRasterizerState;
-            mDrawCalls[mDrawCallHead + colorDrawCallCount].index = i;
-            colorDrawCallCount++;
+        for (int i = 0; i < view->renderableCount; ++i) {
+            Renderable* rb = &view->renderables[i];
+            for (int j = 0; j < rb->primitives.size(); ++j) {
+                RenderPrimitive* rp = &rb->primitives[j];
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].variant = 0;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].vertexBuffer = rb->vertexBuffer;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].indexBuffer = rb->indexBuffer;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].renderableUB = rb->renderableUB;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].boneUB = rb->boneUB;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].count = rp->count;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].offset = rp->offset;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].type = rp->type;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].materialInstance = rp->materialInstance;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].blendState = rp->materialInstance->getMaterial()->mBlendState;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].depthState = rp->materialInstance->getMaterial()->mDepthState;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].rasterizerState = rp->materialInstance->getMaterial()->mRasterizerState;
+                colorDrawCallCount++;
+            }
         }
 
         // 排序

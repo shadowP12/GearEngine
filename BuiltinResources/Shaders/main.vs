@@ -4,6 +4,8 @@ void main() {
 
     materialVertex(material);
 
+    vertex_position = mesh_position;
+
 #if defined(HAS_ATTRIBUTE_UV0)
     vertex_uv01.xy = material.uv0;
 #endif

@@ -28,22 +28,29 @@ namespace gear {
     };
     // END
 
+    struct RenderPrimitive {
+        uint32_t offset = 0;
+        uint32_t count = 0;
+        MaterialInstance* materialInstance = nullptr;
+        Blast::PrimitiveTopology type = Blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_STRIP;
+    };
+
     // TODO: 包围盒
     struct Renderable {
         VertexBuffer* vertexBuffer = nullptr;
         IndexBuffer* indexBuffer = nullptr;
         UniformBuffer* renderableUB = nullptr;
         UniformBuffer* boneUB = nullptr;
-        MaterialInstance* materialInstance = nullptr;
-        Blast::PrimitiveTopology type = Blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_STRIP;
-        uint32_t offset = 0;
-        uint32_t count = 0;
+        std::vector<RenderPrimitive> primitives;
     };
 
     struct RenderView {
         UniformBuffer* cameraUB = nullptr;
         UniformBuffer* lightUB = nullptr;
         RenderTarget* renderTarget = nullptr;
+        uint32_t renderableCount = 0;
+        std::vector<Renderable> renderables;
+        uint32_t layer = 0;
     };
 
     class RenderScene {
@@ -56,9 +63,10 @@ namespace gear {
     private:
         friend Renderer;
         Renderer* mRenderer = nullptr;
+        /**
+         * 最多支持8个RenderView
+         */
         uint32_t mViewCount = 0;
-        std::vector<RenderView> mViews;
-        uint32_t mRenderableCount = 0;
-        std::vector<Renderable> mRenderables;
+        RenderView mViews[8];
     };
 }

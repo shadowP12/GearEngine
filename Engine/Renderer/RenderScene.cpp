@@ -14,12 +14,9 @@
 namespace gear {
     RenderScene::RenderScene(Renderer* renderer) {
         mRenderer = renderer;
-        mViews.resize(8);
     }
 
     RenderScene::~RenderScene() {
-        mViews.clear();
-        mRenderables.clear();
     }
 
     /**
@@ -28,39 +25,47 @@ namespace gear {
      */
     void RenderScene::prepare() {
         Scene* scene = gEngine.getScene();
+
         mViewCount = 0;
-        mRenderableCount = 0;
-        if (mRenderables.size() < scene->mEntities.size()) {
-            mRenderables.resize(scene->mEntities.size());
+        for (int i = 0; i < scene->mCameraEntities.size(); ++i) {
+            if (i >= 8) {
+                // 最多只需要8个RenderView
+                break;
+            }
+            CCamera* cc = scene->mCameraEntities[i]->getComponent<CCamera>();
+            cc->updateCameraBuffer();
+            mViews[mViewCount].cameraUB = cc->mCameraUniformBuffer;
+            mViews[mViewCount].lightUB = cc->mLightUniformBuffer;
+            if (cc->mRenderTarget == nullptr) {
+                mViews[mViewCount].renderTarget = mRenderer->getRenderTarget();
+            } else {
+                mViews[mViewCount].renderTarget = cc->mRenderTarget;
+            }
+            mViews[mViewCount].layer = cc->mLayer;
+            mViews[mViewCount].renderableCount = 0;
+            if (mViews[mViewCount].renderables.size() < scene->mEntities.size()) {
+                mViews[mViewCount].renderables.resize(scene->mEntities.size());
+            }
+            mViewCount++;
         }
 
         for (int i = 0; i < scene->mEntities.size(); ++i) {
             if (scene->mEntities[i]->getComponent<CRenderable>()) {
                 CRenderable* cr = scene->mEntities[i]->getComponent<CRenderable>();
-                cr->updateRenderableBuffer();
-                mRenderables[mRenderableCount].vertexBuffer = cr->mVertexBuffer;
-                mRenderables[mRenderableCount].indexBuffer = cr->mIndexBufferr;
-                mRenderables[mRenderableCount].renderableUB = cr->mRenderableBuffer;
-                mRenderables[mRenderableCount].boneUB = cr->mBoneBuffer;
-                mRenderables[mRenderableCount].materialInstance = cr->mMaterialInstance;
-                mRenderables[mRenderableCount].type = cr->mPrimitive.type;
-                mRenderables[mRenderableCount].offset = cr->mPrimitive.offset;
-                mRenderables[mRenderableCount].count = cr->mPrimitive.count;
-                mRenderableCount++;
-            }
-
-            // 最多支持8个RenderView
-            if (scene->mEntities[i]->getComponent<CCamera>()) {
-                CCamera* cc = scene->mEntities[i]->getComponent<CCamera>();
-                cc->updateCameraBuffer();
-                mViews[mViewCount].cameraUB = cc->mCameraUniformBuffer;
-                mViews[mViewCount].lightUB = cc->mLightUniformBuffer;
-                if (cc->mRenderTarget == nullptr) {
-                    mViews[mViewCount].renderTarget = mRenderer->getRenderTarget();
-                } else {
-                    mViews[mViewCount].renderTarget = cc->mRenderTarget;
+                for (int j = 0; j < mViewCount; ++j) {
+                    if (mViews[j].layer == cr->mLayer) {
+                        cr->updateRenderableBuffer();
+                        mViews[j].renderables[mViews[j].renderableCount].vertexBuffer = cr->mVertexBuffer;
+                        mViews[j].renderables[mViews[j].renderableCount].indexBuffer = cr->mIndexBufferr;
+                        mViews[j].renderables[mViews[j].renderableCount].renderableUB = cr->mRenderableBuffer;
+                        mViews[j].renderables[mViews[j].renderableCount].boneUB = cr->mBoneBuffer;
+                        mViews[j].renderables[mViews[j].renderableCount].primitives.clear();
+                        for (int k = 0; k < cr->mPrimitives.size(); ++k) {
+                            mViews[j].renderables[mViews[j].renderableCount].primitives.push_back(cr->mPrimitives[k]);
+                        }
+                        mViews[j].renderableCount++;
+                    }
                 }
-                mViewCount++;
             }
         }
     }

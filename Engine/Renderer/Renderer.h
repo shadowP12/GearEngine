@@ -26,6 +26,10 @@ namespace gear {
     struct Attachment;
     struct RenderTargetDesc;
     struct RenderTargetParams;
+    class VertexBuffer;
+    class IndexBuffer;
+    class UniformBuffer;
+    class MaterialInstance;
     class RenderTarget;
     class CopyEngine;
     class RenderBuiltinResource;
@@ -44,8 +48,20 @@ namespace gear {
 
         struct DrawCall {
             DrawCallKey key = 0;
-            uint32_t index;
-            uint8_t variant;
+
+            // Material Variant
+            uint8_t variant = 0;
+
+            // RenderPrimitive
+            uint32_t offset = 0;
+            uint32_t count = 0;
+            MaterialInstance* materialInstance = nullptr;
+            VertexBuffer* vertexBuffer = nullptr;
+            IndexBuffer* indexBuffer = nullptr;
+            UniformBuffer* renderableUB = nullptr;
+            UniformBuffer* boneUB = nullptr;
+            Blast::PrimitiveTopology type = Blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_STRIP;
+
             // RenderState
             Blast::GfxBlendState blendState;
             Blast::GfxDepthState depthState;

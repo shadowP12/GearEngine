@@ -1,4 +1,4 @@
-layout(location = LOCATION_POSITION) in vec3 mesh_position;
+layout(location = LOCATION_POSITION) in vec4 mesh_position;
 
 #if defined(HAS_ATTRIBUTE_NORMAL)
 layout(location = LOCATION_NORMAL) in vec3 mesh_normal;

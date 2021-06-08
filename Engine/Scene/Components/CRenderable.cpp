@@ -16,8 +16,12 @@ namespace gear {
         SAFE_DELETE(mRenderableBuffer);
     }
 
-    void CRenderable::setPrimitive(RenderPrimitive primitive) {
-        mPrimitive = primitive;
+    void CRenderable::resetPrimitives() {
+        mPrimitives.clear();
+    }
+
+    void CRenderable::addPrimitive(const RenderPrimitive& primitive) {
+        mPrimitives.push_back(primitive);
     }
 
     void CRenderable::setVertexBuffer(VertexBuffer* buffer) {
@@ -28,13 +32,13 @@ namespace gear {
         mIndexBufferr = buffer;
     }
 
-    void CRenderable::setMaterialInstance(MaterialInstance* instance) {
-        mMaterialInstance = instance;
+    void CRenderable::setLayer(uint32_t layer) {
+        mLayer = layer;
     }
 
     void CRenderable::updateRenderableBuffer() {
         ObjectUniforms ub;
-        ub.modelMatrix = glm::mat4(1.0);//mEntity->getComponent<CTransform>()->getWorldTransform();
+        ub.modelMatrix = mEntity->getComponent<CTransform>()->getWorldTransform();
         ub.normalMatrix = glm::mat4(1.0);
         mRenderableBuffer->update(&ub, 0, sizeof(ObjectUniforms));
     }

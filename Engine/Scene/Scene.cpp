@@ -30,4 +30,22 @@ namespace gear {
             }
         }
     }
+
+    void Scene::registerCamera(Entity* entity) {
+        for (auto iter = mCameraEntities.begin(); iter != mCameraEntities.end();) {
+            if (*iter == entity) {
+                return;
+            }
+        }
+        mCameraEntities.push_back(entity);
+    }
+
+    void Scene::unregisterCamera(Entity* entity) {
+        for (auto iter = mCameraEntities.begin(); iter != mCameraEntities.end();) {
+            if (*iter == entity) {
+                mCameraEntities.erase(iter);
+                return;
+            }
+        }
+    }
 }
