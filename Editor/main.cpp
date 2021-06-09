@@ -22,8 +22,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STBIR_FLAG_ALPHA_PREMULTIPLIED
 #include <stb_image.h>
-//#include <imgui.h>
-//#include "ImGuiBackend.h"
+#include <imgui.h>
+#include "ImGuiBackend.h"
 
 struct Vertex {
     float pos[3];
@@ -254,10 +254,10 @@ int main()
     glfwSetCursorPosCallback(gWindowPtr, cursorPositionCB);
     glfwSetScrollCallback(gWindowPtr, mouseScrollCB);
 
-//    // 初始化imgui
-//    IMGUI_CHECKVERSION();
-//    ImGui::CreateContext();
-//    ImGui_ImplGlfw_Init(gWindowPtr, true);
+    // 初始化imgui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_Init(gWindowPtr, true);
 
     gear::gEngine.getRenderer()->initSurface(glfwGetWin32Window(gWindowPtr));
 
@@ -272,6 +272,7 @@ int main()
         // 每一帧的开始都需要获取当前屏幕信息
         // ImGui_ImplGlfw_NewFrame();
 
+
         gear::gEngine.getRenderer()->beginFrame(gWidth, gHeight);
         gear::gEngine.getRenderer()->endFrame();
         glfwPollEvents();
@@ -281,9 +282,9 @@ int main()
     destroyTestScene();
     delete gCamController;
 
-//    // 销毁imgui
-//    ImGui::DestroyContext();
-//    ImGui_ImplGlfw_Shutdown();
+    // 销毁imgui
+    ImGui::DestroyContext();
+    ImGui_ImplGlfw_Shutdown();
 
     // 销毁glfw
     glfwTerminate();

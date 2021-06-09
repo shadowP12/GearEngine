@@ -4,6 +4,12 @@
 #include <Engine/Resource/Material.h>
 #include <Engine/Resource/GpuBuffer.h>
 #include <Engine/Resource/Texture.h>
+#include <Engine/Scene/Scene.h>
+#include <Engine/Scene/Entity.h>
+#include <Engine/Scene/Components/CCamera.h>
+#include <Engine/Scene/Components/CTransform.h>
+#include <Engine/Scene/Components/CRenderable.h>
+#include <Engine/MaterialCompiler/MaterialCompiler.h>
 
 // GLFW
 #include <GLFW/glfw3.h>
@@ -332,6 +338,25 @@ void ImGui_ImplGlfw_NewFrame()
 }
 
 ImGuiLayout::ImGuiLayout() {
+    {
+        // 初始化UI相机
+        mUICamera = gear::gEngine.getScene()->createEntity();
+        gear::CTransform* ct = mUICamera->addComponent<gear::CTransform>();
+        ct->setTransform(glm::mat4(1.0));
+        mUICamera->addComponent<gear::CCamera>();
+    }
+
+    {
+        // 初始化UIPawn
+        mUIPawn = gear::gEngine.getScene()->createEntity();
+        gear::CTransform* ct = mUIPawn->addComponent<gear::CTransform>();
+        ct->setTransform(glm::mat4(1.0));
+        mUIPawn->addComponent<gear::CRenderable>();
+    }
+
+    // 加载图片资源
+
+    // 加载材质文件
 
 }
 
@@ -350,6 +375,52 @@ ImGuiLayout::~ImGuiLayout() {
         SAFE_DELETE(mIndexBuffers[i]);
     }
     mIndexBuffers.clear();
+    gear::gEngine.getScene()->destroyEntity(mUICamera);
+    gear::gEngine.getScene()->destroyEntity(mUIPawn);
+}
+
+void ImGuiLayout::newFrame() {
+    // todo: set imgui context
+    ImGui::NewFrame();
+}
+
+void ImGuiLayout::render() {
+    // prepare draw data
+    ImGui::Render();
+
+    processImGuiCommands();
+}
+
+void ImGuiLayout::processImGuiCommands() {
+    ImDrawData* commands = ImGui::GetDrawData();
+    const ImGuiIO& io = ImGui::GetIO();
+
+    int fbwidth = (int)(io.DisplaySize.x * io.DisplayFramebufferScale.x);
+    int fbheight = (int)(io.DisplaySize.y * io.DisplayFramebufferScale.y);
+    if (fbwidth == 0 || fbheight == 0)
+        return;
+    commands->ScaleClipRects(io.DisplayFramebufferScale);
+
+    createBuffers(commands->CmdListsCount);
+
+    // 计算当前有多少prim
+    size_t nPrims = 0;
+    for (int cmdListIndex = 0; cmdListIndex < commands->CmdListsCount; cmdListIndex++) {
+        const ImDrawList* cmds = commands->CmdLists[cmdListIndex];
+        nPrims += cmds->CmdBuffer.size();
+    }
+
+    // 为新的prim创建一个材质实例
+    size_t previousSize = mMaterialInstances.size();
+    if (nPrims > mMaterialInstances.size()) {
+        mMaterialInstances.resize(nPrims);
+        for (size_t i = previousSize; i < mMaterialInstances.size(); i++) {
+            mMaterialInstances[i] = mMaterial->createInstance();
+        }
+    }
+
+    // 清空renderable component的prim，并重新设置
+
 }
 
 void ImGuiLayout::createBuffers(int numRequiredBuffers) {
@@ -359,9 +430,9 @@ void ImGuiLayout::createBuffers(int numRequiredBuffers) {
         for (size_t i = previousSize; i < mVertexBuffers.size(); i++) {
             gear::VertexBuffer::Builder vbBuilder;
             vbBuilder.vertexCount(1000);
-            vbBuilder.attribute(Blast::SEMANTIC_POSITION, Blast::FORMAT_R32G32B32_FLOAT);
+            vbBuilder.attribute(Blast::SEMANTIC_POSITION, Blast::FORMAT_R32G32_FLOAT);
             vbBuilder.attribute(Blast::SEMANTIC_TEXCOORD0, Blast::FORMAT_R32G32_FLOAT);
-            vbBuilder.attribute(Blast::SEMANTIC_COLOR, Blast::FORMAT_R32G32B32A32_FLOAT);
+            vbBuilder.attribute(Blast::SEMANTIC_COLOR, Blast::FORMAT_R32G32B32_FLOAT);
             mVertexBuffers[i] = vbBuilder.build();
         }
     }
@@ -371,12 +442,13 @@ void ImGuiLayout::createBuffers(int numRequiredBuffers) {
         for (size_t i = previousSize; i < mIndexBuffers.size(); i++) {
             gear::IndexBuffer::Builder builder;
             builder.indexCount(5000);
-            builder.indexType(Blast::INDEX_TYPE_UINT32);
+            builder.indexType(Blast::INDEX_TYPE_UINT16);
             mIndexBuffers[i] = builder.build();
         }
     }
 }
 
 void ImGuiLayout::updateBufferData(size_t bufferIndex, size_t vbSizeInBytes, void* vbImguiData, size_t ibSizeInBytes, void* ibImguiData) {
-
+    mVertexBuffers[bufferIndex]->update(vbImguiData, 0, ibSizeInBytes);
+    mIndexBuffers[bufferIndex]->update(ibImguiData, 0, ibSizeInBytes);
 }
