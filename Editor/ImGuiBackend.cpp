@@ -1,6 +1,7 @@
 #include "ImGuiBackend.h"
 #include <Engine/GearEngine.h>
 #include <Engine/Renderer/Renderer.h>
+#include <Engine/Renderer/RenderScene.h>
 #include <Engine/Resource/Material.h>
 #include <Engine/Resource/GpuBuffer.h>
 #include <Engine/Resource/Texture.h>
@@ -343,7 +344,7 @@ ImGuiLayout::ImGuiLayout() {
         mUICamera = gear::gEngine.getScene()->createEntity();
         gear::CTransform* ct = mUICamera->addComponent<gear::CTransform>();
         ct->setTransform(glm::mat4(1.0));
-        mUICamera->addComponent<gear::CCamera>();
+        mUICamera->addComponent<gear::CCamera>()->setLayer(2);
     }
 
     {
@@ -351,7 +352,7 @@ ImGuiLayout::ImGuiLayout() {
         mUIPawn = gear::gEngine.getScene()->createEntity();
         gear::CTransform* ct = mUIPawn->addComponent<gear::CTransform>();
         ct->setTransform(glm::mat4(1.0));
-        mUIPawn->addComponent<gear::CRenderable>();
+        mUIPawn->addComponent<gear::CRenderable>()->setLayer(2);
     }
 
     // 加载图片资源
@@ -420,7 +421,46 @@ void ImGuiLayout::processImGuiCommands() {
     }
 
     // 清空renderable component的prim，并重新设置
+    gear::CRenderable* crenderable = mUIPawn->getComponent<gear::CRenderable>();
+    crenderable->resetPrimitives();
+    int bufferIndex = 0;
+    int primIndex = 0;
+    for (int cmdListIndex = 0; cmdListIndex < commands->CmdListsCount; cmdListIndex++) {
+        const ImDrawList* cmds = commands->CmdLists[cmdListIndex];
+        size_t indexOffset = 0;
+        updateBufferData(bufferIndex,
+                         cmds->VtxBuffer.Size * sizeof(ImDrawVert), cmds->VtxBuffer.Data,
+                         cmds->IdxBuffer.Size * sizeof(ImDrawIdx), cmds->IdxBuffer.Data);
+        for (const auto& pcmd : cmds->CmdBuffer) {
+            if (pcmd.UserCallback) {
+                pcmd.UserCallback(cmds, &pcmd);
+            } else {
+                // 设置材质属性
+                gear::MaterialInstance* materialInstance = mMaterialInstances[primIndex];
+                // TODO: 后续提供scissor接口
+                // materialInstance->setScissor( pcmd.ClipRect.x, fbheight - pcmd.ClipRect.w,
+                //                               (uint16_t) (pcmd.ClipRect.z - pcmd.ClipRect.x),
+                //                               (uint16_t) (pcmd.ClipRect.w - pcmd.ClipRect.y));
+                if (pcmd.TextureId) {
+                    Blast::GfxSamplerDesc samplerDesc;
+                    materialInstance->setParameter("albedo_texture", (gear::Texture*)pcmd.TextureId, samplerDesc);
+                }
 
+                // 创建对应的prim
+                gear::RenderPrimitive primitive;
+                primitive.count = pcmd.ElemCount;
+                primitive.offset = indexOffset;
+                primitive.type = Blast::PRIMITIVE_TOPO_TRI_LIST;
+                primitive.materialInstance = materialInstance;
+                primitive.vertexBuffer = mVertexBuffers[bufferIndex];
+                primitive.indexBuffer = mIndexBuffers[bufferIndex];
+                crenderable->addPrimitive(primitive);
+                primIndex++;
+            }
+            indexOffset += pcmd.ElemCount;
+        }
+        bufferIndex++;
+    }
 }
 
 void ImGuiLayout::createBuffers(int numRequiredBuffers) {

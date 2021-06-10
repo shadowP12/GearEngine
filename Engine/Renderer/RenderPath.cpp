@@ -42,10 +42,10 @@ namespace gear {
             for (int j = 0; j < rb->primitives.size(); ++j) {
                 RenderPrimitive* rp = &rb->primitives[j];
                 mDrawCalls[mDrawCallHead + colorDrawCallCount].variant = 0;
-                mDrawCalls[mDrawCallHead + colorDrawCallCount].vertexBuffer = rb->vertexBuffer;
-                mDrawCalls[mDrawCallHead + colorDrawCallCount].indexBuffer = rb->indexBuffer;
                 mDrawCalls[mDrawCallHead + colorDrawCallCount].renderableUB = rb->renderableUB;
                 mDrawCalls[mDrawCallHead + colorDrawCallCount].boneUB = rb->boneUB;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].vertexBuffer = rp->vertexBuffer;
+                mDrawCalls[mDrawCallHead + colorDrawCallCount].indexBuffer = rp->indexBuffer;
                 mDrawCalls[mDrawCallHead + colorDrawCallCount].count = rp->count;
                 mDrawCalls[mDrawCallHead + colorDrawCallCount].offset = rp->offset;
                 mDrawCalls[mDrawCallHead + colorDrawCallCount].type = rp->type;

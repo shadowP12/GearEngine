@@ -31,14 +31,14 @@ namespace gear {
     struct RenderPrimitive {
         uint32_t offset = 0;
         uint32_t count = 0;
+        VertexBuffer* vertexBuffer = nullptr;
+        IndexBuffer* indexBuffer = nullptr;
         MaterialInstance* materialInstance = nullptr;
         Blast::PrimitiveTopology type = Blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_STRIP;
     };
 
     // TODO: 包围盒
     struct Renderable {
-        VertexBuffer* vertexBuffer = nullptr;
-        IndexBuffer* indexBuffer = nullptr;
         UniformBuffer* renderableUB = nullptr;
         UniformBuffer* boneUB = nullptr;
         std::vector<RenderPrimitive> primitives;

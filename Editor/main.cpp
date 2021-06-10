@@ -194,10 +194,9 @@ void createTestScene() {
         primitive.offset = 0;
         primitive.type = Blast::PRIMITIVE_TOPO_TRI_LIST;
         primitive.materialInstance = gUIMatIns;
-        gear::CRenderable* cr = gPawn->addComponent<gear::CRenderable>();
-        cr->addPrimitive(primitive);
-        cr->setVertexBuffer(gVB);
-        cr->setIndexBuffer(gIB);
+        primitive.vertexBuffer = gVB;
+        primitive.indexBuffer = gIB;
+        gPawn->addComponent<gear::CRenderable>()->addPrimitive(primitive);
     }
 
     // 加载测试纹理

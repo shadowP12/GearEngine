@@ -55,8 +55,6 @@ namespace gear {
                 for (int j = 0; j < mViewCount; ++j) {
                     if (mViews[j].layer == cr->mLayer) {
                         cr->updateRenderableBuffer();
-                        mViews[j].renderables[mViews[j].renderableCount].vertexBuffer = cr->mVertexBuffer;
-                        mViews[j].renderables[mViews[j].renderableCount].indexBuffer = cr->mIndexBufferr;
                         mViews[j].renderables[mViews[j].renderableCount].renderableUB = cr->mRenderableBuffer;
                         mViews[j].renderables[mViews[j].renderableCount].boneUB = cr->mBoneBuffer;
                         mViews[j].renderables[mViews[j].renderableCount].primitives.clear();
