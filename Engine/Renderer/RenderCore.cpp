@@ -15,13 +15,27 @@ namespace gear {
         renderPassDesc.numColorAttachments = rt->getColorTargetCount();
         for (int i = 0; i < rt->getColorTargetCount(); i++) {
             renderPassDesc.colors[i].format = rt->getColor(i).format;
-            renderPassDesc.colors[i].loadOp = Blast::LOAD_ACTION_CLEAR;
+            if (params->clearColor) {
+                renderPassDesc.colors[i].loadOp = Blast::LOAD_ACTION_CLEAR;
+            }
+            else {
+                renderPassDesc.colors[i].loadOp = Blast::LOAD_ACTION_LOAD;
+            }
         }
         if (rt->hasDepthStencil()) {
             renderPassDesc.hasDepthStencil = true;
             renderPassDesc.depthStencil.format = rt->getDepthStencil().format;
-            renderPassDesc.depthStencil.depthLoadOp = Blast::LOAD_ACTION_CLEAR;
-            renderPassDesc.depthStencil.stencilLoadOp = Blast::LOAD_ACTION_CLEAR;
+            if (params->clearDepth) {
+                renderPassDesc.depthStencil.depthLoadOp = Blast::LOAD_ACTION_CLEAR;
+            } else {
+                renderPassDesc.depthStencil.depthLoadOp = Blast::LOAD_ACTION_LOAD;
+            }
+
+            if (params->clearStencil) {
+                renderPassDesc.depthStencil.stencilLoadOp = Blast::LOAD_ACTION_CLEAR;
+            } else {
+                renderPassDesc.depthStencil.stencilLoadOp = Blast::LOAD_ACTION_LOAD;
+            }
         }
         Blast::GfxRenderPass* rp = mRenderPassCache->getRenderPass(renderPassDesc);
 
@@ -103,6 +117,6 @@ namespace gear {
         cmd->bindDescriptorSets(2, descriptorBundle.handles);
         cmd->bindVertexBuffer(dc->vertexBuffer->getBuffer(), 0);
         cmd->bindIndexBuffer(dc->indexBuffer->getBuffer(), 0, dc->indexBuffer->getIndexType());
-        cmd->drawIndexed(dc->count, 1, 0, 0, 0);
+        cmd->drawIndexed(dc->count, 1, dc->offset, 0, 0);
     }
 }

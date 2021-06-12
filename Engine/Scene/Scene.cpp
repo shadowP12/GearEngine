@@ -5,7 +5,7 @@ namespace gear {
     Scene::Scene() {}
 
     Scene::~Scene() {
-        for (auto iter = mEntities.begin(); iter != mEntities.end();) {
+        for (auto iter = mEntities.begin(); iter != mEntities.end(); iter++) {
             delete *iter;
             *iter = nullptr;
         }
@@ -19,9 +19,7 @@ namespace gear {
     }
 
     void Scene::destroyEntity(Entity* entity) {
-        for (auto iter = mEntities.begin(); iter != mEntities.end();) {
-            if (iter == mEntities.end())
-                break;
+        for (auto iter = mEntities.begin(); iter != mEntities.end(); iter++) {
             if (*iter == entity) {
                 mEntities.erase(iter);
                 delete entity;
@@ -32,7 +30,7 @@ namespace gear {
     }
 
     void Scene::registerCamera(Entity* entity) {
-        for (auto iter = mCameraEntities.begin(); iter != mCameraEntities.end();) {
+        for (auto iter = mCameraEntities.begin(); iter != mCameraEntities.end(); iter++) {
             if (*iter == entity) {
                 return;
             }
@@ -41,7 +39,7 @@ namespace gear {
     }
 
     void Scene::unregisterCamera(Entity* entity) {
-        for (auto iter = mCameraEntities.begin(); iter != mCameraEntities.end();) {
+        for (auto iter = mCameraEntities.begin(); iter != mCameraEntities.end(); iter++) {
             if (*iter == entity) {
                 mCameraEntities.erase(iter);
                 return;

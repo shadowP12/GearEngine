@@ -1,31 +1,18 @@
 states {
     shadingModel : unlit,
-    culling : none,
-    depthCulling: false
+    blendingMode : transparent
 }
 
 requires {
     uv0
 }
 
-uniforms {
-    float p0,
-    float p1
-}
-
 samplers {
-    sampler2D s0,
-    sampler2D s1
-}
-
-vertex {
-    void materialVertex(inout MaterialVertexInputs material) {
-
-    }
+    sampler2D albedo_texture
 }
 
 fragment {
     void materialFragment(inout MaterialFragmentInputs material) {
-        
+        material.base_color = texture(albedo_texture, vertex_uv01.xy);
     }
 }

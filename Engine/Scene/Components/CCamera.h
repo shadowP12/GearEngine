@@ -6,6 +6,12 @@ namespace gear {
     class RenderTarget;
     class UniformBuffer;
     class Entity;
+
+    enum class ProjectionType {
+        PERSPECTIVE,
+        ORTHO
+    };
+
     class CCamera : public Component {
     public:
         CCamera(Entity* entity);
@@ -15,6 +21,8 @@ namespace gear {
         static ComponentType getClassType() { return ComponentType::Camera; }
 
         ComponentType getType() override { return ComponentType::Camera; }
+
+        void setProjection(ProjectionType type, double left, double right, double bottom, double top, double near, double far);
 
         void setRenderTarget(RenderTarget* target);
 

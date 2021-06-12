@@ -62,10 +62,23 @@ namespace gear {
 
         // 执行
         RenderTargetParams params;
+        params.clearColor = mClearColor;
+        params.clearDepth = mClearDepth;
+        params.clearStencil = mClearStencil;
         bindRenderTarget(view->renderTarget, &params);
         for (int i = mDrawCallHead; i < colorDrawCallCount; ++i) {
             executeDrawCall(&mDrawCalls[i]);
         }
         unbindRenderTarget();
+
+        if (mClearColor) {
+            mClearColor = false;
+        }
+        if (mClearDepth) {
+            mClearDepth = false;
+        }
+        if (mClearStencil) {
+            mClearStencil = false;
+        }
     }
 }

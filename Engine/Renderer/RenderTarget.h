@@ -51,6 +51,8 @@ namespace gear {
      * 该结构用于描述如何使用RT
      */
     struct RenderTargetParams {
-
+        bool clearColor;
+        bool clearDepth;
+        bool clearStencil;
     };
 }

@@ -159,6 +159,8 @@ namespace gear {
          /**
           * Render Pass相关变量
           */
-
+        bool mClearColor;
+        bool mClearDepth;
+        bool mClearStencil;
     };
 }

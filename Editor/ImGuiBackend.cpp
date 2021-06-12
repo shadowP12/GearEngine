@@ -1,5 +1,6 @@
 #include "ImGuiBackend.h"
 #include <Engine/GearEngine.h>
+#include <Engine/Utility/FileSystem.h>
 #include <Engine/Renderer/Renderer.h>
 #include <Engine/Renderer/RenderScene.h>
 #include <Engine/Resource/Material.h>
@@ -339,6 +340,7 @@ void ImGui_ImplGlfw_NewFrame()
 }
 
 ImGuiLayout::ImGuiLayout() {
+    ImGui::GetIO().Fonts->AddFontFromFileTTF("./BuiltinResources/Fonts/Roboto-Medium.ttf", 16.0f);
     {
         // 初始化UI相机
         mUICamera = gear::gEngine.getScene()->createEntity();
@@ -356,9 +358,20 @@ ImGuiLayout::ImGuiLayout() {
     }
 
     // 加载图片资源
+    unsigned char* pixels;
+    int width, height;
+    ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+    uint32_t size = width * height * 4;
+    gear::Texture::Builder texBuild;
+    texBuild.width(width);
+    texBuild.height(height);
+    texBuild.format(Blast::FORMAT_R8G8B8A8_UNORM);
+    mTexture = texBuild.build();
+    mTexture->setData(0, pixels, size);
 
-    // 加载材质文件
-
+    // 加载材质
+    std::string materialCode = gear::readFileData("./BuiltinResources/Materials/ui.mat");
+    mMaterial = gear::gEngine.getMaterialCompiler()->compile(materialCode);
 }
 
 ImGuiLayout::~ImGuiLayout() {
@@ -383,6 +396,8 @@ ImGuiLayout::~ImGuiLayout() {
 void ImGuiLayout::newFrame() {
     // todo: set imgui context
     ImGui::NewFrame();
+    ImGuiIO& io = ImGui::GetIO();
+    mUICamera->getComponent<gear::CCamera>()->setProjection(gear::ProjectionType::ORTHO, 0.0, io.DisplaySize.x, io.DisplaySize.y, 0.0, 0.0, 1.0);
 }
 
 void ImGuiLayout::render() {
@@ -417,6 +432,8 @@ void ImGuiLayout::processImGuiCommands() {
         mMaterialInstances.resize(nPrims);
         for (size_t i = previousSize; i < mMaterialInstances.size(); i++) {
             mMaterialInstances[i] = mMaterial->createInstance();
+            Blast::GfxSamplerDesc samplerDesc;
+            mMaterialInstances[i]->setParameter("albedo_texture", mTexture, samplerDesc);
         }
     }
 
@@ -469,10 +486,10 @@ void ImGuiLayout::createBuffers(int numRequiredBuffers) {
         mVertexBuffers.resize(numRequiredBuffers, nullptr);
         for (size_t i = previousSize; i < mVertexBuffers.size(); i++) {
             gear::VertexBuffer::Builder vbBuilder;
-            vbBuilder.vertexCount(1000);
+            vbBuilder.vertexCount(10000);
             vbBuilder.attribute(Blast::SEMANTIC_POSITION, Blast::FORMAT_R32G32_FLOAT);
             vbBuilder.attribute(Blast::SEMANTIC_TEXCOORD0, Blast::FORMAT_R32G32_FLOAT);
-            vbBuilder.attribute(Blast::SEMANTIC_COLOR, Blast::FORMAT_R32G32B32_FLOAT);
+            vbBuilder.attribute(Blast::SEMANTIC_COLOR, Blast::FORMAT_R8G8B8A8_UNORM);
             mVertexBuffers[i] = vbBuilder.build();
         }
     }
@@ -489,6 +506,6 @@ void ImGuiLayout::createBuffers(int numRequiredBuffers) {
 }
 
 void ImGuiLayout::updateBufferData(size_t bufferIndex, size_t vbSizeInBytes, void* vbImguiData, size_t ibSizeInBytes, void* ibImguiData) {
-    mVertexBuffers[bufferIndex]->update(vbImguiData, 0, ibSizeInBytes);
+    mVertexBuffers[bufferIndex]->update(vbImguiData, 0, vbSizeInBytes);
     mIndexBuffers[bufferIndex]->update(ibImguiData, 0, ibSizeInBytes);
 }

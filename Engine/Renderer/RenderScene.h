@@ -51,6 +51,7 @@ namespace gear {
         uint32_t renderableCount = 0;
         std::vector<Renderable> renderables;
         uint32_t layer = 0;
+        bool operator < (RenderView const& rhs) { return layer < rhs.layer; }
     };
 
     class RenderScene {

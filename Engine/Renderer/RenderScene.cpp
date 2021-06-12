@@ -10,6 +10,7 @@
 #include "Resource/Material.h"
 #include "Resource/GpuBuffer.h"
 #include <Blast/Gfx/GfxContext.h>
+#include <algorithm>
 
 namespace gear {
     RenderScene::RenderScene(Renderer* renderer) {
@@ -48,6 +49,9 @@ namespace gear {
             }
             mViewCount++;
         }
+
+        // 相机排序
+        std::sort(&mViews[0], &mViews[0] + mViewCount);
 
         for (int i = 0; i < scene->mEntities.size(); ++i) {
             if (scene->mEntities[i]->getComponent<CRenderable>()) {

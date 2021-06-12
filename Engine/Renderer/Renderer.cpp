@@ -237,6 +237,11 @@ namespace gear {
         // 初始化渲染器场景
         mScene->prepare();
 
+        // 初始化RenderPass参数
+        mClearColor = true;
+        mClearDepth = true;
+        mClearStencil = true;
+
         // 绘制每一个RenderView
         for (int i = 0; i < mScene->mViewCount; ++i) {
             render(&mScene->mViews[i], mCmds[mFrameIndex]);

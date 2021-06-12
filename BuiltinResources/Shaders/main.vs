@@ -13,5 +13,9 @@ void main() {
     vertex_uv01.zw = material.uv1;
 #endif
 
+#if defined(HAS_ATTRIBUTE_COLOR)
+    vertex_color = material.color;
+#endif
+
     gl_Position = material.world_position;
 }

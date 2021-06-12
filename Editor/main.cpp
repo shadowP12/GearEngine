@@ -42,6 +42,7 @@ unsigned int indices[] = {
 };
 
 
+ImGuiLayout* gImGuiLayout = nullptr;
 GLFWwindow* gWindowPtr = nullptr;
 uint32_t gWidth = 800;
 uint32_t gHeight = 600;
@@ -58,7 +59,7 @@ gear::Entity* gPawn = nullptr;
 class CameraController {
 public:
     CameraController() {
-        mEye = glm::vec3(0.0);
+        mEye = glm::vec3(0.0, 0.0, 2.0);
         mEuler.x = 0.0;
         mEuler.y = 0.0;
         mEuler.z = 0.0;
@@ -158,7 +159,7 @@ void createTestScene() {
 //    gDefaultMat = materialCompiler.compile(materialCode);
 //    gDefaultMatIns = gDefaultMat->createInstance();
 
-    materialCode = readFileData("./BuiltinResources/Materials/ui.mat");
+    materialCode = readFileData("./BuiltinResources/Materials/default.mat");
     gUIMat = materialCompiler.compile(materialCode);
     gUIMatIns = gUIMat->createInstance();
 
@@ -180,7 +181,7 @@ void createTestScene() {
         gCamera = gear::gEngine.getScene()->createEntity();
         gear::CTransform* ct = gCamera->addComponent<gear::CTransform>();
         ct->setTransform(glm::mat4(1.0));
-        gear::CCamera* cc = gCamera->addComponent<gear::CCamera>();
+        gCamera->addComponent<gear::CCamera>()->setProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 100.0);
     }
 
     // 初始化Pawn
@@ -257,6 +258,7 @@ int main()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui_ImplGlfw_Init(gWindowPtr, true);
+    gImGuiLayout = new ImGuiLayout();
 
     gear::gEngine.getRenderer()->initSurface(glfwGetWin32Window(gWindowPtr));
 
@@ -264,17 +266,22 @@ int main()
     createTestScene();
 
     while (!glfwWindowShouldClose(gWindowPtr)) {
+        glfwPollEvents();
         // 更新相机
         gear::CTransform* ct = gCamera->getComponent<gear::CTransform>();
         ct->setTransform(gCamController->getCameraMatrix());
 
         // 每一帧的开始都需要获取当前屏幕信息
-        // ImGui_ImplGlfw_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        gImGuiLayout->newFrame();
 
+        bool show_demo_window = true;
+        ImGui::ShowDemoWindow(&show_demo_window);
+
+        gImGuiLayout->render();
 
         gear::gEngine.getRenderer()->beginFrame(gWidth, gHeight);
         gear::gEngine.getRenderer()->endFrame();
-        glfwPollEvents();
     }
     // 确保渲染器结束所有的工作
     gear::gEngine.getRenderer()->terminate();
@@ -284,6 +291,7 @@ int main()
     // 销毁imgui
     ImGui::DestroyContext();
     ImGui_ImplGlfw_Shutdown();
+    SAFE_DELETE(gImGuiLayout);
 
     // 销毁glfw
     glfwTerminate();

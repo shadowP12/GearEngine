@@ -17,10 +17,6 @@ namespace gear {
 
         // 注册场景相机
         scene->registerCamera(mEntity);
-
-        // TODO: 硬编码投影矩阵
-        mProjMatrix = glm::perspective(glm::radians(45.0), 800.0 / 600.0, 0.1, 100.0);
-        mProjMatrix[1][1] *= -1;
     }
 
     CCamera::~CCamera() {
@@ -31,6 +27,18 @@ namespace gear {
         // RT的生命周期应该由外部控制
         // SAFE_DELETE(mRenderTarget);
         SAFE_DELETE(mCameraUniformBuffer);
+    }
+
+    void CCamera::setProjection(ProjectionType type, double left, double right, double bottom, double top, double near, double far) {
+        if (type == ProjectionType::PERSPECTIVE) {
+            double fov = glm::radians(45.0);//glm::atan((right - left) / 2.0 / near);
+            double aspect = (right - left) / (bottom - top);
+            mProjMatrix = glm::perspective(fov, aspect, near, far);
+            mProjMatrix[1][1] *= -1;
+        } else {
+            // TODO: 调整正交投影矩阵
+            mProjMatrix = glm::orthoRH_ZO(left, right, top, bottom, near, far);
+        }
     }
 
     void CCamera::setRenderTarget(RenderTarget* target) {
@@ -46,6 +54,7 @@ namespace gear {
         FrameUniforms ub;
         ub.viewMatrix = glm::inverse(modelMatrix);
         ub.projMatrix = mProjMatrix;
+        glm::vec4 r = mProjMatrix * glm::vec4(100, 100, 0, 1);
         mCameraUniformBuffer->update(&ub, 0, sizeof(FrameUniforms));
     }
 }

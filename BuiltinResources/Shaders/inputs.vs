@@ -57,3 +57,7 @@ layout(location = 5) out highp vec2 vertex_uv01;
 #elif defined(HAS_ATTRIBUTE_UV1)
 layout(location = 5) out highp vec4 vertex_uv01;
 #endif
+
+#if defined(HAS_ATTRIBUTE_COLOR)
+layout(location = 7) out mediump vec4 vertex_color;
+#endif
