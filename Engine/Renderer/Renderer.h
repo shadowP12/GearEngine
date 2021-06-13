@@ -26,9 +26,11 @@ namespace gear {
     struct Attachment;
     struct RenderTargetDesc;
     struct RenderTargetParams;
+    class GpuBuffer;
     class VertexBuffer;
     class IndexBuffer;
     class UniformBuffer;
+    class Texture;
     class MaterialInstance;
     class RenderTarget;
     class CopyEngine;

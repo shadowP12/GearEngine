@@ -321,6 +321,25 @@ void ImGuiLayout::createBuffers(int numRequiredBuffers) {
 }
 
 void ImGuiLayout::updateBufferData(size_t bufferIndex, size_t vbSizeInBytes, void* vbImguiData, size_t ibSizeInBytes, void* ibImguiData) {
+    if (mVertexBuffers[bufferIndex]->getSize() < vbSizeInBytes) {
+        SAFE_DELETE(mVertexBuffers[bufferIndex]);
+        uint32_t requireCount = (vbSizeInBytes / sizeof(ImDrawVert)) * 2;
+        gear::VertexBuffer::Builder vbBuilder;
+        vbBuilder.vertexCount(requireCount);
+        vbBuilder.attribute(Blast::SEMANTIC_POSITION, Blast::FORMAT_R32G32_FLOAT);
+        vbBuilder.attribute(Blast::SEMANTIC_TEXCOORD0, Blast::FORMAT_R32G32_FLOAT);
+        vbBuilder.attribute(Blast::SEMANTIC_COLOR, Blast::FORMAT_R8G8B8A8_UNORM);
+        mVertexBuffers[bufferIndex] = vbBuilder.build();
+    }
     mVertexBuffers[bufferIndex]->update(vbImguiData, 0, vbSizeInBytes);
+
+    if (mIndexBuffers[bufferIndex]->getSize() < ibSizeInBytes) {
+        SAFE_DELETE(mIndexBuffers[bufferIndex]);
+        uint32_t requireCount = (ibSizeInBytes / sizeof(ImDrawIdx)) * 2;
+        gear::IndexBuffer::Builder builder;
+        builder.indexCount(requireCount);
+        builder.indexType(Blast::INDEX_TYPE_UINT16);
+        mIndexBuffers[bufferIndex] = builder.build();
+    }
     mIndexBuffers[bufferIndex]->update(ibImguiData, 0, ibSizeInBytes);
 }

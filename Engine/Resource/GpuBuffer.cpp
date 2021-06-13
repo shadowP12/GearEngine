@@ -7,6 +7,7 @@
 #include <unordered_map>
 namespace gear {
     GpuBuffer::GpuBuffer(Blast::ResourceType type, uint32_t size) {
+        mSize = size;
         Blast::GfxContext* context = gEngine.getRenderer()->getContext();
         Blast::GfxBufferDesc bufferDesc;
         bufferDesc.size = size;
@@ -16,7 +17,13 @@ namespace gear {
     }
 
     GpuBuffer::~GpuBuffer() {
-        SAFE_DELETE(mBuffer);
+        Renderer* renderer = gEngine.getRenderer();
+        CopyEngine* copyEngine = renderer->getCopyEngine();
+        copyEngine->destroy(mBuffer);
+    }
+
+    uint32_t GpuBuffer::getSize() {
+        return mSize;
     }
 
     void GpuBuffer::update(void* data, uint32_t offset, uint32_t size) {

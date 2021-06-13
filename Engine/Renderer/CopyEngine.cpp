@@ -2,6 +2,7 @@
 #include "Renderer.h"
 #include "Utility/Log.h"
 #include <Blast/Gfx/GfxBuffer.h>
+#include <Blast/Gfx/GfxTexture.h>
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Gfx/GfxCommandBuffer.h>
 
@@ -22,6 +23,18 @@ namespace gear {
             SAFE_DELETE(mCommands[i]);
         }
         mCommands.clear();
+
+        while (mDestroyBuffer.size() > 0) {
+            Blast::GfxBuffer* buffer = mDestroyBuffer.front();
+            SAFE_DELETE(buffer);
+            mDestroyBuffer.pop();
+        }
+
+        while (mDestroyTexture.size() > 0) {
+            Blast::GfxTexture* texture = mDestroyTexture.front();
+            SAFE_DELETE(texture);
+            mDestroyTexture.pop();
+        }
     }
 
     void CopyEngine::update() {
@@ -33,6 +46,24 @@ namespace gear {
                     mCommands[i]->callbacks[j]();
                 }
                 mCommands[i]->callbacks.clear();
+            }
+        }
+
+        // TODO: 后续根据cmd引用来决定释放时机
+        if (mDestroyBuffer.size() > 0 || mDestroyTexture.size() > 0) {
+            // 强行等待所有命令执行完毕很影响性能，后续要采用另外方案
+            mRenderer->terminate();
+
+            while (mDestroyBuffer.size() > 0) {
+                Blast::GfxBuffer* buffer = mDestroyBuffer.front();
+                SAFE_DELETE(buffer);
+                mDestroyBuffer.pop();
+            }
+
+            while (mDestroyTexture.size() > 0) {
+                Blast::GfxTexture* texture = mDestroyTexture.front();
+                SAFE_DELETE(texture);
+                mDestroyTexture.pop();
             }
         }
     }
@@ -60,6 +91,14 @@ namespace gear {
 
     void CopyEngine::releaseStage(Blast::GfxBuffer* stage) {
         mStageBufferSize--;
+    }
+
+    void CopyEngine::destroy(Blast::GfxBuffer* buffer) {
+        mDestroyBuffer.push(buffer);
+    }
+
+    void CopyEngine::destroy(Blast::GfxTexture* texture) {
+        mDestroyTexture.push(texture);
     }
 
 }

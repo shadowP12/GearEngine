@@ -60,7 +60,9 @@ namespace gear {
         }
         mDatas.clear();
 
-        SAFE_DELETE(mInternelTexture);
+        Renderer* renderer = gEngine.getRenderer();
+        CopyEngine* copyEngine = renderer->getCopyEngine();
+        copyEngine->destroy(mInternelTexture);
     }
 
     void Texture::setData(uint32_t i, void* data, uint32_t size) {

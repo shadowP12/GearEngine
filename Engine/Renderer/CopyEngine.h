@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <queue>
 #include <vector>
 #include <functional>
 #include <unordered_set>
@@ -7,6 +8,7 @@
 namespace Blast {
     class GfxFence;
     class GfxBuffer;
+    class GfxTexture;
     class GfxCommandBuffer;
 }
 
@@ -35,9 +37,15 @@ namespace gear {
 
         void releaseStage(Blast::GfxBuffer* stage);
 
+        void destroy(Blast::GfxBuffer* buffer);
+
+        void destroy(Blast::GfxTexture* texture);
+
     private:
         uint32_t mStageBufferSize = 0;
         Renderer* mRenderer = nullptr;
         std::vector<CopyCommand*> mCommands;
+        std::queue<Blast::GfxBuffer*> mDestroyBuffer;
+        std::queue<Blast::GfxTexture*> mDestroyTexture;
     };
 }

@@ -14,8 +14,12 @@ namespace gear {
         Blast::GfxBuffer* getBuffer() { return mBuffer; }
 
         void update(void* data, uint32_t offset, uint32_t size);
+
+        uint32_t getSize();
+
     protected:
         Blast::GfxBuffer* mBuffer = nullptr;
+        uint32_t mSize;
     };
 
     // TODO: 支持instance
