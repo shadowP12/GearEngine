@@ -16,9 +16,7 @@
 #include <Engine/Scene/Components/CTransform.h>
 #include <Engine/Scene/Components/CRenderable.h>
 #include <Engine/MaterialCompiler/MaterialCompiler.h>
-#include <Utility/Log.h>
-#include <iostream>
-#include <fstream>
+#include <Engine/Utility/FileSystem.h>
 #define STB_IMAGE_IMPLEMENTATION
 #define STBIR_FLAG_ALPHA_PREMULTIPLIED
 #include <stb_image.h>
@@ -116,8 +114,6 @@ private:
 };
 CameraController* gCamController = nullptr;
 
-static std::string readFileData(const std::string& path);
-
 static void resizeCB(GLFWwindow* window, int width, int height) {
     gWidth = width;
     gHeight = height;
@@ -155,11 +151,7 @@ void mouseScrollCB(GLFWwindow * window, double offsetX, double offsetY) {
 void createTestScene() {
     // 初始化测试资源
     gear::MaterialCompiler materialCompiler;
-    std::string materialCode = readFileData("./BuiltinResources/Materials/default.mat");
-//    gDefaultMat = materialCompiler.compile(materialCode);
-//    gDefaultMatIns = gDefaultMat->createInstance();
-
-    materialCode = readFileData("./BuiltinResources/Materials/default.mat");
+    std::string materialCode = gear::readFileData("./BuiltinResources/Materials/default.mat");
     gUIMat = materialCompiler.compile(materialCode);
     gUIMatIns = gUIMat->createInstance();
 
@@ -255,10 +247,7 @@ int main()
     glfwSetScrollCallback(gWindowPtr, mouseScrollCB);
 
     // 初始化imgui
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGui_ImplGlfw_Init(gWindowPtr, true);
-    gImGuiLayout = new ImGuiLayout();
+    gImGuiLayout = new ImGuiLayout(gWindowPtr);
 
     gear::gEngine.getRenderer()->initSurface(glfwGetWin32Window(gWindowPtr));
 
@@ -268,17 +257,15 @@ int main()
     while (!glfwWindowShouldClose(gWindowPtr)) {
         glfwPollEvents();
         // 更新相机
-        gear::CTransform* ct = gCamera->getComponent<gear::CTransform>();
-        ct->setTransform(gCamController->getCameraMatrix());
+        gCamera->getComponent<gear::CTransform>()->setTransform(gCamController->getCameraMatrix());
 
         // 每一帧的开始都需要获取当前屏幕信息
-        ImGui_ImplGlfw_NewFrame();
-        gImGuiLayout->newFrame();
+        gImGuiLayout->beginFrame();
 
         bool show_demo_window = true;
         ImGui::ShowDemoWindow(&show_demo_window);
 
-        gImGuiLayout->render();
+        gImGuiLayout->endFrame();
 
         gear::gEngine.getRenderer()->beginFrame(gWidth, gHeight);
         gear::gEngine.getRenderer()->endFrame();
@@ -289,24 +276,9 @@ int main()
     delete gCamController;
 
     // 销毁imgui
-    ImGui::DestroyContext();
-    ImGui_ImplGlfw_Shutdown();
     SAFE_DELETE(gImGuiLayout);
 
     // 销毁glfw
     glfwTerminate();
     return 0;
-}
-
-std::string readFileData(const std::string& path) {
-    std::istream* stream = &std::cin;
-    std::ifstream file;
-
-    file.open(path, std::ios_base::binary);
-    stream = &file;
-    if (file.fail()) {
-        LOGW("cannot open input file %s \n", path.c_str());
-        return std::string("");
-    }
-    return std::string((std::istreambuf_iterator<char>(*stream)), std::istreambuf_iterator<char>());
 }
