@@ -3,18 +3,21 @@
 #include "Scene/Scene.h"
 #include "Renderer/Renderer.h"
 #include "MaterialCompiler/MaterialCompiler.h"
+#include "Input/InputSystem.h"
 
 namespace gear {
     GearEngine::GearEngine() {
         mScene = new Scene();
         mRenderer = new Renderer();
         mMaterialCompiler = new MaterialCompiler();
+        mInputSystem = new InputSystem();
     }
 
     GearEngine::~GearEngine() {
         SAFE_DELETE(mScene);
         SAFE_DELETE(mRenderer);
         SAFE_DELETE(mMaterialCompiler);
+        SAFE_DELETE(mInputSystem);
     }
 
     Scene* GearEngine::getScene() {
@@ -27,6 +30,10 @@ namespace gear {
 
     MaterialCompiler* GearEngine::getMaterialCompiler() {
         return mMaterialCompiler;
+    }
+
+    InputSystem* GearEngine::getInputSystem() {
+        return mInputSystem;
     }
 
     GearEngine gEngine;

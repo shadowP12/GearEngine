@@ -1,4 +1,9 @@
-﻿add_executable (GearEditor main.cpp ImGuiBackend.cpp)
+﻿add_executable (GearEditor
+        main.cpp
+        ImGuiBackend.cpp
+        GearEditor.cpp
+        TextureImporter.cpp
+        GltfImporter/GltfImporter.cpp)
 target_include_directories(GearEditor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_link_libraries(GearEditor PRIVATE GearEngine)
 

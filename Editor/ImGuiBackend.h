@@ -1,6 +1,7 @@
 #pragma once
 #include <imgui.h>
 #include <vector>
+#include <Engine/Utility/Event.h>
 
 struct GLFWwindow;
 
@@ -24,6 +25,12 @@ public:
     void endFrame();
 
 private:
+    void onMousePosition(float x, float y);
+
+    void onMouseButton(int button, int action);
+
+    void onMouseScroll(float offset);
+
     void processImGuiCommands();
 
     void createBuffers(int numRequiredBuffers);
@@ -39,4 +46,7 @@ private:
     std::vector<gear::VertexBuffer*> mVertexBuffers;
     std::vector<gear::IndexBuffer*> mIndexBuffers;
     gear::Texture* mTexture = nullptr;
+    EventHandle mOnMousePositionHandle;
+    EventHandle mOnMouseButtonHandle;
+    EventHandle mOnMouseScrollHandle;
 };

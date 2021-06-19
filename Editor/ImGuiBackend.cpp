@@ -1,6 +1,7 @@
 #include "ImGuiBackend.h"
 #include <Engine/GearEngine.h>
 #include <Engine/Utility/FileSystem.h>
+#include <Engine/Utility/Log.h>
 #include <Engine/Renderer/Renderer.h>
 #include <Engine/Renderer/RenderScene.h>
 #include <Engine/Resource/Material.h>
@@ -12,6 +13,7 @@
 #include <Engine/Scene/Components/CTransform.h>
 #include <Engine/Scene/Components/CRenderable.h>
 #include <Engine/MaterialCompiler/MaterialCompiler.h>
+#include <Engine/Input/InputSystem.h>
 
 // GLFW
 #include <GLFW/glfw3.h>
@@ -82,6 +84,11 @@ void ImguiCharCB(GLFWwindow* window, unsigned int c) {
 
 ImGuiLayout::ImGuiLayout(GLFWwindow* window) {
     mWindow = window;
+
+    mOnMousePositionHandle = gear::gEngine.getInputSystem()->getOnMousePositionEvent().bind(CALLBACK_2(ImGuiLayout::onMousePosition, this), 100);
+    mOnMouseButtonHandle = gear::gEngine.getInputSystem()->getOnMouseButtonEvent().bind(CALLBACK_2(ImGuiLayout::onMouseButton, this), 100);
+    mOnMouseScrollHandle = gear::gEngine.getInputSystem()->getOnMouseScrollEvent().bind(CALLBACK_1(ImGuiLayout::onMouseScroll, this), 100);
+
     ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
@@ -119,8 +126,6 @@ ImGuiLayout::ImGuiLayout(GLFWwindow* window) {
     io.ImeWindowHandle = (void*)glfwGetWin32Window(mWindow);
 #endif
 
-    glfwSetMouseButtonCallback(window, ImguiMouseButtonCB);
-    glfwSetScrollCallback(window, ImguiScrollCB);
     glfwSetKeyCallback(window, ImguiKeyCB);
     glfwSetCharCallback(window, ImguiCharCB);
 
@@ -159,6 +164,10 @@ ImGuiLayout::ImGuiLayout(GLFWwindow* window) {
 }
 
 ImGuiLayout::~ImGuiLayout() {
+    gear::gEngine.getInputSystem()->getOnMousePositionEvent().unbind(mOnMousePositionHandle);
+    gear::gEngine.getInputSystem()->getOnMousePositionEvent().unbind(mOnMouseButtonHandle);
+    gear::gEngine.getInputSystem()->getOnMousePositionEvent().unbind(mOnMouseScrollHandle);
+
     ImGui::DestroyContext();
 
     SAFE_DELETE(mMaterial);
@@ -179,6 +188,33 @@ ImGuiLayout::~ImGuiLayout() {
     gear::gEngine.getScene()->destroyEntity(mUIPawn);
 }
 
+void ImGuiLayout::onMousePosition(float x, float y) {
+    // 当鼠标处于imgui控件内，则截断输入对应的输入事件
+    if (ImGui::IsWindowHovered(1 << 2)) {
+        gear::gEngine.getInputSystem()->getOnMousePositionEvent().block(mOnMousePositionHandle, true);
+    } else {
+        gear::gEngine.getInputSystem()->getOnMousePositionEvent().block(mOnMousePositionHandle, false);
+    }
+}
+
+void ImGuiLayout::onMouseButton(int button, int action) {
+    // 当鼠标处于imgui控件内，则截断输入对应的输入事件
+    if (ImGui::IsWindowHovered(1 << 2)) {
+        gear::gEngine.getInputSystem()->getOnMouseButtonEvent().block(mOnMouseButtonHandle, true);
+    } else {
+        gear::gEngine.getInputSystem()->getOnMouseButtonEvent().block(mOnMouseButtonHandle, false);
+    }
+}
+
+void ImGuiLayout::onMouseScroll(float offset) {
+    // 当鼠标处于imgui控件内，则截断输入对应的输入事件
+    if (ImGui::IsWindowHovered(1 << 2)) {
+        gear::gEngine.getInputSystem()->getOnMouseScrollEvent().block(mOnMouseScrollHandle, true);
+    } else {
+        gear::gEngine.getInputSystem()->getOnMouseScrollEvent().block(mOnMouseScrollHandle, false);
+    }
+}
+
 void ImGuiLayout::beginFrame() {
     ImGuiIO& io = ImGui::GetIO();
     int w, h;
@@ -189,24 +225,16 @@ void ImGuiLayout::beginFrame() {
     if (w > 0 && h > 0)
         io.DisplayFramebufferScale = ImVec2((float)displayW / w, (float)displayH / h);
 
-    // 更新鼠标位置以及按钮状态
-    for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++) {
-        io.MouseDown[i] = gMouseJustPressed[i] || glfwGetMouseButton(mWindow, i) != 0;
-        gMouseJustPressed[i] = false;
+    // 更新imgui现在的输入状态
+    io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+    io.MousePos.x = gear::gEngine.getInputSystem()->getMousePosition().x;
+    io.MousePos.y = gear::gEngine.getInputSystem()->getMousePosition().y;
+
+    for (int i = 0; i < 3; i++) {
+        io.MouseDown[i] = gear::gEngine.getInputSystem()->getMouseButtonDown(i) || gear::gEngine.getInputSystem()->getMouseButtonHeld(i);
     }
 
-    const ImVec2 mousePosBackup = io.MousePos;
-    io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
-    const bool focused = glfwGetWindowAttrib(mWindow, GLFW_FOCUSED) != 0;
-    if (focused) {
-        if (io.WantSetMousePos) {
-            glfwSetCursorPos(mWindow, (double)mousePosBackup.x, (double)mousePosBackup.y);
-        } else {
-            double mouseX, mouseY;
-            glfwGetCursorPos(mWindow, &mouseX, &mouseY);
-            io.MousePos = ImVec2((float)mouseX, (float)mouseY);
-        }
-    }
+    io.MouseWheel = gear::gEngine.getInputSystem()->getMouseScrollWheel();
 
     // 设置dt
     double currentTime = glfwGetTime();

@@ -16,12 +16,13 @@
 #include <Engine/Scene/Components/CTransform.h>
 #include <Engine/Scene/Components/CRenderable.h>
 #include <Engine/MaterialCompiler/MaterialCompiler.h>
+#include <Engine/Input/InputSystem.h>
 #include <Engine/Utility/FileSystem.h>
-#define STB_IMAGE_IMPLEMENTATION
-#define STBIR_FLAG_ALPHA_PREMULTIPLIED
-#include <stb_image.h>
+#include <Engine/Utility/Event.h>
 #include <imgui.h>
 #include "ImGuiBackend.h"
+#include "GearEditor.h"
+#include "TextureImporter.h"
 
 struct Vertex {
     float pos[3];
@@ -61,9 +62,54 @@ public:
         mEuler.x = 0.0;
         mEuler.y = 0.0;
         mEuler.z = 0.0;
+        mOnMousePositionHandle = gear::gEngine.getInputSystem()->getOnMousePositionEvent().bind(CALLBACK_2(CameraController::onMousePosition, this));
+        mOnMouseButtonHandle = gear::gEngine.getInputSystem()->getOnMouseButtonEvent().bind(CALLBACK_2(CameraController::onMouseButton, this));
+        mOnMouseScrollHandle = gear::gEngine.getInputSystem()->getOnMouseScrollEvent().bind(CALLBACK_1(CameraController::onMouseScroll, this));
     }
 
-    ~CameraController() = default;
+    ~CameraController() {
+        gear::gEngine.getInputSystem()->getOnMousePositionEvent().unbind(mOnMousePositionHandle);
+        gear::gEngine.getInputSystem()->getOnMousePositionEvent().unbind(mOnMouseButtonHandle);
+        gear::gEngine.getInputSystem()->getOnMousePositionEvent().unbind(mOnMouseScrollHandle);
+    }
+
+    glm::mat4 getCameraMatrix() {
+        glm::mat4 R, T;
+        R = glm::toMat4(glm::quat(mEuler));
+        T = glm::translate(glm::mat4(1.0), mEye);
+        return T * R;
+    }
+
+private:
+    void onMousePosition(float x, float y) {
+        update(x, y);
+    }
+
+    void onMouseButton(int button, int action) {
+        double x, y;
+        x = gear::gEngine.getInputSystem()->getMousePosition().x;
+        y = gear::gEngine.getInputSystem()->getMousePosition().y;
+        switch (action) {
+            case 0:
+                // Button Up
+                if (button == 1) {
+                    end();
+                }
+                break;
+            case 1:
+                // Button Down
+                if (button == 1) {
+                    begin(x, y);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    void onMouseScroll(float offset) {
+        scroll(offset);
+    }
 
     void begin(int x, int y) {
         mGrabbing = true;
@@ -91,14 +137,6 @@ public:
         mEye += glm::normalize(glm::vec3(R[2][0], R[2][1], R[2][2])) * delta * -0.2f;
     }
 
-    glm::mat4 getCameraMatrix() {
-        glm::mat4 R, T;
-        R = glm::toMat4(glm::quat(mEuler));
-        T = glm::translate(glm::mat4(1.0), mEye);
-        return T * R;
-    }
-
-private:
     void updateTarget(float pitch, float yaw) {
         mTarget = mEye + glm::vec3(glm::eulerAngleYXZ(yaw, pitch, 0.0f) * glm::vec4(0.0, 0.0, 1.0, 0.0));
         glm::vec3 dir = glm::vec3(mTarget - mEye);
@@ -111,6 +149,9 @@ private:
     // 只考虑pitch还有yaw
     glm::vec3 mEuler;
     glm::vec2 mStartPoint;
+    EventHandle mOnMousePositionHandle;
+    EventHandle mOnMouseButtonHandle;
+    EventHandle mOnMouseScrollHandle;
 };
 CameraController* gCamController = nullptr;
 
@@ -120,32 +161,15 @@ static void resizeCB(GLFWwindow* window, int width, int height) {
 }
 
 void cursorPositionCB(GLFWwindow * window, double posX, double posY) {
-    gCamController->update(posX, posY);
+    gear::gEngine.getInputSystem()->onMousePosition(posX, posY);
 }
 
 void mouseButtonCB(GLFWwindow * window, int button, int action, int mods) {
-    double x, y;
-    glfwGetCursorPos(window, &x, &y);
-    switch (action) {
-        case 0:
-            // Button Up
-            if (button == 1) {
-                gCamController->end();
-            }
-            break;
-        case 1:
-            // Button Down
-            if (button == 1) {
-                gCamController->begin(x, y);
-            }
-            break;
-        default:
-            break;
-    }
+    gear::gEngine.getInputSystem()->onMouseButton(button, action);
 }
 
 void mouseScrollCB(GLFWwindow * window, double offsetX, double offsetY) {
-    gCamController->scroll(offsetY);
+    gear::gEngine.getInputSystem()->onMouseScroll(offsetY);
 }
 
 void createTestScene() {
@@ -192,31 +216,7 @@ void createTestScene() {
         gPawn->addComponent<gear::CRenderable>()->addPrimitive(primitive);
     }
 
-    // 加载测试纹理
-    int texWidth, texHeight, texChannels;
-    std::string imagePath = "./BuiltinResources/Textures/test.png";
-    unsigned char* pixels = stbi_load(imagePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-
-    // 做预乘处理
-    for (int i = 0; i < texWidth; ++i) {
-        for (int j = 0; j < texHeight; ++j) {
-            unsigned bytePerPixel = texChannels;
-            unsigned char* pixelOffset = pixels + (i + texWidth * j) * bytePerPixel;
-            float alpha = pixelOffset[3] / 255.0f;
-            pixelOffset[0] *= alpha;
-            pixelOffset[1] *= alpha;
-            pixelOffset[2] *= alpha;
-        }
-    }
-
-    uint32_t imageSize = texWidth * texHeight * texChannels;
-    gear::Texture::Builder texBuild;
-    texBuild.width(texWidth);
-    texBuild.height(texHeight);
-    texBuild.format(Blast::FORMAT_R8G8B8A8_UNORM);
-    gTestTex = texBuild.build();
-    gTestTex->setData(0, pixels, imageSize);
-    stbi_image_free(pixels);
+    gTestTex = gEditor.getTextureImporter()->importTexture2D("./BuiltinResources/Textures/test.png");
 
     Blast::GfxSamplerDesc samplerDesc;
     gUIMatIns->setParameter("albedo_texture", gTestTex, samplerDesc);
@@ -269,6 +269,9 @@ int main()
 
         gear::gEngine.getRenderer()->beginFrame(gWidth, gHeight);
         gear::gEngine.getRenderer()->endFrame();
+
+        // 重置input状态
+        gear::gEngine.getInputSystem()->reset();
     }
     // 确保渲染器结束所有的工作
     gear::gEngine.getRenderer()->terminate();
