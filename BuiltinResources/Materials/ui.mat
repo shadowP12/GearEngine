@@ -1,15 +1,15 @@
 states {
     shadingModel : unlit,
-    blendingMode : transparent
+    blendingMode : transparent,
 }
 
 requires {
     uv0,
-    color
+    color,
 }
 
 samplers {
-    sampler2D albedo_texture
+    sampler2D albedo_texture,
 }
 
 fragment {

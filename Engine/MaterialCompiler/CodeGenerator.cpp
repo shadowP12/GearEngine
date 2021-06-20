@@ -111,11 +111,11 @@ namespace gear {
             return out;
         }
         // 从0开始
-        out << "layout(std140, set = 0, binding = 0) uniform " << "materialUniforms" << " {\n";
+        out << "layout(std140, set = 0, binding = 0) uniform " << "MaterialUniforms" << " {\n";
         for (int i = 0; i < params.size(); ++i) {
             out << "    " << params[i].first << " " << params[i].second<< ";\n";
         }
-        out << "};\n";
+        out << "} material_uniforms;\n";
         return out;
     }
 
