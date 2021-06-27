@@ -102,7 +102,8 @@ namespace gear {
         for (int i = 0; i < mAttributes.size(); ++i) {
             mAttributes[i].location = toLocation.at(mAttributes[i].semantic);
             mAttributes[i].offset = offset;
-            uint32_t stride = context->getFormatStride(mAttributes[i].format);
+            mAttributes[i].size = context->getFormatStride(mAttributes[i].format);
+            uint32_t stride = mAttributes[i].size;
             offset += stride;
         }
         mBufferSize = offset * mVertexCount;

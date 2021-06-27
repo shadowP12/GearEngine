@@ -52,14 +52,14 @@ gear::Material* GltfMaterialTemplate::gen(GltfMaterialConfig* config) {
     // 设置uniform变量
     std::string uniforms_code = "";
     uniforms_code += "uniforms {\n";
-    uniforms_code += "vec4 base_color;\n";
-    uniforms_code += "vec4 metallic_roughness;\n";
+    uniforms_code += "vec4 base_color,\n";
+    uniforms_code += "vec4 metallic_roughness,\n";
     uniforms_code += "}\n";
     replace(code, "${UNIFORMS}", uniforms_code);
 
     // 设置samplers变量
     std::string samplers_code = "";
-    if (config->hasBaseColorTex || config->hasNormalTex || config->hasmetallicRoughnessTex) {
+    if (config->hasBaseColorTex || config->hasNormalTex || config->hasMetallicRoughnessTex) {
         samplers_code += "samplers {\n";
     }
     if (config->hasBaseColorTex) {
@@ -70,10 +70,10 @@ gear::Material* GltfMaterialTemplate::gen(GltfMaterialConfig* config) {
         samplers_code += "sampler2D normal_texture,\n";
     }
 
-    if (config->hasmetallicRoughnessTex) {
+    if (config->hasMetallicRoughnessTex) {
         samplers_code += "sampler2D metallic_roughness_texture,\n";
     }
-    if (config->hasBaseColorTex || config->hasNormalTex || config->hasmetallicRoughnessTex) {
+    if (config->hasBaseColorTex || config->hasNormalTex || config->hasMetallicRoughnessTex) {
         samplers_code += "}\n";
     }
     replace(code, "${SAMPLERS}", samplers_code);
@@ -84,14 +84,14 @@ gear::Material* GltfMaterialTemplate::gen(GltfMaterialConfig* config) {
         frag_shader_code += "material.base_color = texture(base_color_texture, vertex_uv01.xy);\n";
     } else {
         frag_shader_code += "material.base_color = material_uniforms.base_color;\n";
-        frag_shader_code += "material.base_color.rgb *= material.base_color.a\n";
+        frag_shader_code += "material.base_color.rgb *= material.base_color.a;\n";
     }
 
     if (config->hasNormalTex) {
         // TODO
     }
 
-    if (config->hasmetallicRoughnessTex) {
+    if (config->hasMetallicRoughnessTex) {
         // TODO
     }
     replace(code, "${FRAG_SHADER}", frag_shader_code);

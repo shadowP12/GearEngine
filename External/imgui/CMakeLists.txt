@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(imgui)
 
-message(eeeee)
-message(${CMAKE_CURRENT_SOURCE_DIR})
-
 set(IMGUI_INC
     ${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h
     ${CMAKE_CURRENT_SOURCE_DIR}/imgui.h

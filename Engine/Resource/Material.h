@@ -106,6 +106,8 @@ namespace gear {
 
         MaterialInstance* createInstance();
 
+        Blast::GfxShaderVariable getVariable(const std::string& name);
+
     private:
         Material(Builder*);
 

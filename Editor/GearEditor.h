@@ -9,8 +9,11 @@ public:
 
     TextureImporter* getTextureImporter();
 
+    GltfImporter* getGltfImporter();
+
 private:
     TextureImporter* mTextureImporter = nullptr;
+    GltfImporter* mGltfImporter = nullptr;
 };
 
 extern GearEditor gEditor;

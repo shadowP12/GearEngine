@@ -72,6 +72,15 @@ namespace gear {
         return mFragShaderCache[key];
     }
 
+    Blast::GfxShaderVariable Material::getVariable(const std::string& name) {
+        for (int i = 0; i < mVariables.size(); ++i) {
+            if (mVariables[i].name == name) {
+                return mVariables[i];
+            }
+        }
+        return Blast::GfxShaderVariable();
+    }
+
     MaterialInstance* Material::createInstance() {
         return new MaterialInstance(this);
     }
@@ -101,6 +110,8 @@ namespace gear {
                 break;
             }
         }
+        // TODO: uniform buffer更新可以合批处理
+        mUniformBuffer->update(mStorage, 0, mUniformBufferSize);
     }
 
     void MaterialInstance::setParameter(const char* name, Texture* texture, Blast::GfxSamplerDesc params) {

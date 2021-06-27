@@ -23,6 +23,7 @@
 #include "ImGuiBackend.h"
 #include "GearEditor.h"
 #include "TextureImporter.h"
+#include "GltfImporter/GltfImporter.h"
 
 struct Vertex {
     float pos[3];
@@ -54,6 +55,7 @@ gear::IndexBuffer* gIB = nullptr;
 gear::Texture* gTestTex = nullptr;
 gear::Entity* gCamera = nullptr;
 gear::Entity* gPawn = nullptr;
+GltfAsset* gltfAsset = nullptr;
 
 class CameraController {
 public:
@@ -206,23 +208,25 @@ void createTestScene() {
         gear::CTransform* ct = gPawn->addComponent<gear::CTransform>();
         ct->setTransform(glm::mat4(1.0));
 
-        gear::RenderPrimitive primitive;
-        primitive.count = 6;
-        primitive.offset = 0;
-        primitive.type = Blast::PRIMITIVE_TOPO_TRI_LIST;
-        primitive.materialInstance = gUIMatIns;
-        primitive.vertexBuffer = gVB;
-        primitive.indexBuffer = gIB;
-        gPawn->addComponent<gear::CRenderable>()->addPrimitive(primitive);
+//        gear::RenderPrimitive primitive;
+//        primitive.count = 6;
+//        primitive.offset = 0;
+//        primitive.type = Blast::PRIMITIVE_TOPO_TRI_LIST;
+//        primitive.materialInstance = gUIMatIns;
+//        primitive.vertexBuffer = gVB;
+//        primitive.indexBuffer = gIB;
+//        gPawn->addComponent<gear::CRenderable>()->addPrimitive(primitive);
     }
 
     gTestTex = gEditor.getTextureImporter()->importTexture2D("./BuiltinResources/Textures/test.png");
 
     Blast::GfxSamplerDesc samplerDesc;
     gUIMatIns->setParameter("albedo_texture", gTestTex, samplerDesc);
+    gltfAsset = gEditor.getGltfImporter()->import("./BuiltinResources/GltfFiles/test.gltf");
 }
 
 void destroyTestScene() {
+    gEditor.getGltfImporter()->destroyGltfAsset(gltfAsset);
     SAFE_DELETE(gDefaultMat);
     SAFE_DELETE(gDefaultMatIns);
     SAFE_DELETE(gUIMat);
@@ -260,12 +264,12 @@ int main()
         gCamera->getComponent<gear::CTransform>()->setTransform(gCamController->getCameraMatrix());
 
         // 每一帧的开始都需要获取当前屏幕信息
-        gImGuiLayout->beginFrame();
-
-        bool show_demo_window = true;
-        ImGui::ShowDemoWindow(&show_demo_window);
-
-        gImGuiLayout->endFrame();
+//        gImGuiLayout->beginFrame();
+//
+//        bool show_demo_window = true;
+//        ImGui::ShowDemoWindow(&show_demo_window);
+//
+//        gImGuiLayout->endFrame();
 
         gear::gEngine.getRenderer()->beginFrame(gWidth, gHeight);
         gear::gEngine.getRenderer()->endFrame();

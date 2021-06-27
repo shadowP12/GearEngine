@@ -17,7 +17,7 @@ target_link_libraries(GearEditor PRIVATE stb)
 
 # cgltf
 add_library(cgltf INTERFACE)
-target_include_directories(GearEditor INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../External/cgltf)
+target_include_directories(cgltf INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../External/cgltf)
 target_link_libraries(GearEditor PRIVATE cgltf)
 
 # imgui
