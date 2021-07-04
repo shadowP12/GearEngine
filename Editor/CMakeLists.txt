@@ -1,5 +1,6 @@
 ﻿add_executable (GearEditor
         main.cpp
+        DebugBackend.cpp
         ImGuiBackend.cpp
         GearEditor.cpp
         TextureImporter.cpp

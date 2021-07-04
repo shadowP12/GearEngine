@@ -207,15 +207,6 @@ void createTestScene() {
         gPawn = gear::gEngine.getScene()->createEntity();
         gear::CTransform* ct = gPawn->addComponent<gear::CTransform>();
         ct->setTransform(glm::mat4(1.0));
-
-//        gear::RenderPrimitive primitive;
-//        primitive.count = 6;
-//        primitive.offset = 0;
-//        primitive.type = Blast::PRIMITIVE_TOPO_TRI_LIST;
-//        primitive.materialInstance = gUIMatIns;
-//        primitive.vertexBuffer = gVB;
-//        primitive.indexBuffer = gIB;
-//        gPawn->addComponent<gear::CRenderable>()->addPrimitive(primitive);
     }
 
     gTestTex = gEditor.getTextureImporter()->importTexture2D("./BuiltinResources/Textures/test.png");

@@ -319,12 +319,18 @@ GltfAsset* GltfImporter::import(const std::string& filePath) {
             uint8_t* jointData = nullptr;
             uint8_t* weightData = nullptr;
 
+            gear::BBox bbox;
             if (positionOffset != -1) {
                 cgltf_attribute* positionAttribute = getGltfAttribute(cprimitive, cgltf_attribute_type_position);
                 cgltf_accessor* posAccessor = positionAttribute->data;
                 cgltf_buffer_view* posView = posAccessor->buffer_view;
                 positionData = (uint8_t*)(posView->buffer->data) + posAccessor->offset + posView->offset;
                 vertexCount = posAccessor->count;
+
+                const float* minp = &posAccessor->min[0];
+                const float* maxp = &posAccessor->max[0];
+                bbox.grow(glm::vec3(minp[0], minp[1], minp[2]));
+                bbox.grow(glm::vec3(maxp[0], maxp[1], maxp[2]));
             }
 
             if (colorOffset != -1) {
@@ -454,6 +460,7 @@ GltfAsset* GltfImporter::import(const std::string& filePath) {
             gear::RenderPrimitive primitive;
             primitive.count = indexCount;
             primitive.offset = 0;
+            primitive.bbox = bbox;
             primitive.type = Blast::PRIMITIVE_TOPO_TRI_LIST;
             primitive.materialInstance = materialHelper[cmaterial];
             primitive.vertexBuffer = vertexBuffer;

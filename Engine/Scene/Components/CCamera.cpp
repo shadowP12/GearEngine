@@ -45,7 +45,7 @@ namespace gear {
         mRenderTarget = target;
     }
 
-    void CCamera::setLayer(uint32_t layer) {
+    void CCamera::setLayer(RenderLayer layer) {
         mLayer = layer;
     }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "Scene/Components/Component.h"
+#include "Renderer/RenderScene.h"
 #include "Math/Math.h"
 
 namespace gear {
@@ -26,7 +27,7 @@ namespace gear {
 
         void setRenderTarget(RenderTarget* target);
 
-        void setLayer(uint32_t layer);
+        void setLayer(RenderLayer layer);
 
     private:
         void updateCameraBuffer();
@@ -38,6 +39,6 @@ namespace gear {
         // 因为灯光需要根据每个相机进行排序，所以灯光的UniformBuffer放在此处管理
         UniformBuffer* mLightUniformBuffer = nullptr;
         glm::mat4 mProjMatrix;
-        uint32_t mLayer = 0;
+        RenderLayer mLayer = RenderLayer::CORE;
     };
 }

@@ -135,7 +135,7 @@ ImGuiLayout::ImGuiLayout(GLFWwindow* window) {
         mUICamera = gear::gEngine.getScene()->createEntity();
         gear::CTransform* ct = mUICamera->addComponent<gear::CTransform>();
         ct->setTransform(glm::mat4(1.0));
-        mUICamera->addComponent<gear::CCamera>()->setLayer(2);
+        mUICamera->addComponent<gear::CCamera>()->setLayer(gear::RenderLayer::UI);
     }
 
     {
@@ -143,7 +143,7 @@ ImGuiLayout::ImGuiLayout(GLFWwindow* window) {
         mUIPawn = gear::gEngine.getScene()->createEntity();
         gear::CTransform* ct = mUIPawn->addComponent<gear::CTransform>();
         ct->setTransform(glm::mat4(1.0));
-        mUIPawn->addComponent<gear::CRenderable>()->setLayer(2);
+        mUIPawn->addComponent<gear::CRenderable>()->setLayer(gear::RenderLayer::UI);
     }
 
     // 加载图片资源

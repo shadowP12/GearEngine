@@ -1,5 +1,6 @@
 #pragma once
 #include "Scene/Components/Component.h"
+#include "Renderer/RenderScene.h"
 #include "Math/Math.h"
 #include <Blast/Gfx/GfxDefine.h>
 #include <vector>
@@ -30,7 +31,7 @@ namespace gear {
 
         void setIndexBuffer(IndexBuffer* buffer);
 
-        void setLayer(uint32_t layer);
+        void setLayer(RenderLayer layer);
 
     private:
         void updateRenderableBuffer();
@@ -45,6 +46,6 @@ namespace gear {
         // TODO: 后续添加骨骼动画
         UniformBuffer* mBoneBuffer = nullptr;
         std::vector<RenderPrimitive> mPrimitives;
-        uint32_t mLayer = 0;
+        RenderLayer mLayer = RenderLayer::CORE;
     };
 }

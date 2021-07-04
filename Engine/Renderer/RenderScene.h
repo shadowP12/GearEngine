@@ -28,16 +28,23 @@ namespace gear {
     };
     // END
 
+    // 渲染层
+    enum class RenderLayer {
+        CORE = 0,
+        DEBUG = 1,
+        UI = 2,
+    };
+
     struct RenderPrimitive {
         uint32_t offset = 0;
         uint32_t count = 0;
+        BBox bbox;
         VertexBuffer* vertexBuffer = nullptr;
         IndexBuffer* indexBuffer = nullptr;
         MaterialInstance* materialInstance = nullptr;
         Blast::PrimitiveTopology type = Blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_STRIP;
     };
 
-    // TODO: 包围盒
     struct Renderable {
         UniformBuffer* renderableUB = nullptr;
         UniformBuffer* boneUB = nullptr;
@@ -50,8 +57,8 @@ namespace gear {
         RenderTarget* renderTarget = nullptr;
         uint32_t renderableCount = 0;
         std::vector<Renderable> renderables;
-        uint32_t layer = 0;
-        bool operator < (RenderView const& rhs) { return layer < rhs.layer; }
+        RenderLayer layer = RenderLayer::CORE;
+        bool operator < (RenderView const& rhs) { return (uint32_t)layer < (uint32_t)rhs.layer; }
     };
 
     class RenderScene {

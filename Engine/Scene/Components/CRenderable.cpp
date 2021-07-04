@@ -32,7 +32,7 @@ namespace gear {
         mIndexBufferr = buffer;
     }
 
-    void CRenderable::setLayer(uint32_t layer) {
+    void CRenderable::setLayer(RenderLayer layer) {
         mLayer = layer;
     }
 
