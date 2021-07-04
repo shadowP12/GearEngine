@@ -264,12 +264,12 @@ int main()
         gCamera->getComponent<gear::CTransform>()->setTransform(gCamController->getCameraMatrix());
 
         // 每一帧的开始都需要获取当前屏幕信息
-//        gImGuiLayout->beginFrame();
-//
-//        bool show_demo_window = true;
-//        ImGui::ShowDemoWindow(&show_demo_window);
-//
-//        gImGuiLayout->endFrame();
+        gImGuiLayout->beginFrame();
+
+        bool show_demo_window = true;
+        ImGui::ShowDemoWindow(&show_demo_window);
+
+        gImGuiLayout->endFrame();
 
         gear::gEngine.getRenderer()->beginFrame(gWidth, gHeight);
         gear::gEngine.getRenderer()->endFrame();

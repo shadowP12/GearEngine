@@ -34,10 +34,10 @@ namespace gear {
             double fov = glm::radians(45.0);//glm::atan((right - left) / 2.0 / near);
             double aspect = (right - left) / (bottom - top);
             mProjMatrix = glm::perspective(fov, aspect, near, far);
+            // 翻转y轴
             mProjMatrix[1][1] *= -1;
         } else {
-            // TODO: 调整正交投影矩阵
-            mProjMatrix = glm::orthoRH_ZO(left, right, top, bottom, near, far);
+            mProjMatrix = glm::ortho(left, right, top, bottom, near, far);
         }
     }
 

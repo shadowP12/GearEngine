@@ -46,5 +46,6 @@ target_link_libraries(GearEngine PUBLIC filesystem)
 
 # glm
 add_library(glm INTERFACE)
+target_compile_definitions(glm INTERFACE GLM_FORCE_DEPTH_ZERO_TO_ONE=1)
 target_include_directories(filesystem INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/../External/glm)
 target_link_libraries(GearEngine PUBLIC glm)
