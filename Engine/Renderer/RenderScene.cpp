@@ -47,6 +47,12 @@ namespace gear {
             if (mViews[mViewCount].renderables.size() < scene->mEntities.size()) {
                 mViews[mViewCount].renderables.resize(scene->mEntities.size());
             }
+            mViews[mViewCount].cameraInfo.zn = cc->getNear();
+            mViews[mViewCount].cameraInfo.zf = cc->getFar();
+            mViews[mViewCount].cameraInfo.model = cc->getModelMatrix();
+            mViews[mViewCount].cameraInfo.view = cc->getViewMatrix();
+            mViews[mViewCount].cameraInfo.projection = cc->getProjMatrix();
+            mViews[mViewCount].cameraInfo.cameraPosition = getTranslate(cc->getModelMatrix());
             mViewCount++;
         }
 
@@ -64,6 +70,9 @@ namespace gear {
                         mViews[j].renderables[mViews[j].renderableCount].primitives.clear();
                         for (int k = 0; k < cr->mPrimitives.size(); ++k) {
                             mViews[j].renderables[mViews[j].renderableCount].primitives.push_back(cr->mPrimitives[k]);
+                            BBox& bbox = mViews[j].renderables[mViews[j].renderableCount].primitives[k].bbox;
+                            bbox.mMin = TransformPoint(bbox.mMin, cr->getWorldMatrix());
+                            bbox.mMax = TransformPoint(bbox.mMax, cr->getWorldMatrix());
                         }
                         mViews[j].renderableCount++;
                     }

@@ -28,6 +28,32 @@ namespace gear {
     };
     // END
 
+    struct CameraInfo {
+        float zn;
+        float zf;
+        glm::vec3 cameraPosition;
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+    };
+
+    struct CascadeParameters {
+        // clip space的远近平面
+        glm::vec2 csNearFar = { -1.0f, 1.0f };
+
+        // light space的远近平面
+        glm::vec2 lsNearFar;
+
+        // view space的远近平面
+        glm::vec2 vsNearFar;
+
+        // 世界坐标的灯光位置
+        glm::vec3 wsLightPosition;
+
+        BBox wsShadowCastersVolume;
+        BBox wsShadowReceiversVolume;
+    };
+
     // 渲染层
     enum class RenderLayer {
         CORE = 0,
@@ -36,6 +62,8 @@ namespace gear {
     };
 
     struct RenderPrimitive {
+        bool castShadow = false;
+        bool receiveShadow = true;
         uint32_t offset = 0;
         uint32_t count = 0;
         BBox bbox;
@@ -58,6 +86,7 @@ namespace gear {
         uint32_t renderableCount = 0;
         std::vector<Renderable> renderables;
         RenderLayer layer = RenderLayer::CORE;
+        CameraInfo cameraInfo;
         bool operator < (RenderView const& rhs) { return (uint32_t)layer < (uint32_t)rhs.layer; }
     };
 

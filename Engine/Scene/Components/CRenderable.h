@@ -33,8 +33,14 @@ namespace gear {
 
         void setLayer(RenderLayer layer);
 
+        void setCastShadow(bool castShadow);
+
+        void setReceiveShadow(bool receiveShadow);
+
     private:
         void updateRenderableBuffer();
+
+        glm::mat4 getWorldMatrix();
 
     private:
         friend class Renderer;

@@ -244,7 +244,7 @@ namespace gear {
 
         // 绘制每一个RenderView
         for (int i = 0; i < mScene->mViewCount; ++i) {
-            render(&mScene->mViews[i], mCmds[mFrameIndex]);
+            render(&mScene->mViews[i]);
         }
 
         {

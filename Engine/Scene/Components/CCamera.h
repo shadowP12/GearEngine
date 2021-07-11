@@ -32,12 +32,23 @@ namespace gear {
     private:
         void updateCameraBuffer();
 
+        glm::mat4 getViewMatrix();
+
+        glm::mat4 getModelMatrix();
+
+        glm::mat4 getProjMatrix();
+
+        float getNear();
+
+        float getFar();
     private:
         friend class RenderScene;
         RenderTarget* mRenderTarget = nullptr;
         UniformBuffer* mCameraUniformBuffer = nullptr;
         // 因为灯光需要根据每个相机进行排序，所以灯光的UniformBuffer放在此处管理
         UniformBuffer* mLightUniformBuffer = nullptr;
+        float mNear = 0.0f;
+        float mFar = 100.0f;
         glm::mat4 mProjMatrix;
         RenderLayer mLayer = RenderLayer::CORE;
     };

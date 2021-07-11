@@ -28,7 +28,7 @@ struct Vertex {
 };
 
 namespace gear {
-    void Renderer::render(RenderView* view, Blast::GfxCommandBuffer* cmd) {
+    void Renderer::render(RenderView* view) {
         // 在渲染开始前清空所有渲染命令缓存
         mDrawCallHead = 0;
         mDescriptorKey.uniformBuffers[1] = view->cameraUB->getBuffer();

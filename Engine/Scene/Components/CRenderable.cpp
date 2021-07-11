@@ -43,4 +43,20 @@ namespace gear {
         mRenderableBuffer->update(&ub, 0, sizeof(ObjectUniforms));
     }
 
+    glm::mat4 CRenderable::getWorldMatrix() {
+        return mEntity->getComponent<CTransform>()->getWorldTransform();
+    }
+
+    void CRenderable::setCastShadow(bool castShadow) {
+        for (int i = 0; i < mPrimitives.size(); ++i) {
+            mPrimitives[i].castShadow = castShadow;
+        }
+    }
+
+    void CRenderable::setReceiveShadow(bool receiveShadow) {
+        for (int i = 0; i < mPrimitives.size(); ++i) {
+            mPrimitives[i].receiveShadow = receiveShadow;
+        }
+    }
+
 }

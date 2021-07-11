@@ -30,6 +30,8 @@ namespace gear {
     }
 
     void CCamera::setProjection(ProjectionType type, double left, double right, double bottom, double top, double near, double far) {
+        mNear = near;
+        mFar = far;
         if (type == ProjectionType::PERSPECTIVE) {
             double fov = glm::radians(45.0);//glm::atan((right - left) / 2.0 / near);
             double aspect = (right - left) / (bottom - top);
@@ -56,5 +58,26 @@ namespace gear {
         ub.projMatrix = mProjMatrix;
         glm::vec4 r = mProjMatrix * glm::vec4(100, 100, 0, 1);
         mCameraUniformBuffer->update(&ub, 0, sizeof(FrameUniforms));
+    }
+
+    glm::mat4 CCamera::getViewMatrix() {
+        glm::mat4 modelMatrix = mEntity->getComponent<CTransform>()->getWorldTransform();
+        return glm::inverse(modelMatrix);
+    }
+
+    glm::mat4 CCamera::getModelMatrix() {
+        return mEntity->getComponent<CTransform>()->getWorldTransform();
+    }
+
+    glm::mat4 CCamera::getProjMatrix() {
+        return mProjMatrix;
+    }
+
+    float CCamera::getNear() {
+        return mNear;
+    }
+
+    float CCamera::getFar() {
+        return mFar;
     }
 }

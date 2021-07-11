@@ -13,7 +13,7 @@
 #define INV_PI 0.31830988618f
 #define INV_TWO_PI 0.15915494309f
 
-/*
+
 inline glm::vec3 vectorLerp(const glm::vec3& from, const glm::vec3& to, float t)
 {
     return from+(to-from)*t;
@@ -39,6 +39,13 @@ inline glm::vec3 getTranslate(const glm::mat4& mat)
 	return glm::vec3(mat[3][0], mat[3][1], mat[3][2]);
 }
 
+inline glm::vec3 TransformPoint(const glm::vec3& point, const glm::mat4& inMat)
+{
+    glm::vec4 p = glm::vec4(point.x, point.y, point.z, 1.0f);
+    glm::vec4 r = inMat * p;
+    return glm::vec3(r.x / r.w, r.y / r.w, r.z / r.w);
+}
+/*
 inline glm::quat fromEulerAngles(const float& xAngle, const float& yAngle, const float& zAngle)
 {
     float halfXAngle = xAngle * 0.5f;
@@ -173,25 +180,6 @@ inline float getRandom(unsigned int *seed0, unsigned int *seed1)
 
     res.ui = (ires & 0x007fffff) | 0x40000000;
     return (res.f - 2.0f) / 2.0f;
-}
-
-inline glm::vec3 TransformPoint(const glm::vec3& point, const glm::mat4& inMat)
-{
-//    glm::vec4 p = glm::vec4(point.x, point.y, point.z, 1.0f);
-//    glm::vec4 r = inMat * p;
-//    return glm::vec3(r.x, r.y, r.z);
-    glm::mat4 mat = glm::transpose(inMat);
-    float x = point.x, y = point.y, z = point.z;
-    float xp = mat[0][0] * x + mat[0][1] * y + mat[0][2] * z + mat[0][3];
-    float yp = mat[1][0] * x + mat[1][1] * y + mat[1][2] * z + mat[1][3];
-    float zp = mat[2][0] * x + mat[2][1] * y + mat[2][2] * z + mat[2][3];
-    float wp = mat[3][0] * x + mat[3][1] * y + mat[3][2] * z + mat[3][3];
-    assert(wp != 0);
-
-    if (wp == 1.0f)
-        return glm::vec3(xp, yp, zp);
-    else
-        return glm::vec3(xp, yp, zp) / wp;
 }
 
 inline glm::vec4 TransformPoint(const glm::vec4& point, const glm::mat4& inMat)
@@ -360,6 +348,19 @@ namespace gear {
             else {
                 return 2;
             }
+        }
+
+        glm::vec3* getCorners() {
+            glm::vec3 corners[8];
+            corners[0] = { mMin.x, mMin.y, mMin.z };
+            corners[1] = { mMax.x, mMin.y, mMin.z };
+            corners[2] = { mMin.x, mMax.y, mMin.z };
+            corners[3] = { mMax.x, mMax.y, mMin.z };
+            corners[4] = { mMin.x, mMin.y, mMax.z };
+            corners[5] = { mMax.x, mMin.y, mMax.z };
+            corners[6] = { mMin.x, mMax.y, mMax.z };
+            corners[7] = { mMax.x, mMax.y, mMax.z };
+            return corners;
         }
 
         void BBox::grow(const BBox &bbox) {

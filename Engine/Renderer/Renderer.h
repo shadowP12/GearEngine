@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/GearDefine.h"
 #include "RenderCache.h"
+#include "RenderScene.h"
 #include <Blast/Gfx/GfxPipeline.h>
 #include <functional>
 
@@ -108,7 +109,13 @@ namespace gear {
 
         void prepare();
 
-        void render(RenderView* view, Blast::GfxCommandBuffer* cmd);
+        void render(RenderView* view);
+
+        // begin shadow
+        void renderShadow(RenderView* view);
+
+        void computeSceneCascadeParams(RenderView* view, const CameraInfo& cameraInfo, CascadeParameters& cascadeParameters);
+        // end shadow
 
         void bindRenderTarget(RenderTarget* rt, RenderTargetParams* params);
 
