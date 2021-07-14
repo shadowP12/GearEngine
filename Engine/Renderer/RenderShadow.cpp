@@ -64,6 +64,21 @@ namespace gear {
 
     }
 
+    void updateShadowMapData() {
+        // 重新设置相机投影矩阵，为了让视锥体更加紧凑
+        // 开始计算灯光投影矩阵
+        // 1.计算灯光矩阵，使用lookat函数
+        // 2.计算相机视锥体在世界坐标的顶点
+        // 3.计算接收阴影包围盒与视锥体的相交的顶点
+        // 4.计算灯光空间的包围盒
+        // 5.由灯光空间的包围盒计算出灯光视锥体的远近平面
+        // 6.远近平面计算出灯光的投影矩阵
+        // 7.可选内容，通过扭曲灯光投影矩阵的方法去改善阴影贴图
+        
+        
+        
+    }
+
     void Renderer::renderShadow(RenderView* view) {
         CameraInfo cameraInfo = view->cameraInfo;
         // 更新cascade的参数
@@ -79,8 +94,11 @@ namespace gear {
         float splitsWs[SHADOW_CASCADE_COUNT + 1];
         float splitsCs[SHADOW_CASCADE_COUNT + 1];
         for (int i = 0; i < SHADOW_CASCADE_COUNT + 1; i++) {
-            mSplitsWs[i] = p.near + (p.far - p.near) * p.splitPositions[s];
-            mSplitsCs[i] = mat4f::project(p.proj, float3(0.0f, 0.0f, mSplitsWs[s])).z;
+            splitsWs[i] = p.near + (p.far - p.near) * p.splitPositions[s];
+            splitsCs[i] = mat4f::project(p.proj, float3(0.0f, 0.0f, mSplitsWs[s])).z;
         }
+
+        // 
+        
     }
 }

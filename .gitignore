@@ -32,6 +32,7 @@
 *.app
 
 /.vs
+/.vscode
 /GearEngine/.vs
 /GearEngine/Debug
 /GearEngine/GearEngine/Debug
