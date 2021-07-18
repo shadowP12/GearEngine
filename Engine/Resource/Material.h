@@ -41,17 +41,41 @@ namespace gear {
     };
 
     // 材质的变体参数
-    static constexpr size_t MATERIAL_VARIANT_COUNT = 2;
+    static constexpr size_t MATERIAL_VARIANT_COUNT = 32;
     struct MaterialVariant {
     public:
         MaterialVariant(uint8_t key) : key(key) { }
-        static constexpr uint8_t SKINNING_OR_MORPHING   = 0x01; // 使用GPU蒙皮
-        static constexpr uint8_t VERTEX_MASK = SKINNING_OR_MORPHING;
-        static constexpr uint8_t FRAGMENT_MASK = 0;
+        static constexpr uint8_t DIRECTIONAL_LIGHTING   = 0x01; // 方向光
+        static constexpr uint8_t DYNAMIC_LIGHTING       = 0x02; // 动态光
+        static constexpr uint8_t SHADOW_RECEIVER        = 0x04; // 接收阴影
+        static constexpr uint8_t SKINNING_OR_MORPHING   = 0x08; // GPU蒙皮
+        static constexpr uint8_t DEPTH                  = 0x10; // 深度
+
+        static constexpr uint8_t VERTEX_MASK = DIRECTIONAL_LIGHTING |
+                                               DYNAMIC_LIGHTING |
+                                               SHADOW_RECEIVER |
+                                               SKINNING_OR_MORPHING |
+                                               DEPTH;
+
+        static constexpr uint8_t FRAGMENT_MASK = DIRECTIONAL_LIGHTING |
+                                                 DYNAMIC_LIGHTING |
+                                                 SHADOW_RECEIVER |
+                                                 DEPTH;
+
+        static constexpr uint8_t DEPTH_MASK = DIRECTIONAL_LIGHTING |
+                                              DYNAMIC_LIGHTING |
+                                              SHADOW_RECEIVER |
+                                              DEPTH;
 
         inline bool hasSkinningOrMorphing() const noexcept { return key & SKINNING_OR_MORPHING; }
+        inline bool hasDirectionalLighting() const noexcept { return key & DIRECTIONAL_LIGHTING; }
+        inline bool hasDynamicLighting() const noexcept { return key & DYNAMIC_LIGHTING; }
+        inline bool hasShadowReceiver() const noexcept { return key & SHADOW_RECEIVER; }
 
         inline void setSkinning(bool v) noexcept { set(v, SKINNING_OR_MORPHING); }
+        inline void setDirectionalLighting(bool v) noexcept { set(v, DIRECTIONAL_LIGHTING); }
+        inline void setDynamicLighting(bool v) noexcept { set(v, DYNAMIC_LIGHTING); }
+        inline void setShadowReceiver(bool v) noexcept { set(v, SHADOW_RECEIVER); }
 
         static constexpr uint8_t filterVariantVertex(uint8_t variantKey) noexcept {
             // 过滤掉不需要的顶点变体

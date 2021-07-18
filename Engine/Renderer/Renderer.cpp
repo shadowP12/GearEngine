@@ -47,10 +47,43 @@ namespace gear {
             mDescriptorKey.textures[i] = nullptr;
             mDescriptorKey.samplers[i] = nullptr;
         }
+
+        // 创建阴影资源
+        for (int i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
+            Blast::GfxTextureDesc textureDesc;
+            textureDesc.width = mShadowDimension;
+            textureDesc.height = mShadowDimension;
+            textureDesc.colorAtt = false;
+            textureDesc.depthStencilAtt = true;
+            textureDesc.format = Blast::FORMAT_D16_UNORM;
+            textureDesc.type = Blast::RESOURCE_TYPE_TEXTURE;
+            textureDesc.usage = Blast::RESOURCE_USAGE_GPU_ONLY;
+            mShadowMaps[i] = mContext->createTexture(textureDesc);
+
+            Attachment attachment;
+            attachment.format = Blast::FORMAT_D16_UNORM;
+            attachment.texture = mShadowMaps[i];
+            attachment.layer = 1;
+            attachment.level = 1;
+
+            RenderTargetDesc renderTargetDesc;
+            renderTargetDesc.width = mShadowDimension;
+            renderTargetDesc.height = mShadowDimension;
+            renderTargetDesc.depthStencil = attachment;
+            mShadowRTs[i] = createRenderTarget(renderTargetDesc);
+        }
+
     }
 
     Renderer::~Renderer() {
         mQueue->waitIdle();
+
+        // 销毁阴影资源
+        for (int i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
+            SAFE_DELETE(mShadowMaps[i]);
+            SAFE_DELETE(mShadowRTs[i]);
+        }
+
         SAFE_DELETE(mRenderBuiltinResource);
         SAFE_DELETE(mScene);
         SAFE_DELETE(mSamplerCache);

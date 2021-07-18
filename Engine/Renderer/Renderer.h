@@ -154,6 +154,13 @@ namespace gear {
         uint32_t mFrameHeight = 0;
 
         /**
+         * 阴影相关变量
+         */
+        uint32_t mShadowDimension = 1024;
+        Blast::GfxTexture* mShadowMaps[SHADOW_CASCADE_COUNT];
+        RenderTarget* mShadowRTs[SHADOW_CASCADE_COUNT];
+
+        /**
          * 当前图形管线绑定的相关变量
          */
          Blast::GfxRenderPass* mBindRenderPass = nullptr;

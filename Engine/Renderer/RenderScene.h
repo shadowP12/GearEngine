@@ -34,7 +34,7 @@ namespace gear {
         glm::vec3 cameraPosition;
         glm::mat4 model;
         glm::mat4 view;
-        glm::mat4 projection;
+        glm::vec<3, float, 0> projection;
     };
 
     struct CascadeParameters {

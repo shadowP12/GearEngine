@@ -350,7 +350,15 @@ namespace gear {
             }
         }
 
-        glm::vec3* getCorners() {
+        bool isEmpty() const noexcept {
+            bool ret = false;
+            for (int i = 0; i < 3; ++i) {
+                ret |= mMin[i] >= mMax[i];
+            }
+            return ret;
+        }
+
+        glm::vec3* getCorners() const {
             glm::vec3 corners[8];
             corners[0] = { mMin.x, mMin.y, mMin.z };
             corners[1] = { mMax.x, mMin.y, mMin.z };
@@ -405,5 +413,60 @@ namespace gear {
     public:
         glm::vec3 mMin;
         glm::vec3 mMax;
+    };
+
+    class Frustum {
+    public:
+        enum class Plane : uint8_t {
+            LEFT,
+            RIGHT,
+            BOTTOM,
+            TOP,
+            FAR,
+            NEAR
+        };
+
+        Frustum() = default;
+        Frustum(const Frustum& rhs) = default;
+        Frustum(Frustum&& rhs) noexcept = default;
+        Frustum& operator=(const Frustum& rhs) = default;
+        Frustum& operator=(Frustum&& rhs) noexcept = default;
+
+        Frustum(const glm::vec3 corners[8]) {
+            glm::vec3 a = corners[0];
+            glm::vec3 b = corners[1];
+            glm::vec3 c = corners[2];
+            glm::vec3 d = corners[3];
+            glm::vec3 e = corners[4];
+            glm::vec3 f = corners[5];
+            glm::vec3 g = corners[6];
+            glm::vec3 h = corners[7];
+
+            //     c----d
+            //    /|   /|
+            //   g----h |
+            //   | a--|-b
+            //   |/   |/
+            //   e----f
+
+            auto plane = [](glm::vec3 p1, glm::vec3 p2, glm::vec3 p3) {
+                auto v12 = p2 - p1;
+                auto v23 = p3 - p2;
+                auto n = glm::normalize(glm::cross(v12, v23));
+                return glm::vec4{n, -glm::dot(n, p1)};
+            };
+
+            mPlanes[0] = plane(a, e, g);   // left
+            mPlanes[1] = plane(f, b, d);   // right
+            mPlanes[2] = plane(a, b, f);   // bottom
+            mPlanes[3] = plane(g, h, d);   // top
+            mPlanes[4] = plane(a, c, d);   // far
+            mPlanes[5] = plane(e, f, h);   // near
+        }
+
+        glm::vec4* getNormalizedPlanes() { return mPlanes; }
+
+    public:
+        glm::vec4 mPlanes[6];
     };
 }
