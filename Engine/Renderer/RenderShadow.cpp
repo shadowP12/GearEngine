@@ -13,6 +13,8 @@ namespace gear {
 
     struct ShadowMapData {
         glm::mat4 lightProjectionMatrix;
+        glm::vec3 cameraPosition;
+        glm::vec3 cameraForward;
         bool hasVisibleShadows;
     };
 
@@ -273,7 +275,12 @@ namespace gear {
         data.lightProjectionMatrix[2][2] = zfar / (znear - zfar);
         data.lightProjectionMatrix[3][2] = -(zfar * znear) / (zfar - znear);
 
-        // 7.可选内容，通过扭曲灯光投影矩阵的方法去改善阴影贴图
+        // 7.设置相机参数
+        glm::mat4 cameralModelMatrix = lightViewMatrix;
+        data.cameraPosition = getTranslate(cameralModelMatrix);
+        data.cameraForward = getAxisZ(cameralModelMatrix);
+
+        // 可选内容，通过扭曲灯光投影矩阵的方法去改善阴影贴图
         
     }
 
@@ -309,6 +316,8 @@ namespace gear {
 
         // 生成绘制命令并执行
         for (int i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
+            glm::vec3 cameraPosition = datas[i].cameraPosition;
+            glm::vec3 cameraForward = datas[i].cameraForward;
             uint32_t shadowDrawCallHead = mDrawCallHead;
             uint32_t shadowDrawCallCount = 0;
             for (int i = 0; i < view->renderableCount; ++i) {
@@ -316,8 +325,15 @@ namespace gear {
                 for (int j = 0; j < rb->primitives.size(); ++j) {
                     RenderPrimitive* rp = &rb->primitives[j];
                     DrawCall& dc = mDrawCalls[shadowDrawCallHead + shadowDrawCallCount];
-                    dc.variant = MaterialVariant::DEPTH;
+                    // 计算距离
+                    glm::vec3 bboxCenter = rp->bbox.center();
+                    float distance = glm::dot(bboxCenter, cameraForward) - dot(cameraPosition, cameraForward);
+                    distance = -distance;
+                    const uint32_t distanceBits = reinterpret_cast<uint32_t&>(distance);
 
+                    dc.variant = MaterialVariant::DEPTH;
+                    dc.depthState.depthTest =true;
+                    dc.depthState.depthWrite = true;
 
 
 
