@@ -1,9 +1,4 @@
 #include "Renderer.h"
-#include "CopyEngine.h"
-#include "RenderBuiltinResource.h"
-#include "RenderTarget.h"
-#include "RenderScene.h"
-#include "RenderCache.h"
 #include "Utility/FileSystem.h"
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Gfx/GfxBuffer.h>
@@ -11,311 +6,181 @@
 #include <Blast/Gfx/GfxSampler.h>
 #include <Blast/Gfx/GfxSwapchain.h>
 #include <Blast/Gfx/GfxCommandBuffer.h>
-#include <Blast/Gfx/GfxRenderTarget.h>
 #include <Blast/Gfx/GfxShader.h>
 #include <Blast/Gfx/GfxPipeline.h>
 #include <Blast/Gfx/Vulkan/VulkanContext.h>
-#include <Blast/Utility/ShaderCompiler.h>
-#include <Blast/Utility/VulkanShaderCompiler.h>
-#include <assert.h>
 
 namespace gear {
     Renderer::Renderer() {
-        mContext = new Blast::VulkanContext();
-        mQueue = mContext->getQueue(Blast::QUEUE_TYPE_GRAPHICS);
-        Blast::GfxCommandBufferPoolDesc cmdPoolDesc;
-        cmdPoolDesc.queue = mQueue;
-        cmdPoolDesc.transient = false;
-        mCmdPool = mContext->createCommandBufferPool(cmdPoolDesc);
-        mCopyEngine = new CopyEngine(this);
-        mRenderBuiltinResource = new RenderBuiltinResource(this);
-        mDefaultRenderTarget = new RenderTarget(this);
-        mScene = new RenderScene(this);
-        mSamplerCache = new SamplerCache(this);
-        mRenderPassCache = new RenderPassCache(this);
-        mFramebufferCache = new FramebufferCache(this);
-        mGraphicsPipelineCache = new GraphicsPipelineCache(this);
-        mDescriptorCache = new DescriptorCache(this);
+        _context = new blast::VulkanContext();
+        _queue = _context->GetQueue(blast::QUEUE_TYPE_GRAPHICS);
 
-        for (int i = 0; i < UBUFFER_BINDING_COUNT; ++i) {
-            mDescriptorKey.uniformBuffers[i] = nullptr;
-            mDescriptorKey.uniformBufferOffsets[i] = 0;
-            mDescriptorKey.uniformBufferOffsets[i] = 0;
-        }
-
-        for (int i = 0; i < SAMPLER_BINDING_COUNT; ++i) {
-            mDescriptorKey.textures[i] = nullptr;
-            mDescriptorKey.samplers[i] = nullptr;
-        }
-
-        // 创建阴影资源
-        for (int i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
-            Blast::GfxTextureDesc textureDesc;
-            textureDesc.width = mShadowDimension;
-            textureDesc.height = mShadowDimension;
-            textureDesc.colorAtt = false;
-            textureDesc.depthStencilAtt = true;
-            textureDesc.format = Blast::FORMAT_D16_UNORM;
-            textureDesc.type = Blast::RESOURCE_TYPE_TEXTURE;
-            textureDesc.usage = Blast::RESOURCE_USAGE_GPU_ONLY;
-            mShadowMaps[i] = mContext->createTexture(textureDesc);
-
-            Attachment attachment;
-            attachment.format = Blast::FORMAT_D16_UNORM;
-            attachment.texture = mShadowMaps[i];
-            attachment.layer = 1;
-            attachment.level = 1;
-
-            RenderTargetDesc renderTargetDesc;
-            renderTargetDesc.width = mShadowDimension;
-            renderTargetDesc.height = mShadowDimension;
-            renderTargetDesc.depthStencil = attachment;
-            mShadowRTs[i] = createRenderTarget(renderTargetDesc);
-        }
-
+        blast::GfxCommandBufferPoolDesc cmd_pool_desc;
+        cmd_pool_desc.queue = _queue;
+        cmd_pool_desc.transient = false;
+        _cmd_pool = _context->CreateCommandBufferPool(cmd_pool_desc);
     }
 
     Renderer::~Renderer() {
-        mQueue->waitIdle();
+        _queue->WaitIdle();
 
-        // 销毁阴影资源
-        for (int i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
-            SAFE_DELETE(mShadowMaps[i]);
-            SAFE_DELETE(mShadowRTs[i]);
+        for (uint32_t i = 0; i < _num_images; ++i) {
+            _cmd_pool->DeleteBuffer(_cmds[i]);
+            _context->DestroyFence(_render_complete_fences[i]);
+            _context->DestroySemaphore(_image_acquired_semaphores[i]);
+            _context->DestroySemaphore(_render_complete_semaphores[i]);
+            SAFE_DELETE(_frames[i]);
         }
+        SAFE_DELETE_ARRAY(_cmds);
+        SAFE_DELETE_ARRAY(_render_complete_fences);
+        SAFE_DELETE_ARRAY(_image_acquired_semaphores);
+        SAFE_DELETE_ARRAY(_render_complete_semaphores);
+        SAFE_DELETE_ARRAY(_frames);
 
-        SAFE_DELETE(mRenderBuiltinResource);
-        SAFE_DELETE(mScene);
-        SAFE_DELETE(mSamplerCache);
-        SAFE_DELETE(mRenderPassCache);
-        SAFE_DELETE(mFramebufferCache);
-        SAFE_DELETE(mGraphicsPipelineCache);
-        SAFE_DELETE(mDescriptorCache);
-        SAFE_DELETE(mDefaultRenderTarget);
-        SAFE_DELETE(mCopyEngine);
+        _context->DestroyCommandBufferPool(_cmd_pool);
+        _context->DestroySwapchain(_swapchain);
+        _context->DestroySurface(_surface);
 
-        for (int i = 0; i < mImageCount; ++i) {
-            SAFE_DELETE(mCmds[i]);
-        }
-        SAFE_DELETE_ARRAY(mCmds);
-
-        for (int i = 0; i < mImageCount; ++i) {
-            SAFE_DELETE(mRenderCompleteFences[i]);
-        }
-        SAFE_DELETE_ARRAY(mRenderCompleteFences);
-
-        for (int i = 0; i < mImageCount; ++i) {
-            SAFE_DELETE(mImageAcquiredSemaphores[i]);
-        }
-        SAFE_DELETE_ARRAY(mImageAcquiredSemaphores);
-
-        for (int i = 0; i < mImageCount; ++i) {
-            SAFE_DELETE(mRenderCompleteSemaphores[i]);
-        }
-        SAFE_DELETE_ARRAY(mRenderCompleteSemaphores);
-
-        SAFE_DELETE_ARRAY(mColors);
-        SAFE_DELETE_ARRAY(mDepthStencils);
-        SAFE_DELETE(mCmdPool);
-        SAFE_DELETE(mSwapchain);
-        SAFE_DELETE(mSurface);
-        SAFE_DELETE(mContext);
+        SAFE_DELETE(_context);
     }
 
-    void Renderer::terminate() {
-        mQueue->waitIdle();
-    }
 
-    void Renderer::initSurface(void* surface) {
-        Blast::GfxSurfaceDesc surfaceDesc;
-        surfaceDesc.originSurface = surface;
-        mSurface = mContext->createSurface(surfaceDesc);
-    }
-
-    RenderTarget* Renderer::createRenderTarget(const RenderTargetDesc& desc) {
-        return new RenderTarget(this, desc);
-    }
-
-    Attachment Renderer::getColor() {
-        return mColors[mFrameIndex];
-    }
-
-    Attachment Renderer::getDepthStencil() {
-        return mDepthStencils[mFrameIndex];
-    }
-
-    void Renderer::resize(uint32_t width, uint32_t height) {
+    void Renderer::Resize(uint32_t width, uint32_t height) {
         if (width == 0 || height == 0) {
             return;
         }
-        mQueue->waitIdle();
-        Blast::GfxSwapchain* oldSwapchain = mSwapchain;
-        Blast::GfxSwapchainDesc swapchainDesc;
-        swapchainDesc.width = width;
-        swapchainDesc.height = height;
-        swapchainDesc.surface = mSurface;
-        swapchainDesc.oldSwapchain = oldSwapchain;
-        mSwapchain = mContext->createSwapchain(swapchainDesc);
+        _queue->WaitIdle();
 
-        SAFE_DELETE(oldSwapchain);
+        blast::GfxSwapchain* old_swapchain = _swapchain;
+        blast::GfxSwapchainDesc swapchain_desc;
+        swapchain_desc.width = width;
+        swapchain_desc.height = height;
+        swapchain_desc.surface = _surface;
+        swapchain_desc.old_swapchain = old_swapchain;
+        _swapchain = _context->CreateSwapchain(swapchain_desc);
+        _context->DestroySwapchain(old_swapchain);
 
-        for (int i = 0; i < mImageCount; ++i) {
-            SAFE_DELETE(mCmds[i]);
+        for (uint32_t i = 0; i < _num_images; ++i) {
+            _cmd_pool->DeleteBuffer(_cmds[i]);
+            _context->DestroyFence(_render_complete_fences[i]);
+            _context->DestroySemaphore(_image_acquired_semaphores[i]);
+            _context->DestroySemaphore(_render_complete_semaphores[i]);
+            SAFE_DELETE(_frames[i]);
         }
-        SAFE_DELETE_ARRAY(mCmds);
+        SAFE_DELETE_ARRAY(_cmds);
+        SAFE_DELETE_ARRAY(_render_complete_fences);
+        SAFE_DELETE_ARRAY(_image_acquired_semaphores);
+        SAFE_DELETE_ARRAY(_render_complete_semaphores);
+        SAFE_DELETE_ARRAY(_frames);
 
-        for (int i = 0; i < mImageCount; ++i) {
-            SAFE_DELETE(mRenderCompleteFences[i]);
+        _num_images = _swapchain->GetImageCount();
+        _frames = new Frame*[_num_images];
+        _render_complete_fences = new blast::GfxFence*[_num_images];
+        _image_acquired_semaphores = new blast::GfxSemaphore*[_num_images];
+        _render_complete_semaphores = new blast::GfxSemaphore*[_num_images];
+        _cmds = new blast::GfxCommandBuffer*[_num_images];
+        for (uint32_t i = 0; i < _num_images; ++i) {
+            _frames[i] = new Frame();
+            _render_complete_fences[i] = _context->CreateFence();
+            _image_acquired_semaphores[i] = _context->CreateSemaphore();
+            _render_complete_semaphores[i] = _context->CreateSemaphore();
+
+            // 创建新的命令缓存并设置交换链RT为显示状态
+            blast::GfxTexture* color_rt = _swapchain->GetColorRenderTarget(i);
+            blast::GfxTexture* depth_rt = _swapchain->GetDepthRenderTarget(i);
+            _cmds[i] = _cmd_pool->AllocBuffer(false);
+            _cmds[i]->Begin();
+            blast::GfxTextureBarrier barriers[2];
+            barriers[0].texture = color_rt;
+            barriers[0].new_state = blast::RESOURCE_STATE_PRESENT;
+            barriers[1].texture = depth_rt;
+            barriers[1].new_state = blast::RESOURCE_STATE_DEPTH_WRITE;
+            _cmds[i]->SetBarrier(0, nullptr, 2, barriers);
+            _cmds[i]->End();
         }
-        SAFE_DELETE_ARRAY(mRenderCompleteFences);
 
-        for (int i = 0; i < mImageCount; ++i) {
-            SAFE_DELETE(mImageAcquiredSemaphores[i]);
-        }
-        SAFE_DELETE_ARRAY(mImageAcquiredSemaphores);
-
-        for (int i = 0; i < mImageCount; ++i) {
-            SAFE_DELETE(mRenderCompleteSemaphores[i]);
-        }
-        SAFE_DELETE_ARRAY(mRenderCompleteSemaphores);
-
-        SAFE_DELETE_ARRAY(mColors);
-
-        SAFE_DELETE_ARRAY(mDepthStencils);
-
-        mImageCount = mSwapchain->getImageCount();
-
-        mRenderCompleteFences = new Blast::GfxFence*[mImageCount];
-        mImageAcquiredSemaphores = new Blast::GfxSemaphore*[mImageCount];
-        mRenderCompleteSemaphores = new Blast::GfxSemaphore*[mImageCount];
-        mCmds = new Blast::GfxCommandBuffer*[mImageCount];
-        mColors = new Attachment[mImageCount];
-        mDepthStencils = new Attachment[mImageCount];
-        for (int i = 0; i < mImageCount; ++i) {
-            // sync
-            mRenderCompleteFences[i] = mContext->createFence();
-            mImageAcquiredSemaphores[i] = mContext->createSemaphore();
-            mRenderCompleteSemaphores[i] = mContext->createSemaphore();
-
-            // attachments
-            mColors[i].level = 0;
-            mColors[i].layer = 0;
-            mColors[i].texture = mSwapchain->getColorRenderTarget(i);
-            mColors[i].format = mSurface->getFormat();
-
-            mDepthStencils[i].level = 0;
-            mDepthStencils[i].layer = 0;
-            mDepthStencils[i].texture = mSwapchain->getDepthRenderTarget(i);
-            mDepthStencils[i].format = Blast::FORMAT_D24_UNORM_S8_UINT;
-
-            // cmd
-            mCmds[i] = mCmdPool->allocBuf(false);
-
-            // set present format
-            Blast::GfxTexture* colorRT = mSwapchain->getColorRenderTarget(i);
-            Blast::GfxTexture* depthRT = mSwapchain->getDepthRenderTarget(i);
-            mCmds[i]->begin();
-            {
-                // 设置交换链RT为显示状态
-                Blast::GfxTextureBarrier barriers[2];
-                barriers[0].texture = colorRT;
-                barriers[0].newState = Blast::RESOURCE_STATE_PRESENT ;
-                barriers[1].texture = depthRT;
-                barriers[1].newState = Blast::RESOURCE_STATE_DEPTH_WRITE ;
-                mCmds[i]->setBarrier(0, nullptr, 2, barriers);
-            }
-            mCmds[i]->end();
-        }
-        Blast::GfxSubmitInfo submitInfo;
-        submitInfo.cmdBufCount = mImageCount;
-        submitInfo.cmdBufs = mCmds;
-        submitInfo.signalFence = nullptr;
-        submitInfo.waitSemaphoreCount = 0;
-        submitInfo.waitSemaphores = nullptr;
-        submitInfo.signalSemaphoreCount = 0;
-        submitInfo.signalSemaphores = nullptr;
-        mQueue->submit(submitInfo);
-        mQueue->waitIdle();
+        blast::GfxSubmitInfo submit_info;
+        submit_info.num_cmd_bufs = _num_images;
+        submit_info.cmd_bufs = _cmds;
+        submit_info.signal_fence = nullptr;
+        submit_info.num_wait_semaphores = 0;
+        submit_info.wait_semaphores = nullptr;
+        submit_info.num_signal_semaphores = 0;
+        submit_info.signal_semaphores = nullptr;
+        _queue->Submit(submit_info);
+        _queue->WaitIdle();
     }
 
-    void Renderer::beginFrame(uint32_t width, uint32_t height) {
-        if (mFrameWidth != width || mFrameHeight != height) {
-            mFrameWidth = width;
-            mFrameHeight = height;
-            resize(mFrameWidth, mFrameHeight);
+    void Renderer::BeginFrame(void* window, uint32_t width, uint32_t height) {
+        if (_window != window || _frame_width != width || _frame_height != height) {
+            if (_window != window) {
+                _context->DestroySurface(_surface);
+                blast::GfxSurfaceDesc surface_desc;
+                surface_desc.origin_surface = window;
+                _surface = _context->CreateSurface(surface_desc);
+            }
+            _window = window;
+            _frame_width = width;
+            _frame_height = height;
+            Resize(_frame_width, _frame_height);
         }
 
-        uint32_t swapchainImageIndex;
-        mContext->acquireNextImage(mSwapchain, mImageAcquiredSemaphores[mFrameIndex], nullptr, &swapchainImageIndex);
-        if (swapchainImageIndex == -1) {
+        uint32_t swapchain_image_index;
+        _context->AcquireNextImage(_swapchain, _image_acquired_semaphores[_frame_index], nullptr, &swapchain_image_index);
+        if (swapchain_image_index == -1) {
             return;
         }
+        _render_complete_fences[_frame_index]->WaitForComplete();
 
-        mRenderCompleteFences[mFrameIndex]->waitForComplete();
+        // 处理资源销毁任务
 
-        Blast::GfxTexture* colorRT = mSwapchain->getColorRenderTarget(mFrameIndex);
-        Blast::GfxTexture* depthRT = mSwapchain->getDepthRenderTarget(mFrameIndex);
 
-        mCmds[mFrameIndex]->begin();
+        blast::GfxTexture* color_rt = _swapchain->GetColorRenderTarget(_frame_index);
+        blast::GfxTexture* depth_rt = _swapchain->GetDepthRenderTarget(_frame_index);
+
+        _cmds[_frame_index]->Begin();
+        // 处理渲染任务
+
         {
             // 设置交换链RT为可写状态
-            Blast::GfxTextureBarrier barriers[2];
-            barriers[0].texture = colorRT;
-            barriers[0].newState = Blast::RESOURCE_STATE_RENDER_TARGET;
-            barriers[1].texture = depthRT;
-            barriers[1].newState = Blast::RESOURCE_STATE_DEPTH_WRITE;
-            mCmds[mFrameIndex]->setBarrier(0, nullptr, 2, barriers);
-        }
-
-        // 初始化渲染器场景
-        mScene->prepare();
-
-        // 初始化RenderPass参数
-        mClearColor = true;
-        mClearDepth = true;
-        mClearStencil = true;
-
-        // 绘制每一个RenderView
-        for (int i = 0; i < mScene->mViewCount; ++i) {
-            render(&mScene->mViews[i]);
+            blast::GfxTextureBarrier barriers[2];
+            barriers[0].texture = color_rt;
+            barriers[0].new_state = blast::RESOURCE_STATE_RENDER_TARGET;
+            barriers[1].texture = depth_rt;
+            barriers[1].new_state = blast::RESOURCE_STATE_DEPTH_WRITE;
+            _cmds[_frame_index]->SetBarrier(0, nullptr, 2, barriers);
         }
 
         {
             // 设置交换链RT为显示状态
-            Blast::GfxTextureBarrier barriers[2];
-            barriers[0].texture = colorRT;
-            barriers[0].newState = Blast::RESOURCE_STATE_PRESENT ;
-            barriers[1].texture = depthRT;
-            barriers[1].newState = Blast::RESOURCE_STATE_DEPTH_WRITE ;
-            mCmds[mFrameIndex]->setBarrier(0, nullptr, 2, barriers);
+            blast::GfxTextureBarrier barriers[2];
+            barriers[0].texture = color_rt;
+            barriers[0].new_state = blast::RESOURCE_STATE_PRESENT ;
+            barriers[1].texture = depth_rt;
+            barriers[1].new_state = blast::RESOURCE_STATE_DEPTH_WRITE ;
+            _cmds[_frame_index]->SetBarrier(0, nullptr, 2, barriers);
         }
-        mCmds[mFrameIndex]->end();
+        _cmds[_frame_index]->End();
 
-        Blast::GfxSubmitInfo submitInfo;
-        submitInfo.cmdBufCount = 1;
-        submitInfo.cmdBufs = &mCmds[mFrameIndex];
-        submitInfo.signalFence = mRenderCompleteFences[mFrameIndex];
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.waitSemaphores = &mImageAcquiredSemaphores[mFrameIndex];
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.signalSemaphores = &mRenderCompleteSemaphores[mFrameIndex];
-        mQueue->submit(submitInfo);
+        blast::GfxSubmitInfo submit_info;
+        submit_info.num_cmd_bufs = 1;
+        submit_info.cmd_bufs = &_cmds[_frame_index];
+        submit_info.signal_fence = _render_complete_fences[_frame_index];
+        submit_info.num_wait_semaphores = 1;
+        submit_info.wait_semaphores = &_image_acquired_semaphores[_frame_index];
+        submit_info.num_signal_semaphores = 1;
+        submit_info.signal_semaphores = &_render_complete_semaphores[_frame_index];
+        _queue->Submit(submit_info);
 
-        Blast::GfxPresentInfo presentInfo;
-        presentInfo.swapchain = mSwapchain;
-        presentInfo.index = swapchainImageIndex;
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.waitSemaphores = &mRenderCompleteSemaphores[mFrameIndex];
-        mQueue->present(presentInfo);
-        mFrameIndex = (mFrameIndex + 1) % mImageCount;
+        blast::GfxPresentInfo present_info;
+        present_info.swapchain = _swapchain;
+        present_info.index = swapchain_image_index;
+        present_info.num_wait_semaphores = 1;
+        present_info.wait_semaphores = &_render_complete_semaphores[_frame_index];
+        _queue->Present(present_info);
+        _frame_index = (_frame_index + 1) % _num_images;
     }
 
-    void Renderer::endFrame() {
-        mCopyEngine->update();
+    void Renderer::EndFrame() {
     }
-
-    void Renderer::prepare() {
-
-    }
-
 }
