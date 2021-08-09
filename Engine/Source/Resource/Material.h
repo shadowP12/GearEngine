@@ -96,7 +96,6 @@ namespace gear {
 
     class MaterialInstance;
 
-    // TODO: Material ID
     class Material : public Resource {
     public:
         class Builder {
