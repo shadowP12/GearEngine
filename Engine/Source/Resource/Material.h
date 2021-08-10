@@ -1,7 +1,6 @@
 #pragma once
 #include "Core/GearDefine.h"
 #include "Math/Math.h"
-#include "Resource/Resource.h"
 #include <Blast/Gfx/GfxSampler.h>
 #include <Blast/Gfx/GfxPipeline.h>
 #include <Blast/Utility/ShaderCompiler.h>
@@ -81,6 +80,7 @@ namespace gear {
             // 过滤掉不需要的顶点变体
             return variantKey & VERTEX_MASK;
         }
+
 
         static constexpr uint8_t filterVariantFragment(uint8_t variantKey) noexcept {
             // 过滤掉不需要的片段变体

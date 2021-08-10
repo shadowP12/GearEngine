@@ -24,6 +24,15 @@ namespace gear {
     Renderer::~Renderer() {
         _queue->WaitIdle();
 
+        // 执行所有清除任务
+        for (auto task : _destroy_task_map) {
+            task.second();
+        }
+
+        for (auto buffer :_stage_buffer_pool) {
+            _context->DestroyBuffer(buffer);
+        }
+
         for (uint32_t i = 0; i < _num_images; ++i) {
             _cmd_pool->DeleteBuffer(_cmds[i]);
             _context->DestroyFence(_render_complete_fences[i]);
@@ -49,6 +58,22 @@ namespace gear {
             return;
         }
         _queue->WaitIdle();
+
+        // 处理资源
+        for (auto resource : _using_resources) {
+            for (auto task : _destroy_task_map) {
+                if (task.first == resource.first) {
+                    task.second();
+                    _destroy_task_map.erase(task.first);
+                }
+            }
+
+            // 回收暂缓缓存
+            if (find(_stage_buffer_pool.begin(), _stage_buffer_pool.end(), resource) != _stage_buffer_pool.end()) {
+                _usable_stage_buffer_list.push_back((blast::GfxBuffer*)resource.first);
+            }
+        }
+        _using_resources.clear();
 
         blast::GfxSwapchain* old_swapchain = _swapchain;
         blast::GfxSwapchainDesc swapchain_desc;
@@ -131,14 +156,38 @@ namespace gear {
         }
         _render_complete_fences[_frame_index]->WaitForComplete();
 
-        // 处理资源销毁任务
+        // 处理资源
+        for (auto resource : _frames[_frame_index]->resources) {
+            _using_resources[resource] = _using_resources[resource] - 1;
+            if (_using_resources[resource] == 0) {
+                _using_resources.erase(resource);
+                for (auto task : _destroy_task_map) {
+                    if (task.first == resource) {
+                        task.second();
+                        _destroy_task_map.erase(task.first);
+                    }
+                }
+                
+                // 回收暂缓缓存
+                if (find(_stage_buffer_pool.begin(), _stage_buffer_pool.end(), resource) != _stage_buffer_pool.end()) {
+                    _usable_stage_buffer_list.push_back((blast::GfxBuffer*)resource);
+                }
+            }
+        }
+        _frames[_frame_index]->resources.clear();
 
 
         blast::GfxTexture* color_rt = _swapchain->GetColorRenderTarget(_frame_index);
         blast::GfxTexture* depth_rt = _swapchain->GetDepthRenderTarget(_frame_index);
 
         _cmds[_frame_index]->Begin();
+
         // 处理渲染任务
+        while (_render_task_queue.size() > 0) {
+            auto task = _render_task_queue.front();
+            task(_cmds[_frame_index]);
+            _render_task_queue.pop();
+        }
 
         {
             // 设置交换链RT为可写状态
@@ -181,5 +230,45 @@ namespace gear {
     }
 
     void Renderer::EndFrame() {
+    }
+
+    void Renderer::ExecRenderTask(std::function<void(blast::GfxCommandBuffer*)> task) {
+        _render_task_queue.push(task);
+    }
+
+    void Renderer::UseResource(void* resource) {
+        auto iter = _frames[_frame_index]->resources.find(resource);
+        if(iter == _frames[_frame_index]->resources.end()) {
+            _frames[_frame_index]->resources.insert(resource);
+            _using_resources[resource] = _using_resources[resource] + 1;
+        }
+    }
+
+    blast::GfxBuffer* Renderer::AllocStageBuffer(uint32_t size) {
+        for (auto iter = _usable_stage_buffer_list.begin(); iter != _usable_stage_buffer_list.end(); iter++) {
+            if ((*iter)->GetSize() >= size) {
+                _usable_stage_buffer_list.erase(iter);
+                return *iter;
+            }
+        }
+        // 没有合适的buffer，创建一个并存到pool里面
+        blast::GfxBufferDesc buffer_desc;
+        buffer_desc.size = size;
+        buffer_desc.type = blast::RESOURCE_TYPE_RW_BUFFER;
+        buffer_desc.usage = blast::RESOURCE_USAGE_CPU_TO_GPU;
+        blast::GfxBuffer* staging_buffer = _context->CreateBuffer(buffer_desc);
+        _stage_buffer_pool.push_back(staging_buffer);
+    }
+
+    void Renderer::Destroy(blast::GfxBuffer* buffer) {
+        _destroy_task_map[buffer] = ([this, buffer]() {
+            _context->DestroyBuffer(buffer);
+        });
+    }
+
+    void Renderer::Destroy(blast::GfxTexture* texture) {
+        _destroy_task_map[texture] = ([this, texture]() {
+            _context->DestroyTexture(texture);
+        });
     }
 }

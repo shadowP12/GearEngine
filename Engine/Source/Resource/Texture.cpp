@@ -8,24 +8,24 @@
 #include <Blast/Gfx/GfxCommandBuffer.h>
 
 namespace gear {
-    void Texture::Builder::width(uint32_t width) {
-        mWidth = width;
+    void Texture::Builder::SetWidth(uint32_t width) {
+        _width = width;
     }
 
-    void Texture::Builder::height(uint32_t height) {
-        mHeight = height;
+    void Texture::Builder::SetHeight(uint32_t height) {
+        _height = height;
     }
 
-    void Texture::Builder::depth(uint32_t depth) {
-        mDepth = depth;
+    void Texture::Builder::SetDepth(uint32_t depth) {
+        _depth = depth;
     }
 
-    void Texture::Builder::array(uint32_t array) {
-        mArray = array;
+    void Texture::Builder::SetArray(uint32_t array) {
+        _array = array;
     }
 
-    void Texture::Builder::format(Blast::Format format) {
-        mFormat = format;
+    void Texture::Builder::SetFormat(blast::Format format) {
+        _format = format;
     }
 
     Texture * Texture::Builder::build() {
@@ -33,103 +33,81 @@ namespace gear {
     }
 
     Texture::Texture(Builder* builder) {
-        mWidth = builder->mWidth;
-        mHeight = builder->mHeight;
-        mDepth = builder->mDepth;
-        mArray = builder->mArray;
-        mFormat = builder->mFormat;
-        for (int i = 0; i < mArray; ++i) {
-            Blast::GfxContext* context = gEngine.getRenderer()->getContext();
-            uint8_t* data = new uint8_t[mWidth * mHeight * mDepth * context->getFormatStride(mFormat)];
-            mDatas.push_back(data);
+        _width = builder->_width;
+        _height = builder->_height;
+        _depth = builder->_depth;
+        _array = builder->_array;
+        _format = builder->_format;
+        for (int i = 0; i < _array; ++i) {
+            uint8_t* data = new uint8_t[_width * _height * _depth * blast::GetFormatStride(_format)];
+            _datas.push_back(data);
         }
 
-        Blast::GfxContext* context = gEngine.getRenderer()->getContext();
-        Blast::GfxTextureDesc textureDesc;
-        textureDesc.width = mWidth;
-        textureDesc.height = mHeight;
-        textureDesc.format = mFormat;
-        textureDesc.type = Blast::RESOURCE_TYPE_TEXTURE | Blast::RESOURCE_TYPE_RW_TEXTURE;
-        textureDesc.usage = Blast::RESOURCE_USAGE_GPU_ONLY;
-        mInternelTexture = context->createTexture(textureDesc);
+        blast::GfxContext* context = gEngine.GetRenderer()->GetContext();
+        blast::GfxTextureDesc texture_desc;
+        texture_desc.width = _width;
+        texture_desc.height = _height;
+        texture_desc.format = _format;
+        texture_desc.type = blast::RESOURCE_TYPE_TEXTURE | blast::RESOURCE_TYPE_RW_TEXTURE;
+        texture_desc.usage = blast::RESOURCE_USAGE_GPU_ONLY;
+        _texture = context->CreateTexture(texture_desc);
     }
 
     Texture::~Texture() {
-        for (int i = 0; i < mDatas.size(); ++i) {
-            SAFE_DELETE_ARRAY(mDatas[i]);
+        for (int i = 0; i < _datas.size(); ++i) {
+            SAFE_DELETE_ARRAY(_datas[i]);
         }
-        mDatas.clear();
+        _datas.clear();
 
-        Renderer* renderer = gEngine.getRenderer();
-        CopyEngine* copyEngine = renderer->getCopyEngine();
-        copyEngine->destroy(mInternelTexture);
+        Renderer* renderer = gEngine.GetRenderer();
+        renderer->Destroy(_texture);
     }
 
-    void Texture::setData(uint32_t i, void* data, uint32_t size) {
-        uint8_t* dst = mDatas[i];
+    void Texture::SetData(uint32_t i, void* data, uint32_t size) {
+        uint8_t* dst = _datas[i];
         uint8_t* src = (uint8_t*)data;
         memcpy(dst, src, size);
 
-        Blast::GfxContext* context = gEngine.getRenderer()->getContext();
-        uint32_t imageSize = mWidth * mHeight * mDepth * context->getFormatStride(mFormat);
-        uint32_t totalSize = imageSize * mArray;
-        Blast::GfxBufferDesc bufferDesc;
-        bufferDesc.size = totalSize;
-        bufferDesc.type = Blast::RESOURCE_TYPE_RW_BUFFER;
-        bufferDesc.usage = Blast::RESOURCE_USAGE_CPU_TO_GPU;
-        Blast::GfxBuffer* stagingBuffer = context->createBuffer(bufferDesc);
-        uint32_t offset = 0;
-        for (int i = 0; i < mArray; ++i) {
-            stagingBuffer->writeData(offset, imageSize, mDatas[i]);
-            offset += imageSize;
-        }
+        Renderer* renderer = gEngine.GetRenderer();
+        renderer->ExecRenderTask([this, renderer](blast::GfxCommandBuffer* cmd) {
+            uint32_t image_size = _width * _height * _depth * blast::GetFormatStride(_format);
+            uint32_t total_size = image_size * _array;
+            blast::GfxBuffer* staging_buffer = renderer->AllocStageBuffer(total_size);
+            uint32_t offset = 0;
+            for (int i = 0; i < _array; ++i) {
+                staging_buffer->WriteData(offset, image_size, _datas[i]);
+                offset += image_size;
+            }
+            renderer->UseResource(staging_buffer);
 
-        CopyEngine* copyEngine = gEngine.getRenderer()->getCopyEngine();
-        CopyCommand* copyCommand = copyEngine->getActiveCommand();
-        copyCommand->cmd->begin();
-        {
-            // 设置纹理为读写状态
-            Blast::GfxTextureBarrier barrier;
-            barrier.texture = mInternelTexture;
-            barrier.newState = Blast::RESOURCE_STATE_COPY_DEST;
-            copyCommand->cmd->setBarrier(0, nullptr, 1, &barrier);
-        }
+            {
+                // 设置纹理为读写状态
+                blast::GfxTextureBarrier barrier;
+                barrier.texture = _texture;
+                barrier.new_state = blast::RESOURCE_STATE_COPY_DEST;
+                cmd->SetBarrier(0, nullptr, 1, &barrier);
+            }
 
-        offset = 0;
-        Blast::GfxCopyToImageHelper helper;
-        helper.bufferOffset = 0;
-        helper.layer = 0;
-        helper.level = 0;
-        for (int i = 0; i < mArray; ++i) {
-            helper.bufferOffset = offset;
-            helper.layer = i;
-            helper.level = 0;
-            copyCommand->cmd->copyToImage(stagingBuffer, mInternelTexture, helper);
-            offset += imageSize;
-        }
+            offset = 0;
+            blast::GfxCopyToImageRange range;
+            range.buffer_offset = 0;
+            range.layer = 0;
+            range.level = 0;
+            for (int i = 0; i < _array; ++i) {
+                range.buffer_offset = offset;
+                range.layer = i;
+                range.level = 0;
+                cmd->CopyToImage(staging_buffer, _texture, range);
+                offset += image_size;
+            }
 
-        {
-            // 设置纹理为Shader可读状态
-            Blast::GfxTextureBarrier barrier;
-            barrier.texture = mInternelTexture;
-            barrier.newState = Blast::RESOURCE_STATE_SHADER_RESOURCE;
-            copyCommand->cmd->setBarrier(0, nullptr, 1, &barrier);
-        }
-        copyCommand->cmd->end();
-
-        copyCommand->callbacks.push_back([stagingBuffer, copyEngine]() {
-            copyEngine->releaseStage(nullptr);
-            delete stagingBuffer;
+            {
+                // 设置纹理为Shader可读状态
+                blast::GfxTextureBarrier barrier;
+                barrier.texture = _texture;
+                barrier.new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+                cmd->SetBarrier(0, nullptr, 1, &barrier);
+            }
         });
-
-        Blast::GfxSubmitInfo submitInfo;
-        submitInfo.cmdBufCount = 1;
-        submitInfo.cmdBufs = &copyCommand->cmd;
-        submitInfo.signalFence = copyCommand->fence;
-        submitInfo.waitSemaphoreCount = 0;
-        submitInfo.waitSemaphores = nullptr;
-        submitInfo.signalSemaphoreCount = 0;
-        submitInfo.signalSemaphores = nullptr;
-        gEngine.getRenderer()->getQueue()->submit(submitInfo);
     }
 }

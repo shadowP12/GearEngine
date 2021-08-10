@@ -7,22 +7,20 @@
 namespace gear {
     class GpuBuffer {
     public:
-        GpuBuffer(Blast::ResourceType type, uint32_t size);
+        GpuBuffer(blast::ResourceType type, uint32_t size);
 
         virtual ~GpuBuffer();
 
-        Blast::GfxBuffer* getBuffer() { return mBuffer; }
+        void Update(void* data, uint32_t offset, uint32_t size);
 
-        void update(void* data, uint32_t offset, uint32_t size);
+        uint32_t GetSize();
 
-        uint32_t getSize();
+        blast::GfxBuffer* GetBuffer() { return _buffer; }
 
     protected:
-        Blast::GfxBuffer* mBuffer = nullptr;
-        uint32_t mSize;
+        blast::GfxBuffer* _buffer = nullptr;
     };
 
-    // TODO: 支持instance
     class VertexBuffer : public GpuBuffer {
     public:
         class Builder {
@@ -31,26 +29,28 @@ namespace gear {
 
             ~Builder() = default;
 
-            void vertexCount(uint32_t count);
+            void SetVertexCount(uint32_t count);
 
-            void attribute(Blast::ShaderSemantic semantic, Blast::Format format);
+            void SetAttribute(blast::ShaderSemantic semantic, blast::Format format);
 
-            VertexBuffer* build();
+            VertexBuffer* Build();
+
         private:
             friend class VertexBuffer;
-            uint32_t mVertexCount;
-            uint32_t mBufferSize;
-            std::vector<Blast::GfxVertexAttrib> mAttributes;
+            uint32_t _num_vertices;
+            uint32_t _buffer_Size;
+            std::vector<blast::GfxVertexAttribute> _attributes;
         };
 
         ~VertexBuffer();
 
-        Blast::GfxVertexLayout getVertexLayout() { return mLayout; }
+        blast::GfxVertexLayout GetVertexLayout() { return _layout; }
+
     private:
         VertexBuffer(Builder* builder);
 
     private:
-        Blast::GfxVertexLayout mLayout;
+        blast::GfxVertexLayout _layout;
     };
 
     class IndexBuffer : public GpuBuffer {
@@ -61,25 +61,28 @@ namespace gear {
 
             ~Builder() = default;
 
-            void indexType(Blast::IndexType type);
+            void SetIndexType(blast::IndexType type);
 
-            void indexCount(uint32_t count);
+            void SetIndexCount(uint32_t count);
 
-            IndexBuffer* build();
+            IndexBuffer* Build();
+
         private:
             friend class IndexBuffer;
-            uint32_t mIndexCount;
-            uint32_t mBufferSize;
-            Blast::IndexType mIndexType;
+            uint32_t _num_indices;
+            uint32_t _buffer_size;
+            blast::IndexType _index_type;
         };
 
         ~IndexBuffer();
 
-        Blast::IndexType getIndexType() { return mIndexType; }
+        blast::IndexType GetIndexType() { return _index_type; }
+
     private:
         IndexBuffer(Builder* builder);
+
     private:
-        Blast::IndexType mIndexType;
+        blast::IndexType _index_type;
     };
 
     class UniformBuffer : public GpuBuffer {

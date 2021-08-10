@@ -1,18 +1,15 @@
 #pragma once
-
 #include "Core/GearDefine.h"
-#include "Resource/Resource.h"
 #include <Blast/Gfx/GfxDefine.h>
 
-namespace Blast {
+namespace blast {
     class GfxTexture;
 }
 
 namespace gear {
-    /*
-     * TODO: 提供生成mipmap接口
-     */
-    class Texture : public Resource {
+    //TODO: 提供生成mipmap接口
+
+    class Texture {
     public:
         class Builder {
         public:
@@ -20,50 +17,48 @@ namespace gear {
 
             ~Builder() = default;
 
-            void width(uint32_t width);
+            void SetWidth(uint32_t width);
 
-            void height(uint32_t height);
+            void SetHeight(uint32_t height);
 
-            void depth(uint32_t depth);
+            void SetDepth(uint32_t depth);
 
-            void array(uint32_t array);
+            void SetArray(uint32_t array);
 
-            void format(Blast::Format format);
+            void SetFormat(blast::Format format);
 
             Texture* build();
 
         private:
             friend class Texture;
-            uint32_t mWidth = 1;
-            uint32_t mHeight = 1;
-            uint32_t mDepth = 1;
-            uint32_t mArray = 1;
-            Blast::Format mFormat;
+            uint32_t _width = 1;
+            uint32_t _height = 1;
+            uint32_t _depth = 1;
+            uint32_t _array = 1;
+            blast::Format _format;
         };
 
         ~Texture();
 
-        // 设置cpu数据的时候，自动同步到gpu
-        void setData(uint32_t i, void* data, uint32_t size);
+        void SetData(uint32_t i, void* data, uint32_t size);
 
-        uint8_t* getData(uint32_t i) { return mDatas[i]; }
+        uint8_t* GetData(uint32_t i) { return _datas[i]; }
 
-        Blast::GfxTexture* getTexture() { return mInternelTexture; }
+        blast::GfxTexture* GetTexture() { return _texture; }
 
     private:
         Texture(Builder* builder);
 
     private:
         friend class MaterialInstance;
-        ResourceType mType = ResourceType::TEXTURE;
-        uint32_t mWidth;
-        uint32_t mHeight;
-        uint32_t mDepth;
-        uint32_t mArray;
-        Blast::Format mFormat;
-        // 后续将使用一块大的buffer代替vec
-        std::vector<uint8_t*> mDatas;
-        Blast::GfxTexture* mInternelTexture = nullptr;
+        uint32_t _width;
+        uint32_t _height;
+        uint32_t _depth;
+        uint32_t _array;
+        blast::Format _format;
+        // 后续将使用一块大的buffer代替vector
+        std::vector<uint8_t*> _datas;
+        blast::GfxTexture* _texture = nullptr;
     };
 
 }

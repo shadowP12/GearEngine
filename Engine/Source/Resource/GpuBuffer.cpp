@@ -3,145 +3,122 @@
 #include "Renderer/Renderer.h"
 #include "Renderer/CopyEngine.h"
 #include "Utility/Log.h"
-#include <Blast/Gfx/GfxCommandBuffer.h>
+#include <blast/Gfx/GfxCommandBuffer.h>
 #include <unordered_map>
 namespace gear {
-    GpuBuffer::GpuBuffer(Blast::ResourceType type, uint32_t size) {
-        mSize = size;
-        Blast::GfxContext* context = gEngine.getRenderer()->getContext();
-        Blast::GfxBufferDesc bufferDesc;
-        bufferDesc.size = size;
-        bufferDesc.type = type;
-        bufferDesc.usage = Blast::RESOURCE_USAGE_GPU_ONLY;
-        mBuffer = context->createBuffer(bufferDesc);
+    GpuBuffer::GpuBuffer(blast::ResourceType type, uint32_t size) {
+        blast::GfxContext* context = gEngine.GetRenderer()->GetContext();
+        blast::GfxBufferDesc buffer_desc;
+        buffer_desc.size = size;
+        buffer_desc.type = type;
+        buffer_desc.usage = blast::RESOURCE_USAGE_GPU_ONLY;
+        _buffer = context->CreateBuffer(buffer_desc);
     }
 
     GpuBuffer::~GpuBuffer() {
-        Renderer* renderer = gEngine.getRenderer();
-        CopyEngine* copyEngine = renderer->getCopyEngine();
-        copyEngine->destroy(mBuffer);
+        Renderer* renderer = gEngine.GetRenderer();
+        renderer->Destroy(_buffer);
     }
 
-    uint32_t GpuBuffer::getSize() {
-        return mSize;
+    uint32_t GpuBuffer::GetSize() {
+        return _buffer->GetSize();
     }
 
-    void GpuBuffer::update(void* data, uint32_t offset, uint32_t size) {
-        // TODO: StagingBuffer部分需要优化
-        Renderer* renderer = gEngine.getRenderer();
-        CopyEngine* copyEngine = renderer->getCopyEngine();
-        Blast::GfxContext* context = renderer->getContext();
-        Blast::GfxQueue* queue = renderer->getQueue();
+    void GpuBuffer::Update(void* data, uint32_t offset, uint32_t size) {
+        Renderer* renderer = gEngine.GetRenderer();
+        renderer->ExecRenderTask([this, renderer, offset, size, data](blast::GfxCommandBuffer* cmd) {
+            blast::GfxBuffer* staging_buffer = renderer->AllocStageBuffer(size);
+            staging_buffer->WriteData(offset, size, data);
+            renderer->UseResource(staging_buffer);
 
-        Blast::GfxBufferDesc bufferDesc;
-        bufferDesc.size = size;
-        bufferDesc.type = Blast::RESOURCE_TYPE_RW_BUFFER;
-        bufferDesc.usage = Blast::RESOURCE_USAGE_CPU_TO_GPU;
-        Blast::GfxBuffer* stagingBuffer = context->createBuffer(bufferDesc);
-        stagingBuffer->writeData(offset, size, data);
+            blast::GfxCopyToBufferRange range;
+            range.size = size;
+            range.src_offset = 0;
+            range.dst_offset = 0;
+            cmd->CopyToBuffer(staging_buffer, _buffer, range);
 
-        CopyCommand* copyCmd = copyEngine->getActiveCommand();
-        copyCmd->cmd->begin();
-        copyCmd->cmd->copyToBuffer(stagingBuffer, 0, mBuffer, 0, size);
-        Blast::GfxBufferBarrier barrier;
-        barrier.buffer = mBuffer;
-        barrier.newState = Blast::RESOURCE_STATE_SHADER_RESOURCE;
-        copyCmd->cmd->setBarrier(1, &barrier, 0, nullptr);
-        copyCmd->cmd->end();
-
-        copyEngine->acquireStage(1);
-        copyCmd->callbacks.push_back([stagingBuffer, copyEngine]() {
-            copyEngine->releaseStage(nullptr);
-            delete stagingBuffer;
+            blast::GfxBufferBarrier barrier;
+            barrier.buffer = _buffer;
+            barrier.new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+            cmd->SetBarrier(1, &barrier, 0, nullptr);
         });
-
-        Blast::GfxSubmitInfo submitInfo;
-        submitInfo.cmdBufCount = 1;
-        submitInfo.cmdBufs = &copyCmd->cmd;
-        submitInfo.signalFence = copyCmd->fence;
-        submitInfo.waitSemaphoreCount = 0;
-        submitInfo.waitSemaphores = nullptr;
-        submitInfo.signalSemaphoreCount = 0;
-        submitInfo.signalSemaphores = nullptr;
-        queue->submit(submitInfo);
     }
 
-    void VertexBuffer::Builder::vertexCount(uint32_t count) {
-        mVertexCount = count;
+    void VertexBuffer::Builder::SetVertexCount(uint32_t count) {
+        _num_vertices = count;
     }
 
-    void VertexBuffer::Builder::attribute(Blast::ShaderSemantic semantic, Blast::Format format) {
-        Blast::GfxVertexAttrib attrib;
-        attrib.semantic = semantic;
-        attrib.format = format;
-        mAttributes.push_back(attrib);
+    void VertexBuffer::Builder::SetAttribute(blast::ShaderSemantic semantic, blast::Format format) {
+        blast::GfxVertexAttribute attribute;
+        attribute.semantic = semantic;
+        attribute.format = format;
+        _attributes.push_back(attribute);
     }
 
-    VertexBuffer* VertexBuffer::Builder::build() {
-        static const std::unordered_map<Blast::ShaderSemantic, uint32_t> toLocation {
-                { Blast::SEMANTIC_POSITION, 0 },
-                { Blast::SEMANTIC_NORMAL, 1 },
-                { Blast::SEMANTIC_TANGENT, 2 },
-                { Blast::SEMANTIC_BITANGENT, 3 },
-                { Blast::SEMANTIC_COLOR, 4 },
-                { Blast::SEMANTIC_TEXCOORD0, 5 },
-                { Blast::SEMANTIC_TEXCOORD1, 6 },
-                { Blast::SEMANTIC_JOINTS, 7 },
-                { Blast::SEMANTIC_WEIGHTS, 8 },
-                { Blast::SEMANTIC_CUSTOM0, 9 },
-                { Blast::SEMANTIC_CUSTOM1, 10 },
-                { Blast::SEMANTIC_CUSTOM2, 11 },
-                { Blast::SEMANTIC_CUSTOM3, 12 },
-                { Blast::SEMANTIC_CUSTOM4, 13 },
-                { Blast::SEMANTIC_CUSTOM5, 14 }
+    VertexBuffer* VertexBuffer::Builder::Build() {
+        static const std::unordered_map<blast::ShaderSemantic, uint32_t> toLocation {
+                { blast::SEMANTIC_POSITION, 0 },
+                { blast::SEMANTIC_NORMAL, 1 },
+                { blast::SEMANTIC_TANGENT, 2 },
+                { blast::SEMANTIC_BITANGENT, 3 },
+                { blast::SEMANTIC_COLOR, 4 },
+                { blast::SEMANTIC_TEXCOORD0, 5 },
+                { blast::SEMANTIC_TEXCOORD1, 6 },
+                { blast::SEMANTIC_JOINTS, 7 },
+                { blast::SEMANTIC_WEIGHTS, 8 },
+                { blast::SEMANTIC_CUSTOM0, 9 },
+                { blast::SEMANTIC_CUSTOM1, 10 },
+                { blast::SEMANTIC_CUSTOM2, 11 },
+                { blast::SEMANTIC_CUSTOM3, 12 },
+                { blast::SEMANTIC_CUSTOM4, 13 },
+                { blast::SEMANTIC_CUSTOM5, 14 }
         };
-        Renderer* renderer = gEngine.getRenderer();
-        Blast::GfxContext* context = renderer->getContext();
+        Renderer* renderer = gEngine.GetRenderer();
 
         uint32_t offset = 0;
-        for (int i = 0; i < mAttributes.size(); ++i) {
-            mAttributes[i].location = toLocation.at(mAttributes[i].semantic);
-            mAttributes[i].offset = offset;
-            mAttributes[i].size = context->getFormatStride(mAttributes[i].format);
-            uint32_t stride = mAttributes[i].size;
+        for (int i = 0; i < _attributes.size(); ++i) {
+            _attributes[i].location = toLocation.at(_attributes[i].semantic);
+            _attributes[i].offset = offset;
+            _attributes[i].size = blast::GetFormatStride(_attributes[i].format);
+            uint32_t stride = _attributes[i].size;
             offset += stride;
         }
-        mBufferSize = offset * mVertexCount;
+        _buffer_Size = offset * _num_vertices;
 
         return new VertexBuffer(this);
     }
 
     VertexBuffer::VertexBuffer(Builder* builder)
-    : GpuBuffer(Blast::RESOURCE_TYPE_VERTEX_BUFFER, builder->mBufferSize) {
-        mLayout.attribCount = builder->mAttributes.size();
-        for (int i = 0; i < builder->mAttributes.size(); ++i) {
-            mLayout.attribs[i] = builder->mAttributes[i];
+    : GpuBuffer(blast::RESOURCE_TYPE_VERTEX_BUFFER, builder->_buffer_Size) {
+        _layout.num_attributes = builder->_attributes.size();
+        for (int i = 0; i < builder->_attributes.size(); ++i) {
+            _layout.attributes[i] = builder->_attributes[i];
         }
     }
 
     VertexBuffer::~VertexBuffer() {
     }
 
-    void IndexBuffer::Builder::indexType(Blast::IndexType type) {
-        mIndexType = type;
+    void IndexBuffer::Builder::SetIndexType(blast::IndexType type) {
+        _index_type = type;
     }
 
-    void IndexBuffer::Builder::indexCount(uint32_t count) {
-        mIndexCount = count;
+    void IndexBuffer::Builder::SetIndexCount(uint32_t count) {
+        _num_indices = count;
     }
 
-    IndexBuffer* IndexBuffer::Builder::build() {
-        if (mIndexType == Blast::INDEX_TYPE_UINT16) {
-            mBufferSize = sizeof(uint16_t) * mIndexCount;
+    IndexBuffer* IndexBuffer::Builder::Build() {
+        if (_index_type == blast::INDEX_TYPE_UINT16) {
+            _buffer_size = sizeof(uint16_t) * _num_indices;
         } else {
-            mBufferSize = sizeof(uint32_t) * mIndexCount;
+            _buffer_size = sizeof(uint32_t) * _num_indices;
         }
         return new IndexBuffer(this);
     }
 
     IndexBuffer::IndexBuffer(Builder* builder)
-    : GpuBuffer(Blast::ResourceType::RESOURCE_TYPE_INDEX_BUFFER, builder->mBufferSize){
-        mIndexType = builder->mIndexType;
+    : GpuBuffer(blast::ResourceType::RESOURCE_TYPE_INDEX_BUFFER, builder->_buffer_size){
+        _index_type = builder->_index_type;
     }
 
     IndexBuffer::~IndexBuffer() {
@@ -149,7 +126,7 @@ namespace gear {
     }
 
     UniformBuffer::UniformBuffer(uint32_t size)
-    : GpuBuffer(Blast::RESOURCE_TYPE_UNIFORM_BUFFER, size) {
+    : GpuBuffer(blast::RESOURCE_TYPE_UNIFORM_BUFFER, size) {
     }
 
     UniformBuffer::~UniformBuffer() noexcept {

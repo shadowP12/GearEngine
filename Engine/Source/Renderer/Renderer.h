@@ -21,6 +21,8 @@ namespace blast {
     class GfxRootSignature;
     class GfxGraphicsPipeline;
     class GfxSampler;
+    class GfxBuffer;
+    class GfxTexture;
 }
 
 namespace gear {
@@ -45,7 +47,15 @@ namespace gear {
 
         blast::GfxQueue* GetQueue() { return _queue; }
 
-        void AcquireResource(void* resource);
+        void ExecRenderTask(std::function<void(blast::GfxCommandBuffer*)>);
+
+        blast::GfxBuffer* AllocStageBuffer(uint32_t size);
+
+        void UseResource(void* resource);
+
+        void Destroy(blast::GfxBuffer*);
+
+        void Destroy(blast::GfxTexture*);
 
     private:
         blast::GfxContext* _context = nullptr;
@@ -64,11 +74,14 @@ namespace gear {
         Frame** _frames = nullptr;
         // 外部window
         void* _window = nullptr;
+        // 暂存缓存池
+        std::vector<blast::GfxBuffer*> _stage_buffer_pool;
+        std::vector<blast::GfxBuffer*> _usable_stage_buffer_list;
         // 记录gpu正在使用的资源
         std::map<void*, uint32_t> _using_resources;
         // 渲染器的任务队列
-        std::queue<std::function<void()>> _render_task_queue;
+        std::queue<std::function<void(blast::GfxCommandBuffer*)>> _render_task_queue;
         // 资源销毁的回调队列
-        std::queue<std::function<void()>> _destroy_task_queue;
+        std::map<void*, std::function<void()>> _destroy_task_map;
     };
 }
