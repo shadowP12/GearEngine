@@ -1,11 +1,11 @@
 #pragma once
 #include "Core/GearDefine.h"
-#include "RenderTarget.h"
 #include "Math/Math.h"
 #include <Blast/Gfx/GfxBuffer.h>
 #include <Blast/Gfx/GfxTexture.h>
 #include <Blast/Gfx/GfxSampler.h>
 #include <Blast/Gfx/GfxShader.h>
+#include <Blast/Gfx/GfxCommandBuffer.h>
 #include <map>
 #include <vector>
 
@@ -34,8 +34,16 @@ namespace gear {
         glm::vec3 cameraPosition;
         glm::mat4 model;
         glm::mat4 view;
-        glm::vec<3, float, 0> projection;
+        glm::mat4 projection;
     };
+
+    struct FramebufferInfo {
+        blast::GfxClearValue clear_value;
+        blast::SampleCount sample_count;
+        std::tuple<blast::GfxTexture*, uint32_t, uint32_t> colors[TARGET_COUNT];
+        std::tuple<blast::GfxTexture*, uint32_t, uint32_t> depth_stencil;
+    };
+
 
     struct CascadeParameters {
         // clip space的远近平面
