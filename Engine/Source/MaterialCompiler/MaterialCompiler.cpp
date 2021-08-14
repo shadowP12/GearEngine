@@ -14,6 +14,7 @@
 #include <Blast/Utility/ShaderCompiler.h>
 #include <Blast/Utility/VulkanShaderCompiler.h>
 #include <rapidjson/rapidjson.h>
+#include <rapidjson/document.h>
 
 namespace gear {
     static void GetSurfaceMaterialVariants(std::vector<uint8_t>& vs, std::vector<uint8_t>& fs) {
@@ -40,10 +41,89 @@ namespace gear {
     }
 
     Material* MaterialCompiler::Compile(const std::string& code) {
+        rapidjson::Document doc;
+        if(doc.Parse(code.data()).HasParseError()) {
+            return nullptr;
+        }
+
+        Material::Builder builder;
+
+        // 解析material state
+        if (doc.HasMember("state")) {
+            if (doc["state"].HasMember("shading_model")) {
+                ProcessShadingModel(builder, doc["state"]["shading_model"].GetString());
+            }
+
+            if (doc["State"].HasMember("blending_mode")) {
+                ProcessShadingModel(builder, doc["state"]["blending_mode"].GetString());
+            }
+        }
+
+        // 解析材质所需要的顶点属性
+        blast::ShaderSemantic semantics = blast::SEMANTIC_UNDEFINED;
+        if (doc.HasMember("require")) {
+            static const std::unordered_map<std::string, blast::ShaderSemantic> str_to_enum {
+                    { "color", blast::SEMANTIC_COLOR },
+                    { "position", blast::SEMANTIC_POSITION },
+                    { "tangents", blast::SEMANTIC_NORMAL },
+                    { "uv0", blast::SEMANTIC_TEXCOORD0 },
+                    { "uv1", blast::SEMANTIC_TEXCOORD1 },
+                    { "custom0", blast::SEMANTIC_CUSTOM0 },
+                    { "custom1", blast::SEMANTIC_CUSTOM1 },
+                    { "custom2", blast::SEMANTIC_CUSTOM2 },
+                    { "custom3", blast::SEMANTIC_CUSTOM3 },
+                    { "custom4", blast::SEMANTIC_CUSTOM4 },
+                    { "custom5", blast::SEMANTIC_CUSTOM5 },
+            };
+
+            for(uint32_t i = 0; i < doc["require"].Size(); i++) {
+                if (str_to_enum.find(doc["require"][i].GetString()) == str_to_enum.end()) {
+                    continue;
+                }
+                semantics |= str_to_enum.at(doc["require"][i].GetString());
+            }
+        }
+
+        // 解析uniforms
+        std::unordered_map<std::string, blast::UniformType> uniforms;
+        if (doc.HasMember("uniforms")) {
+            static const std::unordered_map<std::string, blast::UniformType> str_to_enum {
+                    { "bool", blast::UNIFORM_BOOL },
+                    { "float", blast::UNIFORM_FLOAT },
+                    { "float2", blast::UNIFORM_FLOAT2 },
+                    { "float3", blast::UNIFORM_FLOAT3 },
+                    { "float4", blast::UNIFORM_FLOAT4 },
+                    { "int", blast::UNIFORM_INT },
+                    { "int2", blast::UNIFORM_INT2 },
+                    { "int3", blast::UNIFORM_INT3 },
+                    { "int4", blast::UNIFORM_INT4 },
+                    { "mat4", blast::UNIFORM_MAT4 },
+            };
+            for(uint32_t i = 0; i < doc["uniforms"].Size(); i++) {
+                uniforms[doc["uniforms"][i]["name"].GetString()] = str_to_enum.at(doc["uniforms"][i]["type"].GetString());
+            }
+        }
+
+        // 解析sampler
+        std::unordered_map<std::string, blast::TextureDimension> samplers;
+        if (doc.HasMember("samplers")) {
+            static const std::unordered_map<std::string, blast::TextureDimension> str_to_enum {
+                    { "sampler_1d", blast::TEXTURE_DIM_1D },
+                    { "sampler_2d", blast::TEXTURE_DIM_2D },
+                    { "sampler_3d", blast::TEXTURE_DIM_3D },
+                    { "sampler_cube", blast::TEXTURE_DIM_CUBE }
+            };
+            for(uint32_t i = 0; i < doc["samplers"].Size(); i++) {
+                samplers[doc["samplers"][i]["name"].GetString()] = str_to_enum.at(doc["samplers"][i]["type"].GetString());
+            }
+        }
+
+        // 解析自定义代码
+
+
         Blast::GfxContext* context = gEngine.getRenderer()->getContext();
         // 解析材质文件内容
-        Material::Builder builder;
-        MaterialBuildInfo buildInfo;
+
         std::string materialCode = code;
         gear::ChunkLexer chunkLexer;
         chunkLexer.lex(materialCode.c_str(), materialCode.size());
@@ -240,36 +320,26 @@ namespace gear {
         return material;
     }
 
-    void MaterialCompiler::processShading(Material::Builder* builder, const std::string& value) {
-        static const std::unordered_map<std::string, Shading> strToEnum {
-            { "lit", Shading::LIT },
-            { "unlit", Shading::UNLIT },
+    void MaterialCompiler::ProcessShadingModel(Material::Builder& builder, const std::string& value) {
+        static const std::unordered_map<std::string, ShadingModel> str_to_enum {
+            { "lit", ShadingModel::SHADING_MODEL_LIT },
+            { "unlit", ShadingModel::SHADING_MODEL_UNLIT },
         };
-        if (strToEnum.find(value) == strToEnum.end()) {
+        if (str_to_enum.find(value) == str_to_enum.end()) {
             return;
         }
-        builder->shading(strToEnum.at(value));
+        builder.SetShadingModel(str_to_enum.at(value));
     }
 
-    void MaterialCompiler::processBlending(Material::Builder* builder, const std::string& value) {
-        static const std::unordered_map<std::string, BlendingMode> strToEnum {
+    void MaterialCompiler::ProcessBlendingModel(Material::Builder& builder, const std::string& value) {
+        static const std::unordered_map<std::string, BlendingMode> str_to_enum {
                 { "opaque", BlendingMode::BLENDING_MODE_OPAQUE },
                 { "transparent", BlendingMode::BLENDING_MODE_TRANSPARENT },
                 { "masked", BlendingMode::BLENDING_MODE_MASKED },
         };
-        if (strToEnum.find(value) == strToEnum.end()) {
+        if (str_to_enum.find(value) == str_to_enum.end()) {
             return;
         }
-        builder->blendingMode(strToEnum.at(value));
-    }
-
-    void MaterialCompiler::processDepthWrite(Material::Builder* builder, const std::string& value) {
-        if (value == "true") {
-            builder->depthWrite(true);
-            return;
-        } else if (value == "false") {
-            builder->depthWrite(false);
-            return;
-        }
+        builder.SetBlendingMode(str_to_enum.at(value));
     }
 }

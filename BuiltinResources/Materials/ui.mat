@@ -11,16 +11,15 @@
 
     "uniforms" : [
         {
-            "type" : "vec3",
             "name" : "test",
-            "size" : 1
+            "type" : "vec3"
         }
     ],
 
     "samplers" : [
         {
-            "type" : "sampler2D",
-            "name" : "albedo_texture"
+            "name" : "albedo_texture",
+            "type" : "sampler_2d"
         }
     ],
 

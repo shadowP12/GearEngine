@@ -23,11 +23,9 @@ namespace gear {
         Material* Compile(const std::string& code);
 
     private:
-        static void processShading(Material::Builder*, const std::string&);
+        static void ProcessShadingModel(Material::Builder&, const std::string&);
 
-        static void processBlending(Material::Builder*, const std::string&);
-
-        static void processDepthWrite(Material::Builder*, const std::string&);
+        static void ProcessBlendingModel(Material::Builder&, const std::string&);
 
     private:
         using Callback = void(*)(Material::Builder*, const std::string&);
