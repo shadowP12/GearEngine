@@ -23,6 +23,7 @@ namespace blast {
     class GfxSampler;
     class GfxBuffer;
     class GfxTexture;
+    class GfxShader;
 }
 
 namespace gear {
@@ -56,6 +57,8 @@ namespace gear {
         void Destroy(blast::GfxBuffer*);
 
         void Destroy(blast::GfxTexture*);
+
+        void Destroy(blast::GfxShader*);
 
     private:
         blast::GfxContext* _context = nullptr;

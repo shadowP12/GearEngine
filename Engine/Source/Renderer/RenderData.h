@@ -10,11 +10,24 @@
 #include <vector>
 
 namespace gear {
-    class VertexBuffer;
-    class IndexBuffer;
-    class UniformBuffer;
-    class MaterialInstance;
-    class RenderTarget;
+    // 着色模型
+    enum ShadingModel {
+        SHADING_MODEL_UNLIT,
+        SHADING_MODEL_LIT,
+    };
+
+    // 混合模式
+    enum BlendingMode {
+        BLENDING_MODE_OPAQUE,
+        BLENDING_MODE_TRANSPARENT,
+        BLENDING_MODE_MASKED,
+    };
+
+    struct RenderState {
+        ShadingModel shading_model;
+        BlendingMode blending_mode;
+    };
+
 
     // BEGIN: Shader里面的数据结构
     struct FrameUniforms {
@@ -43,7 +56,6 @@ namespace gear {
         std::tuple<blast::GfxTexture*, uint32_t, uint32_t> colors[TARGET_COUNT];
         std::tuple<blast::GfxTexture*, uint32_t, uint32_t> depth_stencil;
     };
-
 
     struct CascadeParameters {
         // clip space的远近平面

@@ -1,129 +1,220 @@
 #include "Resource/Material.h"
 #include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
+#include "GearEngine.h"
+#include "Renderer/Renderer.h"
 namespace gear {
-    void Material::Builder::shading(Shading shading) {
-        mShading = shading;
+    static uint32_t GetUniformTypeBaseAlignment(blast::UniformType type) {
+        switch (type) {
+            case blast::UNIFORM_BOOL:
+            case blast::UNIFORM_FLOAT:
+            case blast::UNIFORM_INT:
+            case blast::UNIFORM_UINT:
+                return 1;
+            case blast::UNIFORM_FLOAT2:
+            case blast::UNIFORM_INT2:
+            case blast::UNIFORM_UINT2:
+                return 2;
+            case blast::UNIFORM_FLOAT3:
+            case blast::UNIFORM_FLOAT4:
+            case blast::UNIFORM_INT3:
+            case blast::UNIFORM_INT4:
+            case blast::UNIFORM_UINT3:
+            case blast::UNIFORM_UINT4:
+            case blast::UNIFORM_MAT4:
+                return 4;
+        }
     }
 
-    void Material::Builder::blendingMode(BlendingMode blendingMode) {
-        mBlendingMode = blendingMode;
+    static uint32_t GetUniformTypeStride(blast::UniformType type) {
+        switch (type) {
+            case blast::UNIFORM_BOOL:
+            case blast::UNIFORM_INT:
+            case blast::UNIFORM_UINT:
+            case blast::UNIFORM_FLOAT:
+                return 1;
+            case blast::UNIFORM_INT2:
+            case blast::UNIFORM_UINT2:
+            case blast::UNIFORM_FLOAT2:
+                return 2;
+            case blast::UNIFORM_INT3:
+            case blast::UNIFORM_UINT3:
+            case blast::UNIFORM_FLOAT3:
+                return 3;
+            case blast::UNIFORM_INT4:
+            case blast::UNIFORM_UINT4:
+            case blast::UNIFORM_FLOAT4:
+                return 4;
+            case blast::UNIFORM_MAT4:
+                return 16;
+        }
     }
 
-    void Material::Builder::depthWrite(bool enable) {
-        mDepthWrite = enable;
+
+    void Material::Builder::SetShadingModel(ShadingModel shading_model) {
+        _render_state.shading_model = shading_model;
     }
 
-    Material * Material::Builder::build() {
+    void Material::Builder::SetBlendingMode(BlendingMode blending_model) {
+        _render_state.blending_mode = blending_model;
+    }
+
+    void Material::Builder::AddVertShader(MaterialVariant::Key key, blast::GfxShader* shader) {
+        _vert_shader_cache[key] = shader;
+    }
+
+    void Material::Builder::AddFragShader(MaterialVariant::Key key, blast::GfxShader* shader) {
+        _frag_shader_cache[key] = shader;
+    }
+
+    void Material::Builder::AddSampler(const std::string& name, const blast::TextureDimension& dim) {
+        _samplers[name] = dim;
+    }
+
+    void Material::Builder::AddUniform(const std::string& name, const blast::UniformType& type) {
+        _uniforms[name] = type;
+    }
+
+    Material * Material::Builder::Build() {
         return new Material(this);
     }
 
     Material::Material(Builder* builder) {
-        mShading = builder->mShading;
-        mBlendingMode = builder->mBlendingMode;
-        mDepthWrite = builder->mDepthWrite;
-
-        if (mBlendingMode == BlendingMode::BLENDING_MODE_OPAQUE) {
-            mBlendState.srcFactors[0] = Blast::BLEND_ONE;
-            mBlendState.dstFactors[0] = Blast::BLEND_ZERO;
-            mBlendState.srcAlphaFactors[0] = Blast::BLEND_ONE;
-            mBlendState.dstAlphaFactors[0] = Blast::BLEND_ZERO;
-            mBlendState.masks[0] = 0xf;
-        } else if (mBlendingMode == BlendingMode::BLENDING_MODE_TRANSPARENT) {
-            // 预乘使用的混合方程
-            mBlendState.srcFactors[0] = Blast::BLEND_ONE;
-            mBlendState.dstFactors[0] = Blast::BLEND_ONE_MINUS_SRC_ALPHA;
-            mBlendState.srcAlphaFactors[0] = Blast::BLEND_ONE;
-            mBlendState.dstAlphaFactors[0] = Blast::BLEND_ONE_MINUS_SRC_ALPHA;
-            mBlendState.masks[0] = 0xf;
-        } else if (mBlendingMode == BlendingMode::BLENDING_MODE_MASKED) {
-            mBlendState.srcFactors[0] = Blast::BLEND_ONE;
-            mBlendState.dstFactors[0] = Blast::BLEND_ZERO;
-            mBlendState.srcAlphaFactors[0] = Blast::BLEND_ZERO;
-            mBlendState.dstAlphaFactors[0] = Blast::BLEND_ONE;
-            mBlendState.masks[0] = 0xf;
-        }
-
-        if (mBlendingMode == BlendingMode::BLENDING_MODE_TRANSPARENT) {
-            // 半透材质不应该写入深度缓存
-            mDepthWrite = false;
-        }
-        mDepthState.depthTest = true;
-        mDepthState.depthWrite = mDepthWrite;
+        _render_state = builder->_render_state;
+        _samplers = builder->_samplers;
+        _uniforms = builder->_uniforms;
+        _vert_shader_cache = builder->_vert_shader_cache;
+        _frag_shader_cache = builder->_frag_shader_cache;
     }
 
     Material::~Material() {
-        for (auto& vs : mVertShaderCache) {
-            SAFE_DELETE(vs.second);
+        Renderer* renderer = gEngine.GetRenderer();
+        for (auto& vs : _vert_shader_cache) {
+            renderer->Destroy(vs.second);
         }
 
-        for (auto& fs : mFragShaderCache) {
-            SAFE_DELETE(fs.second);
+        for (auto& fs : _frag_shader_cache) {
+            renderer->Destroy(fs.second);
         }
     }
 
-    Blast::GfxShader* Material::getVertShader(uint8_t variant) {
-        uint8_t key = MaterialVariant::filterVariantVertex(variant);
-        return mVertShaderCache[key];
+    blast::GfxShader* Material::GetVertShader(MaterialVariant::Key variant) {
+        uint8_t key = MaterialVariant::FilterVariantVertex(variant);
+        return _vert_shader_cache[key];
     }
 
-    Blast::GfxShader* Material::getFragShader(uint8_t variant) {
-        uint8_t key = MaterialVariant::filterVariantFragment(variant);
-        return mFragShaderCache[key];
+    blast::GfxShader* Material::GetFragShader(MaterialVariant::Key variant) {
+        uint8_t key = MaterialVariant::FilterVariantFragment(variant);
+        return _frag_shader_cache[key];
     }
 
-    Blast::GfxShaderVariable Material::getVariable(const std::string& name) {
-        for (int i = 0; i < mVariables.size(); ++i) {
-            if (mVariables[i].name == name) {
-                return mVariables[i];
-            }
-        }
-        return Blast::GfxShaderVariable();
-    }
-
-    MaterialInstance* Material::createInstance() {
+    MaterialInstance* Material::CreateInstance() {
         return new MaterialInstance(this);
     }
 
     MaterialInstance::MaterialInstance(Material* material) {
-        mMaterial = material;
-        mUniformBufferSize = 0;
-        for (int i = 0; i < mMaterial->mVariables.size(); i++) {
-            mUniformBufferSize += mMaterial->mVariables[i].size;
+        _material = material;
+
+        // uniform
+        uint32_t offset = 0;
+        for (auto& uniform : material->_uniforms) {
+            std::tuple<blast::UniformType, uint32_t> variable = {};
+            std::get<0>(variable) = uniform.second;
+
+            uint32_t alignment = GetUniformTypeBaseAlignment(uniform.second);
+            uint32_t stride = GetUniformTypeStride(uniform.second);
+
+            size_t padding = (alignment - (offset % alignment)) % alignment;
+            offset += padding;
+
+            std::get<1>(variable) = offset;
+
+            offset += stride;
+            _uniforms[uniform.first] = variable;
         }
-        if (mUniformBufferSize > 0) {
-            mUniformBuffer = new UniformBuffer(mUniformBufferSize);
+        _storage_size = offset;
+        _storage_dirty = true;
+        if (_storage_size > 0) {
+            _material_ub = new UniformBuffer(_storage_size);
         } else {
-            mUniformBuffer = nullptr;
+            _material_ub = nullptr;
+        }
+
+        // texture
+        _samplers = material->_samplers;
+        TextureSlot slot = 0;
+        for (auto& sampler : _samplers) {
+            _slot_map[sampler.first] = slot;
+            blast::GfxSamplerDesc sampler_desc;
+            _sampler_group[slot] = std::pair<Texture*, blast::GfxSamplerDesc>(nullptr, sampler_desc);
+            slot++;
         }
     }
 
     MaterialInstance::~MaterialInstance() {
-        SAFE_DELETE(mUniformBuffer);
+        SAFE_DELETE(_material_ub);
     }
 
-    void MaterialInstance::setParameter(const char* name, void* data, uint32_t offset, uint32_t size) {
-        for (int i = 0; i < mMaterial->mVariables.size(); i++) {
-            if (mMaterial->mVariables[i].name == name) {
-                mBufferDirty = true;
-                memcpy(mStorage + mMaterial->mVariables[i].offset + offset, data, size);
-                break;
-            }
+    UniformBuffer* MaterialInstance::GetUniformBuffer() {
+        if (_storage_dirty) {
+            _storage_dirty = false;
+            _material_ub->Update(_storage, 0, _storage_size);
         }
-        // TODO: uniform buffer更新可以合批处理
-        mUniformBuffer->update(mStorage, 0, mUniformBufferSize);
+        return _material_ub;
     }
 
-    void MaterialInstance::setParameter(const char* name, Texture* texture, Blast::GfxSamplerDesc params) {
-        for (int i = 0; i < mMaterial->mResources.size(); ++i) {
-            if (mMaterial->mResources[i].name == name) {
-                SamplerInfo info;
-                info.texture = texture;
-                info.params = params;
-                mSamplerGroup[mMaterial->mResources[i].reg] = info;
-                break;
-            }
+    void MaterialInstance::SetBool(const std::string& name, const bool& value) {
+        auto iter = _uniforms.find(name);
+        if (iter != _uniforms.end()) {
+            _storage_dirty = true;
+            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(bool));
         }
     }
 
+    void MaterialInstance::SetFloat(const std::string& name, const float& value) {
+        auto iter = _uniforms.find(name);
+        if (iter != _uniforms.end()) {
+            _storage_dirty = true;
+            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(float));
+        }
+    }
+
+    void MaterialInstance::SetFloat2(const std::string& name, const glm::vec2& value) {
+        auto iter = _uniforms.find(name);
+        if (iter != _uniforms.end()) {
+            _storage_dirty = true;
+            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(glm::vec2));
+        }
+    }
+
+    void MaterialInstance::SetFloat3(const std::string& name, const glm::vec3& value) {
+        auto iter = _uniforms.find(name);
+        if (iter != _uniforms.end()) {
+            _storage_dirty = true;
+            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(glm::vec3));
+        }
+    }
+
+    void MaterialInstance::SetFloat4(const std::string& name, const glm::vec4& value) {
+        auto iter = _uniforms.find(name);
+        if (iter != _uniforms.end()) {
+            _storage_dirty = true;
+            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(glm::vec4));
+        }
+    }
+
+    void MaterialInstance::SetMat4(const std::string& name, const glm::mat4& value) {
+        auto iter = _uniforms.find(name);
+        if (iter != _uniforms.end()) {
+            _storage_dirty = true;
+            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(glm::mat4));
+        }
+    }
+
+    void MaterialInstance::SetTexture(const std::string& name, Texture* texture, const blast::GfxSamplerDesc& sampler_desc) {
+        auto iter = _slot_map.find(name);
+        if (iter != _slot_map.end()) {
+            _sampler_group[iter->second] = std::pair<Texture*, blast::GfxSamplerDesc>(texture, sampler_desc);
+        }
+    }
 }

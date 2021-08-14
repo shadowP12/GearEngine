@@ -20,7 +20,7 @@ namespace gear {
 
         ~MaterialCompiler();
 
-        Material* compile(const std::string& path);
+        Material* Compile(const std::string& code);
 
     private:
         static void processShading(Material::Builder*, const std::string&);
@@ -30,7 +30,6 @@ namespace gear {
         static void processDepthWrite(Material::Builder*, const std::string&);
 
     private:
-        Blast::ShaderCompiler* mShaderCompiler = nullptr;
         using Callback = void(*)(Material::Builder*, const std::string&);
         std::unordered_map<std::string, Callback> mParameters;
     };

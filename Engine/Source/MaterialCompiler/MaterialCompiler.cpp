@@ -13,30 +13,23 @@
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Utility/ShaderCompiler.h>
 #include <Blast/Utility/VulkanShaderCompiler.h>
-namespace gear {
-    struct MaterialVariantInfo {
-        MaterialVariantInfo(uint8_t v, Blast::ShaderStage s) : variant(v), stage(s) {}
-        uint8_t variant;
-        Blast::ShaderStage stage;
-    };
+#include <rapidjson/rapidjson.h>
 
-    static std::vector<MaterialVariantInfo> getSurfaceVariants() {
-        std::vector<MaterialVariantInfo> variants;
-        for (uint8_t k = 0; k < MATERIAL_VARIANT_COUNT; k++) {
-            // TODO: 后续新增变体时,需要修改此处逻辑
-            if (MaterialVariant::filterVariantVertex(k) == k) {
-                variants.emplace_back(k, Blast::ShaderStage::SHADER_STAGE_VERT);
+namespace gear {
+    static void GetSurfaceMaterialVariants(std::vector<uint8_t>& vs, std::vector<uint8_t>& fs) {
+        std::vector<uint8_t> variants;
+        for (uint8_t variant = 0; variant < MATERIAL_VARIANT_COUNT; variant++) {
+            if (MaterialVariant::FilterVariantVertex(variant) == variant) {
+                vs.push_back(variant);
             }
 
-            if (MaterialVariant::filterVariantFragment(k) == k) {
-                variants.emplace_back(k, Blast::ShaderStage::SHADER_STAGE_FRAG);
+            if (MaterialVariant::FilterVariantFragment(variant) == variant) {
+                fs.push_back(variant);
             }
         }
-        return variants;
     }
 
     MaterialCompiler::MaterialCompiler() {
-        mShaderCompiler = new Blast::VulkanShaderCompiler();
         // 处理函数回调
         mParameters["shadingModel"] = &processShading;
         mParameters["blendingMode"] = &processBlending;
@@ -44,10 +37,9 @@ namespace gear {
     }
 
     MaterialCompiler::~MaterialCompiler() {
-        SAFE_DELETE(mShaderCompiler);
     }
 
-    Material* MaterialCompiler::compile(const std::string& code) {
+    Material* MaterialCompiler::Compile(const std::string& code) {
         Blast::GfxContext* context = gEngine.getRenderer()->getContext();
         // 解析材质文件内容
         Material::Builder builder;
@@ -143,6 +135,7 @@ namespace gear {
         Material* material = builder.build();
         // 材质参数只需要初始化一次
         bool initMaterialParams = false;
+
         // 生成所有可用的变体
         const auto variants = getSurfaceVariants();
         for (const auto& v : variants) {

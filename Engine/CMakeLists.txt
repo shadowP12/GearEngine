@@ -45,3 +45,8 @@ add_library(glm INTERFACE)
 target_compile_definitions(glm INTERFACE GLM_FORCE_DEPTH_ZERO_TO_ONE=1)
 target_include_directories(filesystem INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/External/glm)
 target_link_libraries(GearEngine PUBLIC glm)
+
+# rapidjson
+add_library(rapidjson INTERFACE)
+target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/External/rapidjson/include)
+target_link_libraries(GearEngine PUBLIC rapidjson)

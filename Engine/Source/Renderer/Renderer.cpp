@@ -271,4 +271,10 @@ namespace gear {
             _context->DestroyTexture(texture);
         });
     }
+
+    void Renderer::Destroy(blast::GfxShader* shader) {
+        _destroy_task_map[shader] = ([this, shader]() {
+            _context->DestroyShader(shader);
+        });
+    }
 }

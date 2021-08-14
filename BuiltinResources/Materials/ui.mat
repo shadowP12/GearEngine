@@ -1,20 +1,28 @@
-states {
-    shadingModel : unlit,
-    blendingMode : transparent,
-}
+{
+    "state" : {
+        "shading_model" : "unlit",
+        "blending_mode" : "transparent"
+    },
 
-requires {
-    uv0,
-    color,
-}
+    "require" : [
+        "uv0",
+        "color"
+    ],
 
-samplers {
-    sampler2D albedo_texture,
-}
+    "uniforms" : [
+        {
+            "type" : "vec3",
+            "name" : "test",
+            "size" : 1
+        }
+    ],
 
-fragment {
-    void materialFragment(inout MaterialFragmentInputs material) {
-        material.base_color = vertex_color * texture(albedo_texture, vertex_uv01.xy);
-        material.base_color.rgb *= material.base_color.a;
-    }
+    "samplers" : [
+        {
+            "type" : "sampler2D",
+            "name" : "albedo_texture"
+        }
+    ],
+
+    "fragment" : "ui.fs"
 }

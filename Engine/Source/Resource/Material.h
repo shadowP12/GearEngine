@@ -1,36 +1,24 @@
 #pragma once
 #include "Core/GearDefine.h"
 #include "Math/Math.h"
+#include "Renderer/RenderData.h"
 #include <Blast/Gfx/GfxSampler.h>
-#include <Blast/Gfx/GfxPipeline.h>
-#include <Blast/Utility/ShaderCompiler.h>
 #include <string>
+#include <set>
 #include <unordered_map>
+#include <tuple>
 
-namespace Blast {
+namespace blast {
     class GfxShader;
 }
 
 namespace gear {
     class Texture;
 
-    // 着色模型
-    enum class Shading {
-        UNLIT,
-        LIT,
-    };
-
     // 材质应用的范围
     enum class MaterialDomain {
         SURFACE = 0,
         POST_PROCESS = 1,
-    };
-
-    // 混合模式
-    enum class BlendingMode {
-        BLENDING_MODE_OPAQUE,
-        BLENDING_MODE_TRANSPARENT,
-        BLENDING_MODE_MASKED,
     };
 
     // 材质属性
@@ -43,60 +31,61 @@ namespace gear {
     static constexpr size_t MATERIAL_VARIANT_COUNT = 32;
     struct MaterialVariant {
     public:
-        MaterialVariant(uint8_t key) : key(key) { }
-        static constexpr uint8_t DIRECTIONAL_LIGHTING   = 0x01; // 方向光
-        static constexpr uint8_t DYNAMIC_LIGHTING       = 0x02; // 动态光
-        static constexpr uint8_t SHADOW_RECEIVER        = 0x04; // 接收阴影
-        static constexpr uint8_t SKINNING_OR_MORPHING   = 0x08; // GPU蒙皮
-        static constexpr uint8_t DEPTH                  = 0x10; // 深度
+        typedef uint32_t Key;
+        MaterialVariant(Key key) : key(key) { }
+        static constexpr Key DIRECTIONAL_LIGHTING   = 0x01; // 方向光
+        static constexpr Key DYNAMIC_LIGHTING       = 0x02; // 动态光
+        static constexpr Key SHADOW_RECEIVER        = 0x04; // 接收阴影
+        static constexpr Key SKINNING_OR_MORPHING   = 0x08; // GPU蒙皮
+        static constexpr Key DEPTH                  = 0x10; // 深度
 
-        static constexpr uint8_t VERTEX_MASK = DIRECTIONAL_LIGHTING |
-                                               DYNAMIC_LIGHTING |
-                                               SHADOW_RECEIVER |
-                                               SKINNING_OR_MORPHING |
-                                               DEPTH;
+        static constexpr Key VERTEX_MASK =  DIRECTIONAL_LIGHTING |
+                                            DYNAMIC_LIGHTING |
+                                            SHADOW_RECEIVER |
+                                            SKINNING_OR_MORPHING |
+                                            DEPTH;
 
-        static constexpr uint8_t FRAGMENT_MASK = DIRECTIONAL_LIGHTING |
-                                                 DYNAMIC_LIGHTING |
-                                                 SHADOW_RECEIVER |
-                                                 DEPTH;
+        static constexpr Key FRAGMENT_MASK =    DIRECTIONAL_LIGHTING |
+                                                DYNAMIC_LIGHTING |
+                                                SHADOW_RECEIVER |
+                                                DEPTH;
 
-        static constexpr uint8_t DEPTH_MASK = DIRECTIONAL_LIGHTING |
-                                              DYNAMIC_LIGHTING |
-                                              SHADOW_RECEIVER |
-                                              DEPTH;
+        static constexpr Key DEPTH_MASK =   DIRECTIONAL_LIGHTING |
+                                            DYNAMIC_LIGHTING |
+                                            SHADOW_RECEIVER |
+                                            DEPTH;
 
-        inline bool hasSkinningOrMorphing() const noexcept { return key & SKINNING_OR_MORPHING; }
-        inline bool hasDirectionalLighting() const noexcept { return key & DIRECTIONAL_LIGHTING; }
-        inline bool hasDynamicLighting() const noexcept { return key & DYNAMIC_LIGHTING; }
-        inline bool hasShadowReceiver() const noexcept { return key & SHADOW_RECEIVER; }
+        inline bool HasSkinningOrMorphing() const noexcept { return key & SKINNING_OR_MORPHING; }
+        inline bool HasDirectionalLighting() const noexcept { return key & DIRECTIONAL_LIGHTING; }
+        inline bool HasDynamicLighting() const noexcept { return key & DYNAMIC_LIGHTING; }
+        inline bool HasShadowReceiver() const noexcept { return key & SHADOW_RECEIVER; }
 
-        inline void setSkinning(bool v) noexcept { set(v, SKINNING_OR_MORPHING); }
-        inline void setDirectionalLighting(bool v) noexcept { set(v, DIRECTIONAL_LIGHTING); }
-        inline void setDynamicLighting(bool v) noexcept { set(v, DYNAMIC_LIGHTING); }
-        inline void setShadowReceiver(bool v) noexcept { set(v, SHADOW_RECEIVER); }
+        inline void SetSkinning(bool v) noexcept { Set(v, SKINNING_OR_MORPHING); }
+        inline void SetDirectionalLighting(bool v) noexcept { Set(v, DIRECTIONAL_LIGHTING); }
+        inline void SetDynamicLighting(bool v) noexcept { Set(v, DYNAMIC_LIGHTING); }
+        inline void SetShadowReceiver(bool v) noexcept { Set(v, SHADOW_RECEIVER); }
 
-        static constexpr uint8_t filterVariantVertex(uint8_t variantKey) noexcept {
-            // 过滤掉不需要的顶点变体
-            return variantKey & VERTEX_MASK;
+        // 过滤掉不需要的顶点变体
+        static constexpr Key FilterVariantVertex(Key variant) noexcept {
+            return variant & VERTEX_MASK;
         }
 
-
-        static constexpr uint8_t filterVariantFragment(uint8_t variantKey) noexcept {
-            // 过滤掉不需要的片段变体
-            return variantKey & FRAGMENT_MASK;
+        // 过滤掉不需要的片段变体
+        static constexpr Key FilterVariantFragment(Key variant) noexcept {
+            return variant & FRAGMENT_MASK;
         }
+
     private:
-        void set(bool v, uint8_t mask) noexcept {
-            key = (key & ~mask) | (v ? mask : uint8_t(0));
+        void Set(bool v, Key mask) noexcept {
+            key = (key & ~mask) | (v ? mask : Key(0));
         }
 
-        uint8_t key = 0;
+        Key key = 0;
     };
 
     class MaterialInstance;
 
-    class Material : public Resource {
+    class Material {
     public:
         class Builder {
         public:
@@ -104,32 +93,36 @@ namespace gear {
 
             ~Builder() = default;
 
-            void shading(Shading);
+            void SetShadingModel(ShadingModel shading_model);
 
-            void blendingMode(BlendingMode);
+            void SetBlendingMode(BlendingMode blending_model);
 
-            void depthWrite(bool);
+            void AddVertShader(MaterialVariant::Key, blast::GfxShader*);
 
-            Material* build();
+            void AddFragShader(MaterialVariant::Key, blast::GfxShader*);
+
+            void AddUniform(const std::string& name, const blast::UniformType& type);
+
+            void AddSampler(const std::string& name, const blast::TextureDimension& dim);
+
+            Material* Build();
 
         private:
             friend class Material;
-            Shading mShading = Shading::UNLIT;
-            BlendingMode mBlendingMode = BlendingMode::BLENDING_MODE_OPAQUE;
-            bool mDepthWrite = false;
-            std::unordered_map<uint8_t, Blast::GfxShader*> mVertShaderCache;
-            std::unordered_map<uint8_t, Blast::GfxShader*> mFragShaderCache;
+            RenderState _render_state;
+            std::unordered_map<std::string, blast::UniformType> _uniforms;
+            std::unordered_map<std::string, blast::TextureDimension> _samplers;
+            std::unordered_map<MaterialVariant::Key, blast::GfxShader*> _vert_shader_cache;
+            std::unordered_map<MaterialVariant::Key, blast::GfxShader*> _frag_shader_cache;
         };
 
         ~Material();
 
-        Blast::GfxShader* getVertShader(uint8_t variant);
+        blast::GfxShader* GetVertShader(MaterialVariant::Key variant);
 
-        Blast::GfxShader* getFragShader(uint8_t variant);
+        blast::GfxShader* GetFragShader(MaterialVariant::Key variant);
 
-        MaterialInstance* createInstance();
-
-        Blast::GfxShaderVariable getVariable(const std::string& name);
+        MaterialInstance* CreateInstance();
 
     private:
         Material(Builder*);
@@ -138,45 +131,54 @@ namespace gear {
         friend class Renderer;
         friend class MaterialCompiler;
         friend class MaterialInstance;
-        Shading mShading;
-        BlendingMode mBlendingMode;
-        bool mDepthWrite = false;
-        Blast::GfxBlendState mBlendState;
-        Blast::GfxDepthState mDepthState;
-        Blast::GfxRasterizerState mRasterizerState;
-        std::vector<Blast::GfxShaderResource> mResources;
-        std::vector<Blast::GfxShaderVariable> mVariables;
-        std::unordered_map<uint8_t, Blast::GfxShader*> mVertShaderCache;
-        std::unordered_map<uint8_t, Blast::GfxShader*> mFragShaderCache;
+        RenderState _render_state;
+        std::unordered_map<std::string, blast::UniformType> _uniforms;
+        std::unordered_map<std::string, blast::TextureDimension> _samplers;
+        std::unordered_map<MaterialVariant::Key, blast::GfxShader*> _vert_shader_cache;
+        std::unordered_map<MaterialVariant::Key, blast::GfxShader*> _frag_shader_cache;
     };
 
-    struct SamplerInfo {
-        Texture* texture;
-        Blast::GfxSamplerDesc params;
-    };
-
-    class UniformBuffer;
-
-    // TODO: MaterialInsrance ID
     class MaterialInstance {
     public:
         ~MaterialInstance();
 
-        Material* getMaterial() { return mMaterial; }
+        Material* GetMaterial() { return _material; }
 
-        void setParameter(const char* name, void* data, uint32_t offset, uint32_t size);
+        UniformBuffer* GetUniformBuffer();
 
-        void setParameter(const char* name, Texture* texture, Blast::GfxSamplerDesc params);
+        void SetBool(const std::string& name, const bool& value);
+
+        void SetFloat(const std::string& name, const float& value);
+
+        void SetFloat2(const std::string& name, const glm::vec2& value);
+
+        void SetFloat3(const std::string& name, const glm::vec3& value);
+
+        void SetFloat4(const std::string& name, const glm::vec4& value);
+
+        void SetMat4(const std::string& name, const glm::mat4& value);
+
+        void SetTexture(const std::string& name, Texture* texture, const blast::GfxSamplerDesc& sampler_desc);
+
     private:
         MaterialInstance(Material* material);
+
     private:
         friend class Renderer;
         friend class Material;
-        Material* mMaterial = nullptr;
-        uint8_t mStorage[128];
-        uint32_t mUniformBufferSize;
-        bool mBufferDirty = false;
-        UniformBuffer* mUniformBuffer;
-        std::unordered_map<uint32_t, SamplerInfo> mSamplerGroup;
+        Material* _material = nullptr;
+
+        // uniform
+        uint8_t _storage[128];
+        uint32_t _storage_size;
+        bool _storage_dirty;
+        UniformBuffer* _material_ub;
+        std::unordered_map<std::string, std::tuple<blast::UniformType, uint32_t>> _uniforms;
+
+        // texture
+        typedef uint32_t TextureSlot;
+        std::unordered_map<std::string, blast::TextureDimension> _samplers;
+        std::unordered_map<std::string, TextureSlot> _slot_map;
+        std::unordered_map<TextureSlot, std::pair<Texture*, blast::GfxSamplerDesc>> _sampler_group;
     };
 }
