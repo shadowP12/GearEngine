@@ -1,5 +1,5 @@
 #pragma once
-#include "Scene/Components/Component.h"
+#include "Component.h"
 #include "Math/Math.h"
 #include <vector>
 
@@ -11,32 +11,29 @@ namespace gear {
 
         virtual ~CTransform();
 
-        static ComponentType getClassType() { return ComponentType::Transform; }
+        static ComponentType GetClassType() { return ComponentType::Transform; }
 
-        ComponentType getType() override { return ComponentType::Transform; }
+        ComponentType GetType() override { return ComponentType::Transform; }
 
-        void setParent(Entity* newParent);
+        void SetParent(Entity* new_parent);
 
-        Entity* getParent();
+        Entity* GetParent();
 
-        const std::vector<Entity*>& getChildren();
+        const std::vector<Entity*>& GetChildren();
 
-        void setTransform(const glm::mat4& localTransform);
+        void SetTransform(const glm::mat4& local_transform);
 
-        const glm::mat4& getTransform();
+        const glm::mat4& GetTransform();
 
-        const glm::mat4& getWorldTransform();
-
-    private:
-        void updateTransform();
+        const glm::mat4& GetWorldTransform();
 
     private:
-        glm::mat4 mLocal;
+        void UpdateTransform();
 
-        glm::mat4 mWorld;
-
-        Entity* mParent = nullptr;
-
-        std::vector<Entity*> mChildren;
+    private:
+        glm::mat4 _local;
+        glm::mat4 _world;
+        Entity* _parent = nullptr;
+        std::vector<Entity*> _children;
     };
 }

@@ -1,7 +1,5 @@
-#include "Scene/Components/CLight.h"
-#include "Scene/Scene.h"
-#include "Scene/Entity.h"
-#include "Renderer/Renderer.h"
+#include "CLight.h"
+#include "Entity/Entity.h"
 
 namespace gear {
     CLight::CLight(Entity* entity)

@@ -41,15 +41,6 @@ namespace gear {
     };
     // END
 
-    struct CameraInfo {
-        float zn;
-        float zf;
-        glm::vec3 cameraPosition;
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
-    };
-
     struct FramebufferInfo {
         blast::GfxClearValue clear_value;
         blast::SampleCount sample_count;
@@ -81,49 +72,4 @@ namespace gear {
         UI = 2,
     };
 
-    struct RenderPrimitive {
-        bool castShadow = false;
-        bool receiveShadow = true;
-        uint32_t offset = 0;
-        uint32_t count = 0;
-        BBox bbox;
-        VertexBuffer* vertexBuffer = nullptr;
-        IndexBuffer* indexBuffer = nullptr;
-        MaterialInstance* materialInstance = nullptr;
-        Blast::PrimitiveTopology type = Blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_STRIP;
-    };
-
-    struct Renderable {
-        UniformBuffer* renderableUB = nullptr;
-        UniformBuffer* boneUB = nullptr;
-        std::vector<RenderPrimitive> primitives;
-    };
-
-    struct RenderView {
-        UniformBuffer* cameraUB = nullptr;
-        UniformBuffer* lightUB = nullptr;
-        RenderTarget* renderTarget = nullptr;
-        uint32_t renderableCount = 0;
-        std::vector<Renderable> renderables;
-        RenderLayer layer = RenderLayer::CORE;
-        CameraInfo cameraInfo;
-        bool operator < (RenderView const& rhs) { return (uint32_t)layer < (uint32_t)rhs.layer; }
-    };
-
-    class RenderScene {
-    public:
-        RenderScene(Renderer* renderer);
-
-        ~RenderScene();
-
-        void prepare();
-    private:
-        friend Renderer;
-        Renderer* mRenderer = nullptr;
-        /**
-         * 最多支持8个RenderView
-         */
-        uint32_t mViewCount = 0;
-        RenderView mViews[8];
-    };
 }

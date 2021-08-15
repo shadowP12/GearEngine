@@ -1,10 +1,10 @@
 #include "Component.h"
-#include "Scene/Scene.h"
+#include "../Entity.h"
 
 namespace gear {
     Component::Component(Entity* entity) {
-        mEntity = entity;
-        mType = ComponentType::None;
+        _entity = entity;
+        _type = ComponentType::None;
     }
 
     Component::~Component() {

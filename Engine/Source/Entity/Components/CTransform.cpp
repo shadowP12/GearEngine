@@ -1,5 +1,5 @@
 #include "CTransform.h"
-#include "Scene/Entity.h"
+#include "../Entity.h"
 
 namespace gear {
     CTransform::CTransform(Entity* entity)
@@ -7,72 +7,72 @@ namespace gear {
     }
 
     CTransform::~CTransform() {
-        setParent(nullptr);
+        SetParent(nullptr);
 
-        for (int i = 0; i < mChildren.size(); ++i) {
-            mChildren[i]->getComponent<CTransform>()->setParent(nullptr);
+        for (int i = 0; i < _children.size(); ++i) {
+            _children[i]->GetComponent<CTransform>()->SetParent(nullptr);
         }
-        mChildren.clear();
+        _children.clear();
     }
 
-    void CTransform::setParent(Entity* newParent) {
-        Entity* oldParent = mParent;
+    void CTransform::SetParent(Entity* new_parent) {
+        Entity* old_parent = _parent;
 
-        if (oldParent == newParent)
+        if (old_parent == new_parent)
             return;
 
-        if (oldParent) {
-            CTransform* oldParentTransform = oldParent->getComponent<CTransform>();
-            for (auto iter = oldParentTransform->mChildren.begin(); iter != oldParentTransform->mChildren.end();) {
-                if (iter == oldParentTransform->mChildren.end()) {
+        if (old_parent) {
+            CTransform* old_parent_transform = old_parent->GetComponent<CTransform>();
+            for (auto iter = old_parent_transform->_children.begin(); iter != old_parent_transform->_children.end();) {
+                if (iter == old_parent_transform->_children.end()) {
                     break;
                 }
 
-                if (*iter == this->mEntity) {
-                    oldParentTransform->mChildren.erase(iter);
+                if (*iter == this->_entity) {
+                    old_parent_transform->_children.erase(iter);
                     break;
                 }
             }
         }
 
-        mParent = newParent;
-        if (newParent) {
-            CTransform* newParentTransform = newParent->getComponent<CTransform>();
-            newParentTransform->mChildren.push_back(this->mEntity);
+        _parent = new_parent;
+        if (new_parent) {
+            CTransform* new_parent_transform = new_parent->GetComponent<CTransform>();
+            new_parent_transform->_children.push_back(this->_entity);
         }
 
-        updateTransform();
+        UpdateTransform();
     }
 
-    Entity* CTransform::getParent() {
-        return mParent;
+    Entity* CTransform::GetParent() {
+        return _parent;
     }
 
-    const std::vector<Entity*>& CTransform::getChildren() {
-        return mChildren;
+    const std::vector<Entity*>& CTransform::GetChildren() {
+        return _children;
     }
 
-    void CTransform::setTransform(const glm::mat4& localTransform) {
-        mLocal = localTransform;
-        updateTransform();
+    void CTransform::SetTransform(const glm::mat4& local_transform) {
+        _local = local_transform;
+        UpdateTransform();
     }
 
-    const glm::mat4& CTransform::getTransform() {
-        return mLocal;
+    const glm::mat4& CTransform::GetTransform() {
+        return _local;
     }
 
-    const glm::mat4& CTransform::getWorldTransform() {
-        return mWorld;
+    const glm::mat4& CTransform::GetWorldTransform() {
+        return _world;
     }
 
-    void CTransform::updateTransform() {
-        mWorld = mLocal;
-        if (mParent) {
-            mWorld = mParent->getComponent<CTransform>()->mWorld * mLocal;
+    void CTransform::UpdateTransform() {
+        _world = _local;
+        if (_parent) {
+            _world = _parent->GetComponent<CTransform>()->_world * _local;
         }
 
-        for (int i = 0; i < mChildren.size(); ++i) {
-            mChildren[i]->getComponent<CTransform>()->updateTransform();
+        for (int i = 0; i < _children.size(); ++i) {
+            _children[i]->GetComponent<CTransform>()->UpdateTransform();
         }
     }
 }

@@ -153,9 +153,8 @@ namespace gear {
             Resize(_frame_width, _frame_height);
         }
 
-        uint32_t swapchain_image_index;
-        _context->AcquireNextImage(_swapchain, _image_acquired_semaphores[_frame_index], nullptr, &swapchain_image_index);
-        if (swapchain_image_index == -1) {
+        _context->AcquireNextImage(_swapchain, _image_acquired_semaphores[_frame_index], nullptr, &_swapchain_image_index);
+        if (_swapchain_image_index == -1) {
             return;
         }
         _render_complete_fences[_frame_index]->WaitForComplete();
@@ -203,6 +202,12 @@ namespace gear {
             _cmds[_frame_index]->SetBarrier(0, nullptr, 2, barriers);
         }
 
+
+    }
+
+    void Renderer::EndFrame() {
+        blast::GfxTexture* color_rt = _swapchain->GetColorRenderTarget(_frame_index);
+        blast::GfxTexture* depth_rt = _swapchain->GetDepthRenderTarget(_frame_index);
         {
             // 设置交换链RT为显示状态
             blast::GfxTextureBarrier barriers[2];
@@ -226,14 +231,11 @@ namespace gear {
 
         blast::GfxPresentInfo present_info;
         present_info.swapchain = _swapchain;
-        present_info.index = swapchain_image_index;
+        present_info.index = _swapchain_image_index;
         present_info.num_wait_semaphores = 1;
         present_info.wait_semaphores = &_render_complete_semaphores[_frame_index];
         _queue->Present(present_info);
         _frame_index = (_frame_index + 1) % _num_images;
-    }
-
-    void Renderer::EndFrame() {
     }
 
     void Renderer::ExecRenderTask(std::function<void(blast::GfxCommandBuffer*)> task) {

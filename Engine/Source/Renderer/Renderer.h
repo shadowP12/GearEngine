@@ -72,6 +72,7 @@ namespace gear {
         blast::GfxSemaphore** _render_complete_semaphores = nullptr;
         blast::GfxCommandBufferPool* _cmd_pool = nullptr;
         blast::GfxCommandBuffer** _cmds = nullptr;
+        uint32_t  _swapchain_image_index;
         uint32_t _num_images = 0;
         uint32_t _frame_index = 0;
         uint32_t _frame_width = 0;

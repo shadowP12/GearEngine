@@ -11,20 +11,26 @@ namespace gear {
 
     class Entity;
 
-    class Component
-    {
+    class Component {
     public:
-        Component(Entity* node);
+        Component(Entity*);
+
         virtual ~Component();
-        virtual void initialized() {}
-        virtual void update(float dt) {}
-        virtual void destroyed() {}
-        virtual void onNodeDirty() {}
-        static ComponentType getClassType() { return ComponentType::None; }
-        virtual ComponentType getType() { return mType; }
+
+        virtual void Initialized() {}
+
+        virtual void Update(float dt) {}
+
+        virtual void Destroyed() {}
+
+        virtual void OnNodeDirty() {}
+
+        static ComponentType GetClassType() { return ComponentType::None; }
+
+        virtual ComponentType GetType() { return _type; }
 
     protected:
-        Entity* mEntity;
-        ComponentType mType;
+        Entity* _entity;
+        ComponentType _type;
     };
 }

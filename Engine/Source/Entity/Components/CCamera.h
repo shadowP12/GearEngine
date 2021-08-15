@@ -1,6 +1,6 @@
 #pragma once
-#include "Scene/Components/Component.h"
-#include "Renderer/RenderScene.h"
+#include "Component.h"
+#include "Resource/RenderTarget.h"
 #include "Math/Math.h"
 
 namespace gear {
@@ -19,37 +19,30 @@ namespace gear {
 
         virtual ~CCamera();
 
-        static ComponentType getClassType() { return ComponentType::Camera; }
+        static ComponentType GetClassType() { return ComponentType::Camera; }
 
-        ComponentType getType() override { return ComponentType::Camera; }
+        ComponentType GetType() override { return ComponentType::Camera; }
 
-        void setProjection(ProjectionType type, double left, double right, double bottom, double top, double near, double far);
+        void SetProjection(ProjectionType type, double left, double right, double bottom, double top, double near, double far);
 
-        void setRenderTarget(RenderTarget* target);
+        void SetRenderTarget(RenderTarget* target);
 
-        void setLayer(RenderLayer layer);
+        RenderTarget* GetRenderTarget();
+
+        glm::mat4 GetViewMatrix();
+
+        glm::mat4 GetModelMatrix();
+
+        glm::mat4 GetProjMatrix();
+
+        float GetNear();
+
+        float GetFar();
 
     private:
-        void updateCameraBuffer();
-
-        glm::mat4 getViewMatrix();
-
-        glm::mat4 getModelMatrix();
-
-        glm::mat4 getProjMatrix();
-
-        float getNear();
-
-        float getFar();
-    private:
-        friend class RenderScene;
-        RenderTarget* mRenderTarget = nullptr;
-        UniformBuffer* mCameraUniformBuffer = nullptr;
-        // 因为灯光需要根据每个相机进行排序，所以灯光的UniformBuffer放在此处管理
-        UniformBuffer* mLightUniformBuffer = nullptr;
-        float mNear = 0.0f;
-        float mFar = 100.0f;
-        glm::mat4 mProjMatrix;
-        RenderLayer mLayer = RenderLayer::CORE;
+        float _near = 0.0f;
+        float _far = 100.0f;
+        glm::mat4 _proj_matrix;
+        RenderTarget* _render_target = nullptr;
     };
 }

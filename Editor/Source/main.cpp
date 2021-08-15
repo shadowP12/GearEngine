@@ -2,8 +2,11 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <GearEngine.h>
+#include <Entity/Entity.h>
+#include <Entity/Scene.h>
+#include <Entity/EntityManager.h>
 #include <Renderer/Renderer.h>
-#include <Renderer/RenderScene.h>
+#include <RenderPipeline/RenderPipeline.h>
 
 struct Vertex {
     float pos[3];
@@ -23,27 +26,29 @@ unsigned int indices[] = {
 
 int main()
 {
+    gear::Scene* scene = gear::gEngine.CreateScene();
+    gear::RenderPipeline* render_pipeline = gear::gEngine.CreateRenderPipeline();
+    render_pipeline->SetScene(scene);
+
     // 初始化glfw
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow* window = glfwCreateWindow(800, 600, "GearEditor", nullptr, nullptr);
-
-    // 传入窗口句柄
-    gear::gEngine.getRenderer()->initSurface(glfwGetWin32Window(window));
 
     int window_width, window_height;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         glfwGetWindowSize(window, &window_width, &window_height);
 
-        gear::gEngine.getRenderer()->beginFrame(window_width, window_height);
-        gear::gEngine.getRenderer()->endFrame();
+        gear::gEngine.GetRenderer()->BeginFrame(glfwGetWin32Window(window), window_width, window_height);
+        render_pipeline->Exec();
+        gear::gEngine.GetRenderer()->EndFrame();
     }
-
-    // 确保渲染器结束所有的工作
-    gear::gEngine.getRenderer()->terminate();
 
     // 销毁glfw
     glfwTerminate();
+
+    gear::gEngine.DestroyScene(scene);
+    gear::gEngine.DestroyRenderPipeline(render_pipeline);
     return 0;
 }

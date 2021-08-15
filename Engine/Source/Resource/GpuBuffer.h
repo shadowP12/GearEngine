@@ -15,7 +15,7 @@ namespace gear {
 
         uint32_t GetSize();
 
-        blast::GfxBuffer* GetBuffer() { return _buffer; }
+        blast::GfxBuffer* GetHandle() { return _buffer; }
 
     protected:
         blast::GfxBuffer* _buffer = nullptr;

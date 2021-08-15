@@ -1,6 +1,6 @@
 #pragma once
-#include "Scene/Components/Component.h"
-#include "Renderer/RenderScene.h"
+#include "Component.h"
+#include "RenderPipeline/RenderPipeline.h"
 #include "Math/Math.h"
 #include <Blast/Gfx/GfxDefine.h>
 #include <vector>
@@ -19,39 +19,26 @@ namespace gear {
 
         virtual ~CRenderable();
 
-        static ComponentType getClassType() { return ComponentType::Renderable; }
+        static ComponentType GetClassType() { return ComponentType::Renderable; }
 
-        ComponentType getType() override { return ComponentType::Renderable; }
+        ComponentType GetType() override { return ComponentType::Renderable; }
 
-        void resetPrimitives();
+        void ResetPrimitives();
 
-        void addPrimitive(const RenderPrimitive& primitive);
+        void AddPrimitive(const RenderPrimitive& primitive);
 
-        void setVertexBuffer(VertexBuffer* buffer);
+        void SetVertexBuffer(VertexBuffer* buffer);
 
-        void setIndexBuffer(IndexBuffer* buffer);
+        void SetIndexBuffer(IndexBuffer* buffer);
 
-        void setLayer(RenderLayer layer);
+        void SetCastShadow(bool castShadow);
 
-        void setCastShadow(bool castShadow);
-
-        void setReceiveShadow(bool receiveShadow);
+        void SetReceiveShadow(bool receiveShadow);
 
     private:
-        void updateRenderableBuffer();
-
-        glm::mat4 getWorldMatrix();
-
-    private:
-        friend class Renderer;
-        friend class RenderScene;
-        VertexBuffer* mVertexBuffer = nullptr;
-        IndexBuffer* mIndexBufferr = nullptr;
-        // 每一个Renderable必备的UniformBuffer
-        UniformBuffer* mRenderableBuffer = nullptr;
-        // TODO: 后续添加骨骼动画
-        UniformBuffer* mBoneBuffer = nullptr;
-        std::vector<RenderPrimitive> mPrimitives;
-        RenderLayer mLayer = RenderLayer::CORE;
+        VertexBuffer* _vb = nullptr;
+        IndexBuffer* _ib = nullptr;
+        UniformBuffer* _bb = nullptr;
+        std::vector<RenderPrimitive> _primitives;
     };
 }
