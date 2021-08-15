@@ -3,17 +3,7 @@
 #include <Blast/Gfx/GfxDefine.h>
 #include <string>
 
-namespace Blast {
-    class ShaderCompiler;
-}
-
 namespace gear {
-    struct MaterialBuildInfo {
-        Blast::ShaderSemantic semantics = Blast::SEMANTIC_UNDEFINED;
-        std::vector<std::pair<std::string, std::string>> uniforms;
-        std::vector<std::pair<std::string, std::string>> samplers;
-    };
-
     class MaterialCompiler {
     public:
         MaterialCompiler();

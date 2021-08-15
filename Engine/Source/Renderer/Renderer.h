@@ -48,6 +48,8 @@ namespace gear {
 
         blast::GfxQueue* GetQueue() { return _queue; }
 
+        blast::ShaderCompiler* GetShaderCompiler() { return _shader_compiler; }
+
         void ExecRenderTask(std::function<void(blast::GfxCommandBuffer*)>);
 
         blast::GfxBuffer* AllocStageBuffer(uint32_t size);
@@ -77,6 +79,8 @@ namespace gear {
         Frame** _frames = nullptr;
         // 外部window
         void* _window = nullptr;
+        // shader编译器
+        blast::ShaderCompiler* _shader_compiler = nullptr;
         // 暂存缓存池
         std::vector<blast::GfxBuffer*> _stage_buffer_pool;
         std::vector<blast::GfxBuffer*> _usable_stage_buffer_list;

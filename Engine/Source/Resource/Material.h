@@ -28,7 +28,7 @@ namespace gear {
     };
 
     // 材质的变体参数
-    static constexpr size_t MATERIAL_VARIANT_COUNT = 32;
+    static constexpr uint32_t MATERIAL_VARIANT_COUNT = 32;
     struct MaterialVariant {
     public:
         typedef uint32_t Key;
@@ -109,6 +109,7 @@ namespace gear {
 
         private:
             friend class Material;
+            friend class MaterialCompiler;
             RenderState _render_state;
             std::unordered_map<std::string, blast::UniformType> _uniforms;
             std::unordered_map<std::string, blast::TextureDimension> _samplers;

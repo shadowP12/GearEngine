@@ -2,7 +2,7 @@ import os
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
 shaders_dir = os.path.abspath(os.path.join(script_dir, '../BuiltinResources/Shaders'))
-gen_dir = os.path.abspath(os.path.join(script_dir, '../Engine/MaterialCompiler'))
+gen_dir = os.path.abspath(os.path.join(script_dir, '../Engine/Source/MaterialCompiler'))
 
 shader_datas = {}
 shader_names = os.listdir(shaders_dir)

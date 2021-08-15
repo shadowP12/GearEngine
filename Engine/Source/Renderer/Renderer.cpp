@@ -9,9 +9,12 @@
 #include <Blast/Gfx/GfxShader.h>
 #include <Blast/Gfx/GfxPipeline.h>
 #include <Blast/Gfx/Vulkan/VulkanContext.h>
+#include <Blast/Utility/ShaderCompiler.h>
+#include <Blast/Utility/VulkanShaderCompiler.h>
 
 namespace gear {
     Renderer::Renderer() {
+        _shader_compiler = new blast::VulkanShaderCompiler();
         _context = new blast::VulkanContext();
         _queue = _context->GetQueue(blast::QUEUE_TYPE_GRAPHICS);
 
@@ -51,6 +54,7 @@ namespace gear {
         _context->DestroySurface(_surface);
 
         SAFE_DELETE(_context);
+        SAFE_DELETE(_shader_compiler);
     }
 
     void Renderer::Resize(uint32_t width, uint32_t height) {

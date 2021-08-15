@@ -1,40 +1,16 @@
 #include "MaterialCompiler.h"
-#include "ChunkLexer.h"
-#include "ChunkParser.h"
-#include "CommonLexer.h"
-#include "ParamParser.h"
-#include "ArrayParser.h"
-#include "DictParser.h"
 #include "CodeGenerator.h"
 #include "Utility/FileSystem.h"
 #include "Utility/Log.h"
-#include "Renderer/Renderer.h"
 #include "GearEngine.h"
+#include "Renderer/Renderer.h"
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Utility/ShaderCompiler.h>
-#include <Blast/Utility/VulkanShaderCompiler.h>
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
 
 namespace gear {
-    static void GetSurfaceMaterialVariants(std::vector<uint8_t>& vs, std::vector<uint8_t>& fs) {
-        std::vector<uint8_t> variants;
-        for (uint8_t variant = 0; variant < MATERIAL_VARIANT_COUNT; variant++) {
-            if (MaterialVariant::FilterVariantVertex(variant) == variant) {
-                vs.push_back(variant);
-            }
-
-            if (MaterialVariant::FilterVariantFragment(variant) == variant) {
-                fs.push_back(variant);
-            }
-        }
-    }
-
     MaterialCompiler::MaterialCompiler() {
-        // 处理函数回调
-        mParameters["shadingModel"] = &processShading;
-        mParameters["blendingMode"] = &processBlending;
-        mParameters["depthWrite"] = &processDepthWrite;
     }
 
     MaterialCompiler::~MaterialCompiler() {
@@ -119,205 +95,125 @@ namespace gear {
         }
 
         // 解析自定义代码
-
-
-        Blast::GfxContext* context = gEngine.getRenderer()->getContext();
-        // 解析材质文件内容
-
-        std::string materialCode = code;
-        gear::ChunkLexer chunkLexer;
-        chunkLexer.lex(materialCode.c_str(), materialCode.size());
-        gear::ChunkParser chunkParser(chunkLexer.getLexemes());
-        std::unordered_map<std::string, std::string> chunks = chunkParser.parse();
-
-        // 解析material states
-        if (chunks.find("states") != chunks.end()) {
-            gear::CommonLexer stateLexer;
-            stateLexer.lex(chunks["states"].c_str(), chunks["states"].size());
-            gear::DictParser stateParser(stateLexer.getLexemes());
-            std::unordered_map<std::string, std::string> stateParams = stateParser.parse();
-            for(const auto& iter : stateParams) {
-                const std::string& key = iter.first;
-                const std::string& value = iter.second;
-                if (mParameters.find(key) == mParameters.end()) {
-                    continue;
-                }
-                mParameters[key](&builder, value);
-            }
-        }
-
-        // 解析vertex requires
-        if (chunks.find("requires") != chunks.end()) {
-            gear::CommonLexer requireLexer;
-            requireLexer.lex(chunks["requires"].c_str(), chunks["requires"].size());
-            gear::ArrayParser requireParser(requireLexer.getLexemes());
-            std::vector<std::string> requireParams = requireParser.parse();
-
-            static const std::unordered_map<std::string, Blast::ShaderSemantic> strToEnum {
-                { "color", Blast::SEMANTIC_COLOR },
-                { "position", Blast::SEMANTIC_POSITION },
-                { "tangents", Blast::SEMANTIC_NORMAL },
-                { "uv0", Blast::SEMANTIC_TEXCOORD0 },
-                { "uv1", Blast::SEMANTIC_TEXCOORD1 },
-                { "custom0", Blast::SEMANTIC_CUSTOM0 },
-                { "custom1", Blast::SEMANTIC_CUSTOM1 },
-                { "custom2", Blast::SEMANTIC_CUSTOM2 },
-                { "custom3", Blast::SEMANTIC_CUSTOM3 },
-                { "custom4", Blast::SEMANTIC_CUSTOM4 },
-                { "custom5", Blast::SEMANTIC_CUSTOM5 },
-            };
-
-            for(const auto& iter : requireParams) {
-                if (strToEnum.find(iter) == strToEnum.end()) {
-                    continue;
-                }
-                buildInfo.semantics |= strToEnum.at(iter);
-            }
-        }
-
-        // 解析uniform block
-        if (chunks.find("uniforms") != chunks.end()) {
-            gear::CommonLexer uniformLexer;
-            uniformLexer.lex(chunks["uniforms"].c_str(), chunks["uniforms"].size());
-            gear::ParamParser uniformParamParser(uniformLexer.getLexemes());
-            std::vector<gear::ParamParseValue> uniformParams = uniformParamParser.parse();
-            for (int i = 0; i < uniformParams.size(); ++i) {
-                buildInfo.uniforms.push_back(std::make_pair(uniformParams[i].type, uniformParams[i].name));
-            }
-        }
-
-        // 解析sampler block
-        if (chunks.find("samplers") != chunks.end()) {
-            gear::CommonLexer samplerLexer;
-            samplerLexer.lex(chunks["samplers"].c_str(), chunks["samplers"].size());
-            gear::ParamParser samplerParamParser(samplerLexer.getLexemes());
-            std::vector<gear::ParamParseValue> samplerParams = samplerParamParser.parse();
-            for (int i = 0; i < samplerParams.size(); ++i) {
-                buildInfo.samplers.push_back(std::make_pair(samplerParams[i].type, samplerParams[i].name));
-            }
-        }
-        // 处理自定义shader代码块
-        // TODO: 处理缩进
-        std::string materialVertexCode;
-        if (chunks.find("vertex") != chunks.end()) {
-            materialVertexCode = chunks["vertex"];
+        std::string vertex_code;
+        if (doc.HasMember("vertex_code")) {
+            vertex_code = doc["vertex_code"].GetString();
         } else {
-            materialVertexCode = "void materialVertex(inout MaterialVertexInputs material) {}\n";
+            vertex_code = "void MaterialVertex(inout MaterialVertexInputs material) {}\n";
         }
 
-        std::string materialFragmentCode;
-        if (chunks.find("fragment") != chunks.end()) {
-            materialFragmentCode = chunks["fragment"];
+        std::string fragment_code;
+        if (doc.HasMember("fragment_code")) {
+            fragment_code = doc["fragment_code"].GetString();
         } else {
-            materialFragmentCode = "void materialFragment(inout MaterialFragmentInputs material) {}\n";
+            fragment_code = "void MaterialFragment(inout MaterialFragmentInputs material) {}\n";
         }
 
-        Material* material = builder.build();
-        // 材质参数只需要初始化一次
-        bool initMaterialParams = false;
+        for (auto& uniform : uniforms) {
+            builder.AddUniform(uniform.first, uniform.second);
+        }
+
+        for (auto& sampler :samplers) {
+            builder.AddSampler(sampler.first, sampler.second);
+        }
 
         // 生成所有可用的变体
-        const auto variants = getSurfaceVariants();
-        for (const auto& v : variants) {
-            // 设置顶点属性布局
-            MaterialVariant variant(v.variant);
-            Blast::ShaderSemantic attributes = buildInfo.semantics;
-            attributes |= Blast::ShaderSemantic::SEMANTIC_POSITION;
-            if (material->mShading != Shading::UNLIT) {
-                attributes |= Blast::ShaderSemantic::SEMANTIC_NORMAL;
-                attributes |= Blast::ShaderSemantic::SEMANTIC_TANGENT;
-                attributes |= Blast::ShaderSemantic::SEMANTIC_BITANGENT;
+        // 需要过滤掉不用使用到的材质变体
+        for (MaterialVariant::Key key = 0; key < MATERIAL_VARIANT_COUNT; key++) {
+            MaterialVariant variant(key);
+
+            // 设置当前材质变体的顶点属性
+            blast::ShaderSemantic attributes = semantics;
+            attributes |= blast::ShaderSemantic::SEMANTIC_POSITION;
+            if (builder._render_state.shading_model != SHADING_MODEL_UNLIT) {
+                attributes |= blast::ShaderSemantic::SEMANTIC_NORMAL;
+                attributes |= blast::ShaderSemantic::SEMANTIC_TANGENT;
+                attributes |= blast::ShaderSemantic::SEMANTIC_BITANGENT;
             }
-            if (attributes & Blast::ShaderSemantic::SEMANTIC_NORMAL) {
-                attributes |= Blast::ShaderSemantic::SEMANTIC_TANGENT;
-                attributes |= Blast::ShaderSemantic::SEMANTIC_BITANGENT;
+            if (attributes & blast::ShaderSemantic::SEMANTIC_NORMAL) {
+                attributes |= blast::ShaderSemantic::SEMANTIC_TANGENT;
+                attributes |= blast::ShaderSemantic::SEMANTIC_BITANGENT;
             }
-            if (variant.hasSkinningOrMorphing()) {
-                attributes |= Blast::ShaderSemantic::SEMANTIC_JOINTS;
-                attributes |= Blast::ShaderSemantic::SEMANTIC_WEIGHTS;
+            if (variant.HasSkinningOrMorphing()) {
+                attributes |= blast::ShaderSemantic::SEMANTIC_JOINTS;
+                attributes |= blast::ShaderSemantic::SEMANTIC_WEIGHTS;
             }
-            if (v.stage == Blast::ShaderStage::SHADER_STAGE_VERT) {
+
+            // unlit着色模型不需要任何光照相关的材质变体
+            if (builder._render_state.shading_model == SHADING_MODEL_UNLIT) {
+                if (variant.HasDirectionalLighting() || variant.HasDynamicLighting()) {
+                    continue;
+                }
+            }
+
+            // 生成vertex shader
+            if (variant.FilterVariantVertex(key) == key) {
                 std::stringstream vs;
                 CodeGenerator cg;
-                if (variant.hasSkinningOrMorphing()) {
-                    cg.generateDefine(vs, "HAS_SKINNING_OR_MORPHING");
-                }
-                cg.generateShaderAttributes(vs, v.stage, attributes);
-                cg.generateShaderInput(vs, v.stage);
-                cg.generateCommonData(vs);
-                cg.generateUniforms(vs, v.stage, buildInfo.uniforms);
-                cg.generateSamplers(vs, v.stage, buildInfo.samplers);
-                cg.generateCommonMaterial(vs, v.stage);
-                vs << materialVertexCode << "\n";
-                cg.generateShaderMain(vs, v.stage);
-                cg.generateEpilog(vs);
 
-                Blast::ShaderCompileDesc compileDesc;
-                compileDesc.code = vs.str();
-                compileDesc.stage = Blast::SHADER_STAGE_VERT;
-                Blast::ShaderCompileResult compileResult = mShaderCompiler->compile(compileDesc);
-                if (!compileResult.success) {
-                    LOGI("\n %s \n", vs.str().c_str());
+                if (variant.HasSkinningOrMorphing()) {
+                    cg.GenerateDefine(vs, "HAS_SKINNING_OR_MORPHING");
                 }
 
-                Blast::GfxShaderDesc shaderDesc;
-                shaderDesc.stage = Blast::SHADER_STAGE_VERT;
-                shaderDesc.bytes = compileResult.bytes;
-                Blast::GfxShader* vertShader = context->createShader(shaderDesc);
-                material->mVertShaderCache[v.variant] = vertShader;
+                cg.GenerateShaderAttributes(vs, blast::SHADER_STAGE_VERT, attributes);
+                cg.GenerateShaderInput(vs, blast::SHADER_STAGE_VERT);
 
-                if (!initMaterialParams) {
-                    initMaterialParams = true;
-                    int resIdx = -1;
-                    for (int i = 0; i < compileResult.resources.size(); ++i) {
-                        if (compileResult.resources[i].set == 0) {
-                            material->mResources.push_back(compileResult.resources[i]);
-                            resIdx = i;
-                        } else if (compileResult.resources[i].set == 1 && compileResult.resources[i].reg >= 4) {
-                            material->mResources.push_back(compileResult.resources[i]);
-                        }
-                    }
+                cg.GenerateCommonData(vs);
+                cg.GenerateUniforms(vs, uniforms);
+                cg.GenerateSamplers(vs, samplers);
 
-                    if (resIdx != -1) {
-                        for (int i = 0; i < compileResult.variables.size(); i++) {
-                            if (compileResult.variables[i].parentIndex == resIdx) {
-                                material->mVariables.push_back(compileResult.variables[i]);
-                            }
-                        }
-                    }
+                cg.GenerateCommonMaterial(vs, blast::SHADER_STAGE_VERT);
+                cg.GenerateCustomCode(vs, vertex_code);
+                cg.GenerateShaderMain(vs, blast::SHADER_STAGE_VERT);
+                cg.GenerateEpilog(vs);
 
+                blast::ShaderCompileDesc compile_desc;
+                compile_desc.code = vs.str();
+                compile_desc.stage = blast::SHADER_STAGE_VERT;
+                blast::ShaderCompileResult compile_result = gEngine.GetRenderer()->GetShaderCompiler()->Compile(compile_desc);
+                if (compile_result.success) {
+                    blast::GfxShaderDesc shader_desc;
+                    shader_desc.stage = blast::SHADER_STAGE_VERT;
+                    shader_desc.bytes = compile_result.bytes;
+                    blast::GfxShader* vert_shader = gEngine.GetRenderer()->GetContext()->CreateShader(shader_desc);
+                    builder.AddVertShader(key, vert_shader);
+                } else {
+                    LOGE("\n %s \n", vs.str().c_str());
                 }
             }
-            if (v.stage == Blast::ShaderStage::SHADER_STAGE_FRAG) {
+
+            // 生成fragment shader
+            if (variant.FilterVariantFragment(key) == key) {
                 std::stringstream fs;
                 CodeGenerator cg;
-                cg.generateShaderAttributes(fs, v.stage, attributes);
-                cg.generateShaderInput(fs, v.stage);
-                cg.generateCommonData(fs);
-                cg.generateUniforms(fs, v.stage, buildInfo.uniforms);
-                cg.generateSamplers(fs, v.stage, buildInfo.samplers);
-                cg.generateCommonMaterial(fs, v.stage);
-                fs << materialFragmentCode << "\n";
-                cg.generateShaderMain(fs, v.stage);
-                cg.generateEpilog(fs);
+                cg.GenerateShaderAttributes(fs, blast::SHADER_STAGE_FRAG, attributes);
+                cg.GenerateShaderInput(fs, blast::SHADER_STAGE_FRAG);
 
-                Blast::ShaderCompileDesc compileDesc;
-                compileDesc.code = fs.str();
-                compileDesc.stage = Blast::SHADER_STAGE_FRAG;
-                Blast::ShaderCompileResult compileResult = mShaderCompiler->compile(compileDesc);
-                if (!compileResult.success) {
-                    LOGI("\n %s \n", fs.str().c_str());
+                cg.GenerateCommonData(fs);
+                cg.GenerateUniforms(fs, uniforms);
+                cg.GenerateSamplers(fs, samplers);
+
+                cg.GenerateCommonMaterial(fs, blast::SHADER_STAGE_FRAG);
+                cg.GenerateCustomCode(fs, fragment_code);
+                cg.GenerateShaderMain(fs, blast::SHADER_STAGE_FRAG);
+                cg.GenerateEpilog(fs);
+
+                blast::ShaderCompileDesc compile_desc;
+                compile_desc.code = fs.str();
+                compile_desc.stage = blast::SHADER_STAGE_FRAG;
+                blast::ShaderCompileResult compile_result = gEngine.GetRenderer()->GetShaderCompiler()->Compile(compile_desc);
+                if (compile_result.success) {
+                    blast::GfxShaderDesc shader_desc;
+                    shader_desc.stage = blast::SHADER_STAGE_VERT;
+                    shader_desc.bytes = compile_result.bytes;
+                    blast::GfxShader* frag_shader = gEngine.GetRenderer()->GetContext()->CreateShader(shader_desc);
+                    builder.AddVertShader(key, frag_shader);
+                } else {
+                    LOGE("\n %s \n", fs.str().c_str());
                 }
-
-                Blast::GfxShaderDesc shaderDesc;
-                shaderDesc.stage = Blast::SHADER_STAGE_FRAG;
-                shaderDesc.bytes = compileResult.bytes;
-                Blast::GfxShader* fragShader = context->createShader(shaderDesc);
-                material->mFragShaderCache[v.variant] = fragShader;
             }
         }
-
-        return material;
+        return builder.Build();
     }
 
     void MaterialCompiler::ProcessShadingModel(Material::Builder& builder, const std::string& value) {

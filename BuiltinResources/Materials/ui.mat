@@ -1,27 +1,23 @@
 {
-    "state" : {
-        "shading_model" : "unlit",
-        "blending_mode" : "transparent"
+    "state": {
+        "shading_model": "unlit",
+        "blending_mode": "transparent"
     },
-
-    "require" : [
+    "require": [
         "uv0",
         "color"
     ],
-
-    "uniforms" : [
+    "uniforms": [
         {
-            "name" : "test",
-            "type" : "vec3"
+            "name": "test",
+            "type": "vec3"
         }
     ],
-
-    "samplers" : [
+    "samplers": [
         {
-            "name" : "albedo_texture",
-            "type" : "sampler_2d"
+            "name": "albedo_texture",
+            "type": "sampler_2d"
         }
     ],
-
-    "fragment" : "ui.fs"
+    "fragment_code": "void MaterialFragment(inout MaterialFragmentInputs material) {\n    material.base_color = vertex_color * texture(albedo_texture, vertex_uv01.xy);\n    material.base_color.rgb *= material.base_color.a;\n}"
 }
