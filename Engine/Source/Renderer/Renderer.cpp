@@ -22,6 +22,27 @@ namespace gear {
         cmd_pool_desc.queue = _queue;
         cmd_pool_desc.transient = false;
         _cmd_pool = _context->CreateCommandBufferPool(cmd_pool_desc);
+
+        // 创建RootSignature
+        blast::GfxRootSignatureDesc root_signature_desc;
+        for (int i = 0; i < UBUFFER_BINDING_COUNT; ++i) {
+            blast::GfxRegisterInfo register_info;
+            register_info.set = 0;
+            register_info.reg = i;
+            register_info.size = 1;
+            register_info.type = blast::RESOURCE_TYPE_UNIFORM_BUFFER;
+            root_signature_desc.registers.push_back(register_info);
+        }
+
+        for (int i = 0; i < SAMPLER_BINDING_COUNT; ++i) {
+            blast::GfxRegisterInfo register_info;
+            register_info.set = 1;
+            register_info.reg = i;
+            register_info.size = 1;
+            register_info.type = blast::RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER;
+            root_signature_desc.registers.push_back(register_info);
+        }
+        _root_signature = _context->CreateRootSignature(root_signature_desc);
     }
 
     Renderer::~Renderer() {
@@ -52,6 +73,7 @@ namespace gear {
         _context->DestroyCommandBufferPool(_cmd_pool);
         _context->DestroySwapchain(_swapchain);
         _context->DestroySurface(_surface);
+        _context->DestroyRootSignature(_root_signature);
 
         SAFE_DELETE(_context);
         SAFE_DELETE(_shader_compiler);

@@ -15,6 +15,9 @@
 // 纹理采样器个数
 #define SAMPLER_BINDING_COUNT 8
 
+// 材质纹理采样器个数
+#define MATERIAL_SAMPLER_COUNT 4
+
 // CSM的Cascade个数
 #define SHADOW_CASCADE_COUNT 3
 

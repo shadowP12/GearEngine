@@ -82,6 +82,9 @@ namespace gear {
         uint32_t renderable_ub_offset = 0;
         blast::GfxBuffer* renderable_ub = nullptr;
 
+        std::pair<blast::GfxBuffer*, blast::GfxSamplerDesc> material_samplers[MATERIAL_SAMPLER_COUNT];
+        blast::GfxBuffer* material_ub = nullptr;
+
         blast::PrimitiveTopology topo;
         RenderState render_state;
 
