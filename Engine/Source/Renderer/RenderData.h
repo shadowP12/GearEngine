@@ -28,8 +28,6 @@ namespace gear {
         BlendingMode blending_mode;
     };
 
-
-    // BEGIN: Shader里面的数据结构
     struct FrameUniforms {
         glm::mat4 viewMatrix;
         glm::mat4 projMatrix;
@@ -39,14 +37,7 @@ namespace gear {
         glm::mat4 modelMatrix;
         glm::mat4 normalMatrix;
     };
-    // END
 
-    struct FramebufferInfo {
-        blast::GfxClearValue clear_value;
-        blast::SampleCount sample_count;
-        std::tuple<blast::GfxTexture*, uint32_t, uint32_t> colors[TARGET_COUNT];
-        std::tuple<blast::GfxTexture*, uint32_t, uint32_t> depth_stencil;
-    };
 
     struct CascadeParameters {
         // clip space的远近平面
@@ -65,11 +56,35 @@ namespace gear {
         BBox wsShadowReceiversVolume;
     };
 
-    // 渲染层
-    enum class RenderLayer {
-        CORE = 0,
-        DEBUG = 1,
-        UI = 2,
+    struct FramebufferInfo {
+        blast::GfxClearValue clear_value;
+        blast::SampleCount sample_count;
+        std::tuple<blast::GfxTexture*, uint32_t, uint32_t> colors[TARGET_COUNT];
+        std::tuple<blast::GfxTexture*, uint32_t, uint32_t> depth_stencil;
     };
 
+    using DrawCallKey = uint64_t;
+
+    struct DrawCall {
+        DrawCallKey key = 0;
+
+        blast::GfxShader* vs = nullptr;
+        blast::GfxShader* fs = nullptr;
+
+        blast::GfxBuffer* vb = nullptr;
+
+        uint32_t ib_offset = 0;
+        uint32_t ib_count = 0;
+        blast::GfxBuffer* ib = nullptr;
+
+        blast::GfxBuffer* bone_ub = nullptr;
+
+        uint32_t renderable_ub_offset = 0;
+        blast::GfxBuffer* renderable_ub = nullptr;
+
+        blast::PrimitiveTopology topo;
+        RenderState render_state;
+
+        bool operator < (DrawCall const& rhs) { return key < rhs.key; }
+    };
 }
