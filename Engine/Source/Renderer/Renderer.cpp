@@ -109,7 +109,8 @@ namespace gear {
             }
 
             // 回收暂缓缓存
-            if (find(_stage_buffer_pool.begin(), _stage_buffer_pool.end(), resource) != _stage_buffer_pool.end()) {
+            auto iter = find(_stage_buffer_pool.begin(), _stage_buffer_pool.end(), resource.first);
+            if (iter != _stage_buffer_pool.end()) {
                 _usable_stage_buffer_list.push_back((blast::GfxBuffer*)resource.first);
             }
         }

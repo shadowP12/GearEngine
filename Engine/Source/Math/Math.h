@@ -415,9 +415,10 @@ namespace gear {
         glm::vec3 mMax;
     };
 
+    /*
     class Frustum {
     public:
-        enum class Plane : uint8_t {
+        enum class Plane {
             LEFT,
             RIGHT,
             BOTTOM,
@@ -469,4 +470,5 @@ namespace gear {
     public:
         glm::vec4 mPlanes[6];
     };
+    */
 }

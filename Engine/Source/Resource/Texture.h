@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/GearDefine.h"
 #include <Blast/Gfx/GfxDefine.h>
+#include <vector>
 
 namespace blast {
     class GfxTexture;

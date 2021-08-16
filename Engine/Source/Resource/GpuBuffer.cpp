@@ -1,7 +1,6 @@
 #include "GpuBuffer.h"
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
-#include "Renderer/CopyEngine.h"
 #include "Utility/Log.h"
 #include <blast/Gfx/GfxCommandBuffer.h>
 #include <unordered_map>

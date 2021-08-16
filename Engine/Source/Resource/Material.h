@@ -141,6 +141,7 @@ namespace gear {
         std::unordered_map<MaterialVariant::Key, blast::GfxShader*> _frag_shader_cache;
     };
 
+    class UniformBuffer;
     class MaterialInstance {
     public:
         typedef uint32_t TextureSlot;

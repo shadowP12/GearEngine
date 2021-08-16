@@ -5,10 +5,10 @@ namespace gear {
     }
 
     Entity::~Entity() {
-        for (int i = 0; i < mComponents.size(); ++i) {
-            delete mComponents[i];
-            mComponents[i] = nullptr;
+        for (int i = 0; i < _components.size(); ++i) {
+            delete _components[i];
+            _components[i] = nullptr;
         }
-        mComponents.clear();
+        _components.clear();
     }
 }

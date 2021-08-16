@@ -1,6 +1,5 @@
 #include "RenderCache.h"
 #include "Renderer.h"
-#include "RenderBuiltinResource.h"
 #include <Blast/Gfx/GfxContext.h>
 
 namespace gear {
@@ -217,8 +216,8 @@ namespace gear {
         }
 
         DescriptorBundle bundle;
-        bundle.handles[0] = _renderer->GetRootSignature()->allocateSet(0);
-        bundle.handles[1] = _renderer->GetRootSignature()->allocateSet(1);
+        bundle.handles[0] = _renderer->GetRootSignature()->AllocateSet(0);
+        bundle.handles[1] = _renderer->GetRootSignature()->AllocateSet(1);
 
         for (int i = 0; i < UBUFFER_BINDING_COUNT; ++i) {
             if (key.uniform_buffers[i] != nullptr) {

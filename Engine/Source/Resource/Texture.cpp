@@ -1,7 +1,6 @@
 #include "Resource/Texture.h"
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
-#include "Renderer/CopyEngine.h"
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Gfx/GfxBuffer.h>
 #include <Blast/Gfx/GfxTexture.h>

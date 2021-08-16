@@ -22,11 +22,11 @@ namespace gear {
 
         void SetWidth(uint32_t width);
 
-        uint32_t GetWidth();
+        uint32_t GetWidth() { return _width; }
 
         void SetHeight(uint32_t height);
 
-        uint32_t GetHeight();
+        uint32_t GetHeight() { return _height; }
 
         blast::SampleCount GetSamples() { return _sample_count; }
 
