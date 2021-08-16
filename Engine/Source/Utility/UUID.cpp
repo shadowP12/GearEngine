@@ -3,7 +3,7 @@
 #include <windows.h>
 #include <rpc.h>
 
-std::string generateUUID() {
+std::string GenerateUUID() {
     UUID uuid{};
     RPC_CSTR str = nullptr;
 

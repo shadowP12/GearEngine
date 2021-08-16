@@ -3,7 +3,7 @@
 
 #include <string>
 namespace gear {
-    std::string getCurrentPath();
+    std::string GetCurrentPath();
 
-    std::string readFileData(const std::string& path);
+    std::string ReadFileData(const std::string& path);
 }

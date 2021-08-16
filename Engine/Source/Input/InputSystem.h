@@ -10,38 +10,38 @@ namespace gear {
 
         ~InputSystem();
 
-        void reset();
+        void Reset();
 
-        float getMouseScrollWheel() { return mMouseScrollWheel; }
+        float GetMouseScrollWheel() { return _mouse_scroll_wheel; }
 
-        bool getMouseButtonHeld(uint8_t i) { return mMouseButtonHeld[i]; }
+        bool GetMouseButtonHeld(uint8_t i) { return _mouse_button_held[i]; }
 
-        bool getMouseButtonDown(uint8_t i) { return mMouseButtonDown[i]; }
+        bool GetMouseButtonDown(uint8_t i) { return _mouse_button_down[i]; }
 
-        bool getMouseButtonUp(uint8_t i) { return mMouseButtonUp[i]; }
+        bool GetMouseButtonUp(uint8_t i) { return _mouse_button_up[i]; }
 
-        glm::vec2 getMousePosition() { return mMousePosition; }
+        glm::vec2 GetMousePosition() { return _mouse_position; }
 
-        void onMousePosition(float x, float y);
+        void OnMousePosition(float x, float y);
 
-        void onMouseButton(int button, int action);
+        void OnMouseButton(int button, int action);
 
-        void onMouseScroll(float offset);
+        void OnMouseScroll(float offset);
 
-        Event<void, float, float>& getOnMousePositionEvent();
+        Event<void, float, float>& GetOnMousePositionEvent();
 
-        Event<void, int, int>& getOnMouseButtonEvent();
+        Event<void, int, int>& GetOnMouseButtonEvent();
 
-        Event<void, float>& getOnMouseScrollEvent();
+        Event<void, float>& GetOnMouseScrollEvent();
 
     private:
-        float mMouseScrollWheel;
-        bool mMouseButtonHeld[3];
-        bool mMouseButtonDown[3];
-        bool mMouseButtonUp[3];
-        glm::vec2 mMousePosition;
-        Event<void, float, float> mOnMousePositionEvent;
-        Event<void, int, int> mOnMouseButtonEvent;
-        Event<void, float> mOnMouseScrollEvent;
+        float _mouse_scroll_wheel;
+        bool _mouse_button_held[3];
+        bool _mouse_button_down[3];
+        bool _mouse_button_up[3];
+        glm::vec2 _mouse_position;
+        Event<void, float, float> _on_mouse_position_event;
+        Event<void, int, int> _on_mouse_button_event;
+        Event<void, float> _on_mouse_scroll_event;
     };
 }

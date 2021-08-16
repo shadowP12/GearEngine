@@ -7,14 +7,14 @@
 #include <sstream>
 
 namespace gear {
-    std::string getCurrentPath() {
+    std::string GetCurrentPath() {
         char buffer[1024];
         getcwd(buffer, 1024);
         std::string path(buffer);
         return path;
     }
 
-    std::string readFileData(const std::string& path) {
+    std::string ReadFileData(const std::string& path) {
         std::istream* stream = &std::cin;
         std::ifstream file;
 

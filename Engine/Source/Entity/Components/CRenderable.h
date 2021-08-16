@@ -36,6 +36,7 @@ namespace gear {
         void SetReceiveShadow(bool receiveShadow);
 
     private:
+        friend class RenderPipeline;
         VertexBuffer* _vb = nullptr;
         IndexBuffer* _ib = nullptr;
         UniformBuffer* _bb = nullptr;

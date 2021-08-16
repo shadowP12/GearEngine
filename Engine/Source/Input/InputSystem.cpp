@@ -2,57 +2,57 @@
 
 namespace gear {
     InputSystem::InputSystem() {
-        mMousePosition = glm::vec2(0.0f, 0.0f);
-        memset(mMouseButtonHeld, 0, sizeof(mMouseButtonHeld));
-        memset(mMouseButtonUp, 0, sizeof(mMouseButtonUp));
-        memset(mMouseButtonDown, 0, sizeof(mMouseButtonDown));
-        mMouseScrollWheel = 0.0;
+        _mouse_position = glm::vec2(0.0f, 0.0f);
+        memset(_mouse_button_held, 0, sizeof(_mouse_button_held));
+        memset(_mouse_button_up, 0, sizeof(_mouse_button_up));
+        memset(_mouse_button_down, 0, sizeof(_mouse_button_down));
+        _mouse_scroll_wheel = 0.0;
     }
 
     InputSystem::~InputSystem() {
     }
 
-    void InputSystem::reset() {
-        memset(mMouseButtonUp, 0, sizeof(mMouseButtonUp));
-        memset(mMouseButtonDown, 0, sizeof(mMouseButtonDown));
-        mMouseScrollWheel = 0.0;
+    void InputSystem::Reset() {
+        memset(_mouse_button_up, 0, sizeof(_mouse_button_up));
+        memset(_mouse_button_down, 0, sizeof(_mouse_button_down));
+        _mouse_scroll_wheel = 0.0;
     }
 
-    void InputSystem::onMousePosition(float x, float y) {
-        mMousePosition = glm::vec2(x, y);
-        mOnMousePositionEvent.dispatch(x, y);
+    void InputSystem::OnMousePosition(float x, float y) {
+        _mouse_position = glm::vec2(x, y);
+        _on_mouse_position_event.Dispatch(x, y);
     }
 
-    void InputSystem::onMouseButton(int button, int action) {
+    void InputSystem::OnMouseButton(int button, int action) {
         switch (action) {
             case 0:
-                mMouseButtonUp[button] = true;
-                mMouseButtonHeld[button] = false;
+                _mouse_button_up[button] = true;
+                _mouse_button_held[button] = false;
                 break;
             case 1:
-                mMouseButtonDown[button] = true;
-                mMouseButtonHeld[button] = true;
+                _mouse_button_down[button] = true;
+                _mouse_button_held[button] = true;
                 break;
             default:
                 break;
         }
-        mOnMouseButtonEvent.dispatch(button, action);
+        _on_mouse_button_event.Dispatch(button, action);
     }
 
-    void InputSystem::onMouseScroll(float offset) {
-        mMouseScrollWheel = offset;
-        mOnMouseScrollEvent.dispatch(offset);
+    void InputSystem::OnMouseScroll(float offset) {
+        _mouse_scroll_wheel = offset;
+        _on_mouse_scroll_event.Dispatch(offset);
     }
 
-    Event<void, float, float> & InputSystem::getOnMousePositionEvent() {
-        return mOnMousePositionEvent;
+    Event<void, float, float> & InputSystem::GetOnMousePositionEvent() {
+        return _on_mouse_position_event;
     }
 
-    Event<void, int, int> & InputSystem::getOnMouseButtonEvent() {
-        return mOnMouseButtonEvent;
+    Event<void, int, int> & InputSystem::GetOnMouseButtonEvent() {
+        return _on_mouse_button_event;
     }
 
-    Event<void, float> & InputSystem::getOnMouseScrollEvent() {
-        return mOnMouseScrollEvent;
+    Event<void, float> & InputSystem::GetOnMouseScrollEvent() {
+        return _on_mouse_scroll_event;
     }
 }

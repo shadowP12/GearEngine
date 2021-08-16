@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/GearDefine.h"
+#include "RenderData.h"
 #include <set>
 #include <map>
 #include <queue>
@@ -27,6 +28,11 @@ namespace blast {
 }
 
 namespace gear {
+    class SamplerCache;
+    class TextureViewCache;
+    class FramebufferCache;
+    class GraphicsPipelineCache;
+    class DescriptorCache;
     class Renderer {
     public:
         struct Frame {
@@ -52,6 +58,14 @@ namespace gear {
 
         blast::ShaderCompiler* GetShaderCompiler() { return _shader_compiler; }
 
+        blast::GfxTexture* GetColor();
+
+        blast::GfxTexture* GetDepthStencil();
+
+        uint32_t GetWidth() { return _frame_width; }
+
+        uint32_t GetHeight() { return _frame_height; }
+
         void ExecRenderTask(std::function<void(blast::GfxCommandBuffer*)>);
 
         blast::GfxBuffer* AllocStageBuffer(uint32_t size);
@@ -63,6 +77,14 @@ namespace gear {
         void Destroy(blast::GfxTexture*);
 
         void Destroy(blast::GfxShader*);
+
+        void BindFramebuffer(const FramebufferInfo& info);
+
+        void UnbindFramebuffer();
+
+        void BindFrameUniformBuffer(blast::GfxBuffer* buffer, uint32_t size, uint32_t offset);
+
+        void ExecuteDrawCall(const DrawCall& draw_call);
 
     private:
         blast::GfxContext* _context = nullptr;
@@ -85,6 +107,17 @@ namespace gear {
         void* _window = nullptr;
         // shader编译器
         blast::ShaderCompiler* _shader_compiler = nullptr;
+        // gpu对象缓存
+        SamplerCache* _sampler_cache;
+        TextureViewCache* _texture_view_cache;
+        FramebufferCache* _framebuffer_cache;
+        GraphicsPipelineCache* _graphics_pipeline_cache;
+        DescriptorCache* _descriptor_cache;
+        // 当前渲染器绑定的资源
+        blast::GfxFramebuffer* _bind_fb = nullptr;
+        blast::GfxBuffer* _bind_frame_uniform_buffer = nullptr;
+        uint32_t _bind_frame_uniform_buffer_size = 0;
+        uint32_t _bind_frame_uniform_buffer_offset = 0;
         // 暂存缓存池
         std::vector<blast::GfxBuffer*> _stage_buffer_pool;
         std::vector<blast::GfxBuffer*> _usable_stage_buffer_list;

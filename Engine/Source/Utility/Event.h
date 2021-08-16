@@ -30,59 +30,52 @@ public:
     struct EventData {
         EventHandle handle = 0;
         uint32_t order = 0;
-        bool block = false;
         std::function<RetType(Args...)> func;
         bool operator < (EventData const& rhs) { return order > rhs.order; }
     };
 
-    EventHandle bind(std::function<RetType(Args...)> func, uint32_t order = 0, bool block = false) {
+    EventHandle Bind(std::function<RetType(Args...)> func, uint32_t order = 0) {
         EventData data;
-        data.handle = ++mNextHandle;
+        data.handle = ++_next_handle;
         data.order = order;
-        data.block = block;
         data.func = func;
-        mEventDatas.push_back(data);
-        return mNextHandle;
+        _event_datas.push_back(data);
+        return _event_datas;
     }
 
-    void unbind(EventHandle handle) {
-        for (typename std::vector<EventData>::iterator iter = mEventDatas.begin(); iter != mEventDatas.end(); iter++) {
-            // 为了让编译通过，额外加了一次转化
+    void Unbind(EventHandle handle) {
+        for (typename std::vector<EventData>::iterator iter = _event_datas.begin(); iter != _event_datas.end(); iter++) {
             EventData& data = *iter;
             if (data.handle == handle) {
-                mEventDatas.erase(iter);
+                _event_datas.erase(iter);
                 break;
             }
         }
     }
 
-    void block(EventHandle handle, bool block) {
-        for (typename std::vector<EventData>::iterator iter = mEventDatas.begin(); iter != mEventDatas.end(); iter++) {
-            // 为了让编译通过，额外加了一次转化
-            EventData& data = *iter;
-            if (data.handle == handle) {
-                data.block = block;
-                break;
-            }
-        }
+    void Block() {
+        _block = true;
     }
 
-    void dispatch(Args... args) {
+    void Dispatch(Args... args) {
+        _block = false;
+
         // 对回调函数进行排序
-        std::sort(&mEventDatas[0], &mEventDatas[0] + mEventDatas.size());
+        std::sort(&_event_datas[0], &_event_datas[0] + _event_datas.size());
 
-        for (int i = 0; i < mEventDatas.size(); ++i) {
-            mEventDatas[i].func(std::forward<Args>(args)...);
+        for (int i = 0; i < _event_datas.size(); ++i) {
+            _event_datas[i].func(std::forward<Args>(args)...);
 
             // 处理截断条件
-            if (mEventDatas[i].block) {
+            if (_block == true) {
                 break;
             }
         }
     }
 private:
-    EventHandle mNextHandle = 0;
-    std::vector<EventData> mEventDatas;
+    EventHandle _next_handle = 0;
+    std::vector<EventData> _event_datas;
+    bool _block;
 };
 
 

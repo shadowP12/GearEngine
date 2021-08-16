@@ -123,6 +123,8 @@ namespace gear {
 
         blast::GfxShader* GetFragShader(MaterialVariant::Key variant);
 
+        RenderState GetRenderState() { return _render_state; }
+
         MaterialInstance* CreateInstance();
 
     private:
@@ -141,11 +143,15 @@ namespace gear {
 
     class MaterialInstance {
     public:
+        typedef uint32_t TextureSlot;
+
         ~MaterialInstance();
 
         Material* GetMaterial() { return _material; }
 
         UniformBuffer* GetUniformBuffer();
+
+        const std::unordered_map<TextureSlot, std::pair<Texture*, blast::GfxSamplerDesc>>& GetGfxSamplerGroup() { return _sampler_group; }
 
         void SetBool(const std::string& name, const bool& value);
 
@@ -177,7 +183,6 @@ namespace gear {
         std::unordered_map<std::string, std::tuple<blast::UniformType, uint32_t>> _uniforms;
 
         // texture
-        typedef uint32_t TextureSlot;
         std::unordered_map<std::string, blast::TextureDimension> _samplers;
         std::unordered_map<std::string, TextureSlot> _slot_map;
         std::unordered_map<TextureSlot, std::pair<Texture*, blast::GfxSamplerDesc>> _sampler_group;

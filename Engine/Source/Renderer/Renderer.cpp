@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "RenderCache.h"
 #include "Utility/FileSystem.h"
 #include <Blast/Gfx/GfxContext.h>
 #include <Blast/Gfx/GfxBuffer.h>
@@ -43,10 +44,23 @@ namespace gear {
             root_signature_desc.registers.push_back(register_info);
         }
         _root_signature = _context->CreateRootSignature(root_signature_desc);
+
+        // render cache
+        _sampler_cache = new SamplerCache(this);
+        _texture_view_cache = new TextureViewCache(this);
+        _framebuffer_cache = new FramebufferCache(this);
+        _graphics_pipeline_cache = new GraphicsPipelineCache(this);
+        _descriptor_cache = new DescriptorCache(this);
     }
 
     Renderer::~Renderer() {
         _queue->WaitIdle();
+
+        SAFE_DELETE(_sampler_cache);
+        SAFE_DELETE(_texture_view_cache);
+        SAFE_DELETE(_framebuffer_cache);
+        SAFE_DELETE(_graphics_pipeline_cache);
+        SAFE_DELETE(_descriptor_cache);
 
         // 执行所有清除任务
         for (auto task : _destroy_task_map) {
@@ -224,7 +238,19 @@ namespace gear {
             _cmds[_frame_index]->SetBarrier(0, nullptr, 2, barriers);
         }
 
-
+        // 在每一帧的开始清空当前fb
+        FramebufferInfo screen_fb = {};
+        screen_fb.clear_value.flags = blast::CLEAR_ALL;
+        screen_fb.width = _frame_width;
+        screen_fb.height = _frame_height;
+        std::get<0>(screen_fb.colors[0]) = color_rt;
+        std::get<1>(screen_fb.colors[0]) = 0;
+        std::get<2>(screen_fb.colors[0]) = 0;
+        std::get<0>(screen_fb.depth_stencil) = depth_rt;
+        std::get<1>(screen_fb.depth_stencil) = 0;
+        std::get<2>(screen_fb.depth_stencil) = 0;
+        BindFramebuffer(screen_fb);
+        UnbindFramebuffer();
     }
 
     void Renderer::EndFrame() {
@@ -258,6 +284,14 @@ namespace gear {
         present_info.wait_semaphores = &_render_complete_semaphores[_frame_index];
         _queue->Present(present_info);
         _frame_index = (_frame_index + 1) % _num_images;
+    }
+
+    blast::GfxTexture* Renderer::GetColor() {
+        return _swapchain->GetColorRenderTarget(_frame_index);
+    }
+
+    blast::GfxTexture* Renderer::GetDepthStencil() {
+        return _swapchain->GetDepthRenderTarget(_frame_index);
     }
 
     void Renderer::ExecRenderTask(std::function<void(blast::GfxCommandBuffer*)> task) {
@@ -304,5 +338,142 @@ namespace gear {
         _destroy_task_map[shader] = ([this, shader]() {
             _context->DestroyShader(shader);
         });
+    }
+
+    void Renderer::BindFramebuffer(const FramebufferInfo& info) {
+        blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
+
+        blast::GfxClearValue clear_value;
+
+        blast::GfxFramebufferDesc framebuffer_desc = {};
+        framebuffer_desc.width = info.width;
+        framebuffer_desc.height = info.height;
+        framebuffer_desc.sample_count = info.sample_count;
+
+        for (int i = 0; i < TARGET_COUNT; ++i) {
+            if (std::get<0>(info.colors[i]) != nullptr) {
+                blast::GfxTextureViewDesc texture_view_desc;
+                texture_view_desc.texture = std::get<0>(info.colors[i]);
+                texture_view_desc.layer = std::get<1>(info.colors[i]);
+                texture_view_desc.level = std::get<2>(info.colors[i]);
+                framebuffer_desc.colors[i] = _texture_view_cache->GetTextureView(texture_view_desc);
+                framebuffer_desc.num_colors++;
+            }
+        }
+        if (std::get<0>(info.depth_stencil) != nullptr) {
+            blast::GfxTextureViewDesc texture_view_desc;
+            texture_view_desc.texture = std::get<0>(info.depth_stencil);
+            texture_view_desc.layer = std::get<1>(info.depth_stencil);
+            texture_view_desc.level = std::get<2>(info.depth_stencil);
+            framebuffer_desc.depth_stencil = _texture_view_cache->GetTextureView(texture_view_desc);
+            framebuffer_desc.has_depth_stencil = true;
+        }
+
+        blast::GfxFramebuffer* fb = _framebuffer_cache->GetFramebuffer(framebuffer_desc);
+        cmd->BindFramebuffer(fb);
+        cmd->ClearFramebuffer(fb, info.clear_value);
+
+        _bind_fb = fb;
+    }
+
+    void Renderer::UnbindFramebuffer() {
+        blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
+        cmd->UnbindFramebuffer();
+    }
+
+    void Renderer::BindFrameUniformBuffer(blast::GfxBuffer* buffer, uint32_t size, uint32_t offset) {
+        _bind_frame_uniform_buffer = buffer;
+        _bind_frame_uniform_buffer_size = size;
+        _bind_frame_uniform_buffer_offset = offset;
+    }
+
+    void Renderer::ExecuteDrawCall(const DrawCall& dc) {
+        blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
+
+        // 标记使用的外部资源
+        UseResource(dc.bone_ub);
+        UseResource(dc.renderable_ub);
+        UseResource(dc.material_ub);
+        UseResource(dc.vb);
+        UseResource(dc.ib);
+        UseResource(dc.vs);
+        UseResource(dc.fs);
+        UseResource(_bind_frame_uniform_buffer);
+
+        DescriptorKey descriptor_key = {};
+        // 绑定materialUB
+        if (dc.material_ub) {
+            descriptor_key.uniform_buffers[0] = dc.material_ub;
+            descriptor_key.uniform_buffer_sizes[0] = dc.material_ub_size;
+            descriptor_key.uniform_buffer_offsets[0] = dc.material_ub_offset;
+        }
+
+        // 绑定frameUB
+        descriptor_key.uniform_buffers[1] = _bind_frame_uniform_buffer;
+        descriptor_key.uniform_buffer_sizes[1] = _bind_frame_uniform_buffer_size;
+        descriptor_key.uniform_buffer_offsets[1] = _bind_frame_uniform_buffer_offset;
+
+        // 绑定renderableUB
+        descriptor_key.uniform_buffers[2] = dc.renderable_ub;
+        descriptor_key.uniform_buffer_sizes[2] = dc.renderable_ub_size;
+        descriptor_key.uniform_buffer_offsets[2] = dc.renderable_ub_offset;
+
+        // 绑定materialSamplers
+        for (int i = 0; i < MATERIAL_SAMPLER_COUNT; ++i) {
+            if (dc.material_samplers->first != nullptr) {
+                blast::GfxTextureViewDesc texture_view_desc;
+                texture_view_desc.texture = dc.material_samplers->first;
+                texture_view_desc.layer = 0;
+                texture_view_desc.level = 0;
+                descriptor_key.textures_views[i + 4] = _texture_view_cache->GetTextureView(texture_view_desc);
+                descriptor_key.samplers[i + 4] = _sampler_cache->GetSampler(dc.material_samplers->second);
+            }
+        }
+
+        DescriptorBundle descriptor_bundle = _descriptor_cache->GetDescriptor(descriptor_key);
+
+        blast::GfxGraphicsPipelineDesc pipeline_desc = {};
+        pipeline_desc.framebuffer = _bind_fb;
+        pipeline_desc.root_signature = _root_signature;
+        pipeline_desc.vertex_shader = dc.vs;
+        pipeline_desc.pixel_shader = dc.fs;
+        pipeline_desc.vertex_layout = dc.vertex_layout;
+
+        pipeline_desc.depth_state.depth_test = true;
+        pipeline_desc.depth_state.depth_write = true;
+
+        if (dc.render_state.blending_mode == BlendingMode::BLENDING_MODE_OPAQUE) {
+            pipeline_desc.blend_state.src_factors[0] = blast::BLEND_ONE;
+            pipeline_desc.blend_state.dst_factors[0] = blast::BLEND_ZERO;
+            pipeline_desc.blend_state.src_alpha_factors[0] = blast::BLEND_ONE;
+            pipeline_desc.blend_state.dst_alpha_factors[0] = blast::BLEND_ZERO;
+            pipeline_desc.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
+        } else if (dc.render_state.blending_mode == BlendingMode::BLENDING_MODE_TRANSPARENT) {
+            // 半透材质不应该写入深度缓存
+            pipeline_desc.depth_state.depth_write = false;
+
+            // 预乘使用的混合方程
+            pipeline_desc.blend_state.src_factors[0] = blast::BLEND_ONE;
+            pipeline_desc.blend_state.dst_factors[0] = blast::BLEND_ONE_MINUS_SRC_ALPHA;
+            pipeline_desc.blend_state.src_alpha_factors[0] = blast::BLEND_ONE;
+            pipeline_desc.blend_state.dst_alpha_factors[0] = blast::BLEND_ONE_MINUS_SRC_ALPHA;
+            pipeline_desc.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
+
+        } else if (dc.render_state.blending_mode == BlendingMode::BLENDING_MODE_MASKED) {
+            pipeline_desc.blend_state.src_factors[0] = blast::BLEND_ONE;
+            pipeline_desc.blend_state.dst_factors[0] = blast::BLEND_ZERO;
+            pipeline_desc.blend_state.src_alpha_factors[0] = blast::BLEND_ZERO;
+            pipeline_desc.blend_state.dst_alpha_factors[0] = blast::BLEND_ONE;
+            pipeline_desc.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
+        }
+
+        pipeline_desc.rasterizer_state.primitive_topo = dc.topo;
+
+        blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(pipeline_desc);
+        cmd->BindGraphicsPipeline(pipeline);
+        cmd->BindDescriptorSets(_root_signature, 2, descriptor_bundle.handles);
+        cmd->BindVertexBuffer(dc.vb, 0);
+        cmd->BindIndexBuffer(dc.ib, 0, dc.ib_type);
+        cmd->DrawIndexed(dc.ib_count, 1, dc.ib_offset, 0, 0);
     }
 }

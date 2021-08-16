@@ -2,4 +2,4 @@
 
 #include <string>
 
-std::string generateUUID();
+std::string GenerateUUID();

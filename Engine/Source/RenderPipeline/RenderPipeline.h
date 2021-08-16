@@ -1,5 +1,6 @@
 #pragma once
 #include "Renderer/RenderData.h"
+#include "Utility/Flags.h"
 
 namespace gear {
     class Renderer;
@@ -8,6 +9,16 @@ namespace gear {
     class VertexBuffer;
     class UniformBuffer;
     class MaterialInstance;
+
+    struct ViewUniforms {
+        glm::mat4 view_matrix;
+        glm::mat4 proj_matrix;
+    };
+
+    struct RenderableUniforms {
+        glm::mat4 model_matrix;
+        glm::mat4 normal_matrix;
+    };
 
     struct RenderLight {
 
@@ -30,7 +41,9 @@ namespace gear {
     };
 
     struct Renderable {
+        uint32_t renderable_ub_size;
         uint32_t renderable_ub_offset;
+        UniformBuffer* renderable_ub = nullptr;
         UniformBuffer* bone_ub = nullptr;
         std::vector<RenderPrimitive> primitives;
     };
@@ -63,6 +76,10 @@ namespace gear {
         UniformBuffer* _light_ub = nullptr;
 
         // display
-        FramebufferInfo display_fb;
+        FramebufferInfo _display_fb;
+
+        // draw call
+        uint32_t _dc_head = 0;
+        DrawCall _dc_list[10240];
     };
 }
