@@ -177,6 +177,12 @@ namespace gear {
     }
 
     void Renderer::BeginFrame(void* window, uint32_t width, uint32_t height) {
+        _skip_frame = false;
+        if (width == 0 || height == 0) {
+            _skip_frame = true;
+            return;
+        }
+
         if (_window != window || _frame_width != width || _frame_height != height) {
             if (_window != window) {
                 _context->DestroySurface(_surface);
@@ -192,6 +198,7 @@ namespace gear {
 
         _context->AcquireNextImage(_swapchain, _image_acquired_semaphores[_frame_index], nullptr, &_swapchain_image_index);
         if (_swapchain_image_index == -1) {
+            _skip_frame = true;
             return;
         }
         _render_complete_fences[_frame_index]->WaitForComplete();
@@ -201,13 +208,15 @@ namespace gear {
             _using_resources[resource] = _using_resources[resource] - 1;
             if (_using_resources[resource] == 0) {
                 _using_resources.erase(resource);
-                for (auto task : _destroy_task_map) {
-                    if (task.first == resource) {
-                        task.second();
-                        _destroy_task_map.erase(task.first);
+                for (auto iter = _destroy_task_map.begin(); iter!=_destroy_task_map.end();) {
+                    if (iter->first == resource) {
+                        iter->second();
+                        iter = _destroy_task_map.erase(iter);
+                    } else {
+                        iter++;
                     }
                 }
-                
+
                 // 回收暂缓缓存
                 if (find(_stage_buffer_pool.begin(), _stage_buffer_pool.end(), resource) != _stage_buffer_pool.end()) {
                     _usable_stage_buffer_list.push_back((blast::GfxBuffer*)resource);
@@ -215,7 +224,6 @@ namespace gear {
             }
         }
         _frames[_frame_index]->resources.clear();
-
 
         blast::GfxTexture* color_rt = _swapchain->GetColorRenderTarget(_frame_index);
         blast::GfxTexture* depth_rt = _swapchain->GetDepthRenderTarget(_frame_index);
@@ -255,6 +263,10 @@ namespace gear {
     }
 
     void Renderer::EndFrame() {
+        if (_skip_frame) {
+            return;
+        }
+
         blast::GfxTexture* color_rt = _swapchain->GetColorRenderTarget(_frame_index);
         blast::GfxTexture* depth_rt = _swapchain->GetDepthRenderTarget(_frame_index);
         {
@@ -310,8 +322,9 @@ namespace gear {
     blast::GfxBuffer* Renderer::AllocStageBuffer(uint32_t size) {
         for (auto iter = _usable_stage_buffer_list.begin(); iter != _usable_stage_buffer_list.end(); iter++) {
             if ((*iter)->GetSize() >= size) {
+                blast::GfxBuffer* buffer = *iter;
                 _usable_stage_buffer_list.erase(iter);
-                return *iter;
+                return buffer;
             }
         }
         // 没有合适的buffer，创建一个并存到pool里面
@@ -321,6 +334,7 @@ namespace gear {
         buffer_desc.usage = blast::RESOURCE_USAGE_CPU_TO_GPU;
         blast::GfxBuffer* staging_buffer = _context->CreateBuffer(buffer_desc);
         _stage_buffer_pool.push_back(staging_buffer);
+        return staging_buffer;
     }
 
     void Renderer::Destroy(blast::GfxBuffer* buffer) {
@@ -373,7 +387,8 @@ namespace gear {
         blast::GfxFramebuffer* fb = _framebuffer_cache->GetFramebuffer(framebuffer_desc);
         cmd->BindFramebuffer(fb);
         cmd->ClearFramebuffer(fb, info.clear_value);
-
+        cmd->SetViewport(0.0, 0.0, info.width, info.height);
+        cmd->SetScissor(0, 0, info.width, info.height);
         _bind_fb = fb;
     }
 

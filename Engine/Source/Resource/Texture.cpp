@@ -63,47 +63,53 @@ namespace gear {
     }
 
     void Texture::SetData(uint32_t i, void* data, uint32_t size) {
+        Renderer* renderer = gEngine.GetRenderer();
+
         uint8_t* dst = _datas[i];
         uint8_t* src = (uint8_t*)data;
         memcpy(dst, src, size);
 
-        Renderer* renderer = gEngine.GetRenderer();
-        renderer->ExecRenderTask([this, renderer](blast::GfxCommandBuffer* cmd) {
-            uint32_t image_size = _width * _height * _depth * blast::GetFormatStride(_format);
-            uint32_t total_size = image_size * _array;
-            blast::GfxBuffer* staging_buffer = renderer->AllocStageBuffer(total_size);
-            uint32_t offset = 0;
-            for (int i = 0; i < _array; ++i) {
-                staging_buffer->WriteData(offset, image_size, _datas[i]);
-                offset += image_size;
-            }
+        blast::GfxTexture* texture = _texture;
+        uint32_t array = _array;
+        uint32_t image_size = _width * _height * _depth * blast::GetFormatStride(_format);
+        uint32_t total_size = image_size * _array;
+        blast::GfxBuffer* staging_buffer = renderer->AllocStageBuffer(total_size);
+        uint32_t offset = 0;
+        for (int i = 0; i < _array; ++i) {
+            staging_buffer->WriteData(offset, image_size, _datas[i]);
+            offset += image_size;
+        }
+
+        renderer->ExecRenderTask([renderer, texture, staging_buffer, image_size, array](blast::GfxCommandBuffer* cmd) {
+
+            renderer->UseResource(texture);
             renderer->UseResource(staging_buffer);
 
             {
                 // 设置纹理为读写状态
                 blast::GfxTextureBarrier barrier;
-                barrier.texture = _texture;
+                barrier.texture = texture;
                 barrier.new_state = blast::RESOURCE_STATE_COPY_DEST;
                 cmd->SetBarrier(0, nullptr, 1, &barrier);
             }
 
-            offset = 0;
+            uint32_t offset = 0;
             blast::GfxCopyToImageRange range;
             range.buffer_offset = 0;
             range.layer = 0;
             range.level = 0;
-            for (int i = 0; i < _array; ++i) {
+            for (int i = 0; i < array; ++i) {
                 range.buffer_offset = offset;
                 range.layer = i;
                 range.level = 0;
-                cmd->CopyToImage(staging_buffer, _texture, range);
+                cmd->CopyToImage(staging_buffer, texture, range);
                 offset += image_size;
             }
 
             {
                 // 设置纹理为Shader可读状态
                 blast::GfxTextureBarrier barrier;
-                barrier.texture = _texture;
+                barrier.texture = texture;
                 barrier.new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
                 cmd->SetBarrier(0, nullptr, 1, &barrier);
             }

@@ -13,5 +13,5 @@
             "type": "sampler_2d"
         }
     ],
-    "fragment_code": "void MaterialFragment(inout MaterialFragmentInputs material) {\n    material.base_color = vertex_color * texture(albedo_texture, vertex_uv01.xy);\n    material.base_color.rgb *= material.base_color.a;\n}"
+    "fragment_code": "void ProcessMaterialFragmentParams(inout MaterialFragmentParams params) {\n    params.base_color = vertex_color * texture(albedo_texture, vertex_uv01.xy);\n    params.base_color.rgb *= params.base_color.a;\n }"
 }

@@ -118,8 +118,8 @@ namespace gear {
                 }
 
                 // 更新renderable_ub
-                _view_ub->Update(&model_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
-                _view_ub->Update(&normal_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
+                _renderable_ub->Update(&model_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, model_matrix), sizeof(glm::mat4));
+                _renderable_ub->Update(&normal_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, normal_matrix), sizeof(glm::mat4));
                 _num_renderables++;
             }
         }
@@ -145,7 +145,12 @@ namespace gear {
                 _dc_list[common_dc_head + num_common_dc].renderable_ub_size = rb->renderable_ub_size;
                 _dc_list[common_dc_head + num_common_dc].renderable_ub_offset = rb->renderable_ub_offset;
 
-                _dc_list[common_dc_head + num_common_dc].bone_ub = rb->bone_ub->GetHandle();
+                if (rb->bone_ub) {
+                    _dc_list[common_dc_head + num_common_dc].bone_ub = rb->bone_ub->GetHandle();
+                } else {
+                    _dc_list[common_dc_head + num_common_dc].bone_ub = nullptr;
+                }
+
 
                 _dc_list[common_dc_head + num_common_dc].vertex_layout = rp->vb->GetVertexLayout();
                 _dc_list[common_dc_head + num_common_dc].vb = rp->vb->GetHandle();
@@ -164,9 +169,15 @@ namespace gear {
                 _dc_list[common_dc_head + num_common_dc].vs = rp->mi->GetMaterial()->GetVertShader(material_variant);
                 _dc_list[common_dc_head + num_common_dc].fs = rp->mi->GetMaterial()->GetFragShader(material_variant);
 
-                _dc_list[common_dc_head + num_common_dc].material_ub = rp->mi->GetUniformBuffer()->GetHandle();
-                _dc_list[common_dc_head + num_common_dc].material_ub_size = rp->mi->GetUniformBuffer()->GetSize();
-                _dc_list[common_dc_head + num_common_dc].material_ub_offset = 0;
+                if (rp->mi->GetUniformBuffer()) {
+                    _dc_list[common_dc_head + num_common_dc].material_ub = rp->mi->GetUniformBuffer()->GetHandle();
+                    _dc_list[common_dc_head + num_common_dc].material_ub_size = rp->mi->GetUniformBuffer()->GetSize();
+                    _dc_list[common_dc_head + num_common_dc].material_ub_offset = 0;
+                } else {
+                    _dc_list[common_dc_head + num_common_dc].material_ub = nullptr;
+                    _dc_list[common_dc_head + num_common_dc].material_ub_size = 0;
+                    _dc_list[common_dc_head + num_common_dc].material_ub_offset = 0;
+                }
 
                 for (uint32_t k = 0; k < rp->mi->GetGfxSamplerGroup().size(); ++k) {
                     std::get<0>(_dc_list[common_dc_head + num_common_dc].material_samplers[k]) = rp->mi->GetGfxSamplerGroup().at(k).first->GetTexture();

@@ -40,7 +40,7 @@ public:
         data.order = order;
         data.func = func;
         _event_datas.push_back(data);
-        return _event_datas;
+        return data.handle;
     }
 
     void Unbind(EventHandle handle) {

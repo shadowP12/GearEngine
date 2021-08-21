@@ -13,9 +13,11 @@ namespace gear {
 
     void Scene::AddEntity(Entity* entity) {
         auto iter = find(_entities.begin( ), _entities.end( ), entity);
-        if (iter == _entities.end()) {
-            _entities.push_back(*iter);
+        if (iter != _entities.end()) {
+            return;
         }
+
+        _entities.push_back(entity);
     }
 
     void Scene::RemoveEntity(Entity* entity) {

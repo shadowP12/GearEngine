@@ -30,8 +30,8 @@ namespace gear {
                 ProcessShadingModel(builder, doc["state"]["shading_model"].GetString());
             }
 
-            if (doc["State"].HasMember("blending_mode")) {
-                ProcessShadingModel(builder, doc["state"]["blending_mode"].GetString());
+            if (doc["state"].HasMember("blending_mode")) {
+                ProcessBlendingModel(builder, doc["state"]["blending_mode"].GetString());
             }
         }
 
@@ -99,14 +99,14 @@ namespace gear {
         if (doc.HasMember("vertex_code")) {
             vertex_code = doc["vertex_code"].GetString();
         } else {
-            vertex_code = "void MaterialVertex(inout MaterialVertexInputs material) {}\n";
+            vertex_code = "void ProcessMaterialVertexParams(inout MaterialVertexParams params) {}\n";
         }
 
         std::string fragment_code;
         if (doc.HasMember("fragment_code")) {
             fragment_code = doc["fragment_code"].GetString();
         } else {
-            fragment_code = "void MaterialFragment(inout MaterialFragmentInputs material) {}\n";
+            fragment_code = "void ProcessMaterialFragmentParams(inout MaterialFragmentParams params) {}\n";
         }
 
         for (auto& uniform : uniforms) {
@@ -207,7 +207,7 @@ namespace gear {
                     shader_desc.stage = blast::SHADER_STAGE_VERT;
                     shader_desc.bytes = compile_result.bytes;
                     blast::GfxShader* frag_shader = gEngine.GetRenderer()->GetContext()->CreateShader(shader_desc);
-                    builder.AddVertShader(key, frag_shader);
+                    builder.AddFragShader(key, frag_shader);
                 } else {
                     LOGE("\n %s \n", fs.str().c_str());
                 }

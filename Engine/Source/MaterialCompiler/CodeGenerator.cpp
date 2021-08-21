@@ -90,9 +90,9 @@ namespace gear {
 
     std::stringstream& CodeGenerator::GenerateCommonMaterial(std::stringstream& out, blast::ShaderStage stage) const {
         if (stage == blast::SHADER_STAGE_VERT) {
-            out << MATERIAL_INPUTS_VS_DATA << "\n";
+            out << MATERIAL_PARAMS_VS_DATA << "\n";
         } else if (stage == blast::SHADER_STAGE_FRAG) {
-            out << MATERIAL_INPUTS_FS_DATA << "\n";
+            out << MATERIAL_PARAMS_FS_DATA << "\n";
         }
         return out;
     }
@@ -148,7 +148,7 @@ namespace gear {
         uint32_t slot = 4;
         for (auto& sampler : samplers) {
             out << "layout(set = 1, binding = " << slot << ") ";
-            out << "uniform " << sampler.first << " " << dim_to_str.at(sampler.second) << ";\n";
+            out << "uniform " << dim_to_str.at(sampler.second) << " " << sampler.first << ";\n";
             slot++;
         }
         return out;

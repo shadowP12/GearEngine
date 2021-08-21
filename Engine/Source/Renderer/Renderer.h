@@ -97,6 +97,7 @@ namespace gear {
         blast::GfxCommandBufferPool* _cmd_pool = nullptr;
         blast::GfxCommandBuffer** _cmds = nullptr;
         blast::GfxRootSignature* _root_signature = nullptr;
+        bool _skip_frame = false;
         uint32_t  _swapchain_image_index;
         uint32_t _num_images = 0;
         uint32_t _frame_index = 0;

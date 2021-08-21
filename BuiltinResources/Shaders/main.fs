@@ -1,10 +1,11 @@
 layout(location = 0) out vec4 fragColor;
 
 void main() {
-    MaterialFragmentInputs inputs;
-    initMaterialFragment(inputs);
+    MaterialFragmentParams material_params;
 
-    materialFragment(inputs);
-    // todo
-    fragColor = inputs.base_color;
+    InitMaterialFragmentParams(material_params);
+
+    ProcessMaterialFragmentParams(material_params);
+    
+    fragColor = material_params.base_color;
 }

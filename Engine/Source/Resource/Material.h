@@ -168,6 +168,8 @@ namespace gear {
 
         void SetTexture(const std::string& name, Texture* texture, const blast::GfxSamplerDesc& sampler_desc);
 
+        void SetScissor(float x, float y, float w, float h);
+
     private:
         MaterialInstance(Material* material);
 

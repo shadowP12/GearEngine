@@ -25,19 +25,23 @@ namespace gear {
 
     void GpuBuffer::Update(void* data, uint32_t offset, uint32_t size) {
         Renderer* renderer = gEngine.GetRenderer();
-        renderer->ExecRenderTask([this, renderer, offset, size, data](blast::GfxCommandBuffer* cmd) {
-            blast::GfxBuffer* staging_buffer = renderer->AllocStageBuffer(size);
-            staging_buffer->WriteData(offset, size, data);
+
+        blast::GfxBuffer* staging_buffer = renderer->AllocStageBuffer(size);
+        staging_buffer->WriteData(0, size, data);
+
+        blast::GfxBuffer* buffer = _buffer;
+        renderer->ExecRenderTask([renderer, buffer, staging_buffer, size, offset](blast::GfxCommandBuffer* cmd) {
+            renderer->UseResource(buffer);
             renderer->UseResource(staging_buffer);
 
             blast::GfxCopyToBufferRange range;
             range.size = size;
             range.src_offset = 0;
-            range.dst_offset = 0;
-            cmd->CopyToBuffer(staging_buffer, _buffer, range);
+            range.dst_offset = offset;
+            cmd->CopyToBuffer(staging_buffer, buffer, range);
 
             blast::GfxBufferBarrier barrier;
-            barrier.buffer = _buffer;
+            barrier.buffer = buffer;
             barrier.new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
             cmd->SetBarrier(1, &barrier, 0, nullptr);
         });

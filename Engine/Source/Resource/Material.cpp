@@ -156,6 +156,10 @@ namespace gear {
     }
 
     UniformBuffer* MaterialInstance::GetUniformBuffer() {
+        if (!_material_ub) {
+            return nullptr;
+        }
+
         if (_storage_dirty) {
             _storage_dirty = false;
             _material_ub->Update(_storage, 0, _storage_size);
