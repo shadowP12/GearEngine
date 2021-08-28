@@ -127,12 +127,12 @@ namespace gear {
             size_t padding = (alignment - (offset % alignment)) % alignment;
             offset += padding;
 
-            std::get<1>(variable) = offset;
+            std::get<1>(variable) = offset * sizeof(uint32_t);
 
             offset += stride;
             _uniforms[uniform.first] = variable;
         }
-        _storage_size = offset;
+        _storage_size = offset * sizeof(uint32_t);
         _storage_dirty = true;
         if (_storage_size > 0) {
             _material_ub = new UniformBuffer(_storage_size);
@@ -203,7 +203,8 @@ namespace gear {
         auto iter = _uniforms.find(name);
         if (iter != _uniforms.end()) {
             _storage_dirty = true;
-            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(glm::vec4));
+            uint32_t offset = std::get<1>(iter->second);
+            memcpy(_storage + offset, &value, sizeof(glm::vec4));
         }
     }
 

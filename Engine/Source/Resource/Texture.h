@@ -28,7 +28,7 @@ namespace gear {
 
             void SetFormat(blast::Format format);
 
-            Texture* build();
+            Texture* Build();
 
         private:
             friend class Texture;

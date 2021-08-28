@@ -39,10 +39,20 @@ namespace gear {
 
         float GetFar();
 
+        void SetMain(bool enable);
+
+        bool GetMain();
+
+        void SetDisplay(bool enable);
+
+        bool GetDisplay();
+
     private:
         float _near = 0.0f;
         float _far = 100.0f;
         glm::mat4 _proj_matrix;
+        bool _is_main = true;
+        bool _is_display = true;
         RenderTarget* _render_target = nullptr;
     };
 }

@@ -250,6 +250,12 @@ namespace gear {
         // 在每一帧的开始清空当前fb
         FramebufferInfo screen_fb = {};
         screen_fb.clear_value.flags = blast::CLEAR_ALL;
+        screen_fb.clear_value.color[0] = 0.2f;
+        screen_fb.clear_value.color[1] = 0.3f;
+        screen_fb.clear_value.color[2] = 0.8f;
+        screen_fb.clear_value.color[3] = 1.0f;
+        screen_fb.clear_value.depth = 1.0f;
+        screen_fb.clear_value.stencil = 0;
         screen_fb.width = _frame_width;
         screen_fb.height = _frame_height;
         std::get<0>(screen_fb.colors[0]) = color_rt;
@@ -356,6 +362,10 @@ namespace gear {
     }
 
     void Renderer::BindFramebuffer(const FramebufferInfo& info) {
+        if (_skip_frame) {
+            return;
+        }
+
         blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
 
         blast::GfxClearValue clear_value;
@@ -393,6 +403,10 @@ namespace gear {
     }
 
     void Renderer::UnbindFramebuffer() {
+        if (_skip_frame) {
+            return;
+        }
+
         blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
         cmd->UnbindFramebuffer();
     }
@@ -404,6 +418,10 @@ namespace gear {
     }
 
     void Renderer::ExecuteDrawCall(const DrawCall& dc) {
+        if (_skip_frame) {
+            return;
+        }
+
         blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
 
         // 标记使用的外部资源

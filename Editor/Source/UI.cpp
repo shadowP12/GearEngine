@@ -191,7 +191,7 @@ namespace ImGui {
         tex_builder.SetWidth(width);
         tex_builder.SetHeight(height);
         tex_builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
-        g_ui_texture = tex_builder.build();
+        g_ui_texture = tex_builder.Build();
         g_ui_texture->SetData(0, pixels, size);
 
         // 加载材质

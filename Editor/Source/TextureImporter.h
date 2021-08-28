@@ -5,11 +5,4 @@ namespace gear {
     class Texture;
 }
 
-class TextureImporter {
-public:
-    TextureImporter();
-
-    ~TextureImporter();
-
-    gear::Texture* importTexture2D(const std::string&);
-};
+gear::Texture* ImportTexture2D(const std::string&);

@@ -54,4 +54,16 @@ namespace gear {
     float CCamera::GetFar() {
         return _far;
     }
+
+    void CCamera::SetMain(bool enable) {
+        _is_main = enable;
+    }
+
+    bool CCamera::GetMain() { return _is_main; }
+
+    void CCamera::SetDisplay(bool enable) {
+        _is_display = enable;
+    }
+
+    bool CCamera::GetDisplay() { return _is_display; }
 }

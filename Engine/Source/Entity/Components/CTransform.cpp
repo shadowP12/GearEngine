@@ -52,7 +52,31 @@ namespace gear {
         return _children;
     }
 
+    void CTransform::SetPosition(const glm::vec3& pos) {
+        _translation = pos;
+        UpdateLocalTransform();
+        UpdateTransform();
+    }
+
+    void CTransform::SetScale(const glm::vec3& scale) {
+        _scale = scale;
+        UpdateLocalTransform();
+        UpdateTransform();
+    }
+
+    void CTransform::SetEuler(const glm::vec3& euler) {
+        _euler = euler;
+        _rot = glm::quat(euler);
+        UpdateLocalTransform();
+        UpdateTransform();
+    }
+
     void CTransform::SetTransform(const glm::mat4& local_transform) {
+        glm::vec3 skew;
+        glm::vec4 perspective;
+        glm::decompose(local_transform, _scale, _rot, _translation, skew,perspective);
+        _euler = glm::eulerAngles(_rot) * 3.14159f / 180.f;
+
         _local = local_transform;
         UpdateTransform();
     }
@@ -65,6 +89,18 @@ namespace gear {
         return _world;
     }
 
+    const glm::vec3& CTransform::GetRightVector() {
+        return GetAxisX(_world);
+    }
+
+    const glm::vec3& CTransform::GetUpVector() {
+        return GetAxisY(_world);
+    }
+
+    const glm::vec3& CTransform::GetFrontVector() {
+        return GetAxisZ(_world);
+    }
+
     void CTransform::UpdateTransform() {
         _world = _local;
         if (_parent) {
@@ -74,5 +110,13 @@ namespace gear {
         for (int i = 0; i < _children.size(); ++i) {
             _children[i]->GetComponent<CTransform>()->UpdateTransform();
         }
+    }
+
+    void CTransform::UpdateLocalTransform() {
+        glm::mat4 r, t, s;
+        r = glm::toMat4(_rot);
+        t = glm::translate(glm::mat4(1.0), _translation);
+        s = glm::scale(glm::mat4(1.0), _scale);
+        _local = t * r * s;
     }
 }

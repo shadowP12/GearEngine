@@ -1,4 +1,6 @@
 #include "UI.h"
+#include "GltfImporter.h"
+#include "CameraController.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
@@ -7,6 +9,9 @@
 #include <Entity/Entity.h>
 #include <Entity/Scene.h>
 #include <Entity/EntityManager.h>
+#include <Entity/Components/CCamera.h>
+#include <Entity/Components/CTransform.h>
+#include <Entity/Components/CRenderable.h>
 #include <Resource/GpuBuffer.h>
 #include <Renderer/Renderer.h>
 #include <RenderPipeline/RenderPipeline.h>
@@ -26,9 +31,32 @@ void MouseScrollCB(GLFWwindow * window, double offset_x, double offset_y) {
 
 int main()
 {
-    gear::Scene* scene = gear::gEngine.CreateScene();
-    gear::RenderPipeline* render_pipeline = gear::gEngine.CreateRenderPipeline();
-    render_pipeline->SetScene(scene);
+    gear::Entity* main_camera = gear::gEngine.GetEntityManager()->CreateEntity();
+    main_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
+    main_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(6.0f, 6.0f, 12.0f));
+    main_camera->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(-0.358f, 0.46f, 0.0f));
+    main_camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 1000.0);
+
+    gear::Entity* debug_camera = gear::gEngine.GetEntityManager()->CreateEntity();
+    debug_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
+    debug_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 0.0f, 12.0f));
+    debug_camera->AddComponent<gear::CCamera>()->SetMain(false);
+    debug_camera->GetComponent<gear::CCamera>()->SetDisplay(false);
+    debug_camera->GetComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 1000.0);
+
+    gear::Scene* editor_scene = gear::gEngine.CreateScene();
+    gear::RenderPipeline* editor_pipeline = gear::gEngine.CreateRenderPipeline();
+    editor_pipeline->SetScene(editor_scene);
+
+    GltfAsset* gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/test.gltf");
+    for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
+        editor_scene->AddEntity(gltf_asset->entities[i]);
+    }
+    editor_scene->AddEntity(main_camera);
+    editor_scene->AddEntity(debug_camera);
+
+    CameraController* camera_controller = new CameraController();
+    camera_controller->SetCamera(main_camera);
 
     // 初始化glfw
     glfwInit();
@@ -52,9 +80,13 @@ int main()
         // 在此插入ui代码
         bool show_demo_window = true;
         ImGui::ShowDemoWindow(&show_demo_window);
+
+
+
         ImGui::EndUI();
 
         gear::gEngine.GetRenderer()->BeginFrame(glfwGetWin32Window(window), window_width, window_height);
+        editor_pipeline->Exec();
         ui_pipeline->Exec();
         gear::gEngine.GetRenderer()->EndFrame();
 
@@ -68,7 +100,12 @@ int main()
     // 销毁glfw
     glfwTerminate();
 
-    gear::gEngine.DestroyScene(scene);
-    gear::gEngine.DestroyRenderPipeline(render_pipeline);
+    SAFE_DELETE(camera_controller);
+
+    DestroyGltfAsset(gltf_asset);
+    gear::gEngine.DestroyScene(editor_scene);
+    gear::gEngine.GetEntityManager()->DestroyEntity(main_camera);
+    gear::gEngine.GetEntityManager()->DestroyEntity(debug_camera);
+    gear::gEngine.DestroyRenderPipeline(editor_pipeline);
     return 0;
 }

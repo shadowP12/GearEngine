@@ -27,7 +27,7 @@ namespace gear {
         _format = format;
     }
 
-    Texture * Texture::Builder::build() {
+    Texture * Texture::Builder::Build() {
         return new Texture(this);
     }
 

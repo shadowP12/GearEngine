@@ -12,7 +12,7 @@
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
 
-#define MAX_NUM_VIEWS 1
+#define MAX_NUM_VIEWS 2
 
 namespace gear {
     RenderPipeline::RenderPipeline() {
@@ -62,36 +62,43 @@ namespace gear {
                 if (_num_views < MAX_NUM_VIEWS) {
                     CCamera* ccamera = entity->GetComponent<CCamera>();
 
-                    // 设置display_fb
-                    if (ccamera->GetRenderTarget() == nullptr) {
-                        _display_fb.clear_value.flags = blast::CLEAR_NONE;
-                        _display_fb.width = renderer->GetWidth();
-                        _display_fb.height = renderer->GetHeight();
-                        std::get<0>(_display_fb.colors[0]) = renderer->GetColor();
-                        std::get<1>(_display_fb.colors[0]) = 0;
-                        std::get<2>(_display_fb.colors[0]) = 0;
-                        std::get<0>(_display_fb.depth_stencil) = renderer->GetDepthStencil();
-                        std::get<1>(_display_fb.depth_stencil) = 0;
-                        std::get<2>(_display_fb.depth_stencil) = 0;
-                    } else {
-                        _display_fb.clear_value.flags = blast::CLEAR_NONE;
-                        _display_fb.width = ccamera->GetRenderTarget()->GetWidth();
-                        _display_fb.height = ccamera->GetRenderTarget()->GetHeight();
-                        for (int i = 0; i < TARGET_COUNT; ++i) {
-                            auto c = ccamera->GetRenderTarget()->GetColor(i);
-                            std::get<0>(_display_fb.colors[i]) = std::get<0>(c)->GetTexture();
-                            std::get<1>(_display_fb.colors[i]) = std::get<1>(c);
-                            std::get<2>(_display_fb.colors[i]) = std::get<2>(c);
+                    if (ccamera->GetDisplay()) {
+                        // 设置display_fb
+                        if (ccamera->GetRenderTarget() == nullptr) {
+                            _display_fb.clear_value.flags = blast::CLEAR_NONE;
+                            _display_fb.width = renderer->GetWidth();
+                            _display_fb.height = renderer->GetHeight();
+                            std::get<0>(_display_fb.colors[0]) = renderer->GetColor();
+                            std::get<1>(_display_fb.colors[0]) = 0;
+                            std::get<2>(_display_fb.colors[0]) = 0;
+                            std::get<0>(_display_fb.depth_stencil) = renderer->GetDepthStencil();
+                            std::get<1>(_display_fb.depth_stencil) = 0;
+                            std::get<2>(_display_fb.depth_stencil) = 0;
+                        } else {
+                            _display_fb.clear_value.flags = blast::CLEAR_NONE;
+                            _display_fb.width = ccamera->GetRenderTarget()->GetWidth();
+                            _display_fb.height = ccamera->GetRenderTarget()->GetHeight();
+                            for (int i = 0; i < TARGET_COUNT; ++i) {
+                                auto c = ccamera->GetRenderTarget()->GetColor(i);
+                                std::get<0>(_display_fb.colors[i]) = std::get<0>(c)->GetTexture();
+                                std::get<1>(_display_fb.colors[i]) = std::get<1>(c);
+                                std::get<2>(_display_fb.colors[i]) = std::get<2>(c);
+                            }
+                            auto d = ccamera->GetRenderTarget()->GetDepthStencil();
+                            std::get<0>(_display_fb.depth_stencil) = std::get<0>(d)->GetTexture();
+                            std::get<1>(_display_fb.depth_stencil) = std::get<1>(d);
+                            std::get<2>(_display_fb.depth_stencil) = std::get<2>(d);
                         }
-                        auto d = ccamera->GetRenderTarget()->GetDepthStencil();
-                        std::get<0>(_display_fb.depth_stencil) = std::get<0>(d)->GetTexture();
-                        std::get<1>(_display_fb.depth_stencil) = std::get<1>(d);
-                        std::get<2>(_display_fb.depth_stencil) = std::get<2>(d);
+                        glm::mat4 view_matrix = ccamera->GetViewMatrix();
+                        glm::mat4 proj_matrix = ccamera->GetProjMatrix();
+                        _view_ub->Update(&view_matrix, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
+                        _view_ub->Update(&proj_matrix, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
                     }
-                    glm::mat4 view_matrix = ccamera->GetViewMatrix();
-                    glm::mat4 proj_matrix = ccamera->GetProjMatrix();
-                    _view_ub->Update(&view_matrix, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
-                    _view_ub->Update(&proj_matrix, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
+
+                    if (ccamera->GetMain()) {
+                        //
+                    }
+
                     _num_views++;
                 }
             }

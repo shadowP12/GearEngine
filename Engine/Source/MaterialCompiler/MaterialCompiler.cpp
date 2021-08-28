@@ -19,6 +19,7 @@ namespace gear {
     Material* MaterialCompiler::Compile(const std::string& code) {
         rapidjson::Document doc;
         if(doc.Parse(code.data()).HasParseError()) {
+            LOGE("\n %s \n", code.c_str());
             return nullptr;
         }
 
@@ -76,6 +77,8 @@ namespace gear {
                     { "mat4", blast::UNIFORM_MAT4 },
             };
             for(uint32_t i = 0; i < doc["uniforms"].Size(); i++) {
+                std::string s = doc["uniforms"][i]["name"].GetString();
+                std::string t = doc["uniforms"][i]["type"].GetString();
                 uniforms[doc["uniforms"][i]["name"].GetString()] = str_to_enum.at(doc["uniforms"][i]["type"].GetString());
             }
         }

@@ -19,17 +19,17 @@ inline glm::vec3 vectorLerp(const glm::vec3& from, const glm::vec3& to, float t)
     return from+(to-from)*t;
 }
 
-inline glm::vec3 getAxisX(const glm::mat4& mat)
+inline glm::vec3 GetAxisX(const glm::mat4& mat)
 {
 	return glm::vec3(mat[0][0], mat[0][1], mat[0][2]);
 }
 
-inline glm::vec3 getAxisY(const glm::mat4& mat)
+inline glm::vec3 GetAxisY(const glm::mat4& mat)
 {
 	return glm::vec3(mat[1][0], mat[1][1], mat[1][2]);
 }
 
-inline glm::vec3 getAxisZ(const glm::mat4& mat)
+inline glm::vec3 GetAxisZ(const glm::mat4& mat)
 {
 	return glm::vec3(mat[2][0], mat[2][1], mat[2][2]);
 }

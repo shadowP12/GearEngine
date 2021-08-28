@@ -126,7 +126,7 @@ namespace gear {
         // 从0开始
         out << "layout(std140, set = 0, binding = 0) uniform " << "MaterialUniforms" << " {\n";
         for (auto& uniform : uniforms) {
-            out << "    " << uniform.first << " " << type_to_str.at(uniform.second) << ";\n";
+            out << "    " << type_to_str.at(uniform.second) << " " << uniform.first << ";\n";
         }
         out << "} material_uniforms;\n";
         return out;
