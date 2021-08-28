@@ -82,8 +82,8 @@ namespace gear {
 
         renderer->ExecRenderTask([renderer, texture, staging_buffer, image_size, array](blast::GfxCommandBuffer* cmd) {
 
-            renderer->UseResource(texture);
-            renderer->UseResource(staging_buffer);
+            renderer->UseCopy(texture);
+            renderer->UseCopy(staging_buffer);
 
             {
                 // 设置纹理为读写状态

@@ -31,8 +31,8 @@ namespace gear {
 
         blast::GfxBuffer* buffer = _buffer;
         renderer->ExecRenderTask([renderer, buffer, staging_buffer, size, offset](blast::GfxCommandBuffer* cmd) {
-            renderer->UseResource(buffer);
-            renderer->UseResource(staging_buffer);
+            renderer->UseCopy(buffer);
+            renderer->UseCopy(staging_buffer);
 
             blast::GfxCopyToBufferRange range;
             range.size = size;

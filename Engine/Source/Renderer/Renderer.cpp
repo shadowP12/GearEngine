@@ -24,6 +24,10 @@ namespace gear {
         cmd_pool_desc.transient = false;
         _cmd_pool = _context->CreateCommandBufferPool(cmd_pool_desc);
 
+        // Copy Command
+        _copy_fence = _context->CreateFence();
+        _copy_cmd = _cmd_pool->AllocBuffer(false);
+
         // 创建RootSignature
         blast::GfxRootSignatureDesc root_signature_desc;
         for (int i = 0; i < UBUFFER_BINDING_COUNT; ++i) {
@@ -84,6 +88,9 @@ namespace gear {
         SAFE_DELETE_ARRAY(_render_complete_semaphores);
         SAFE_DELETE_ARRAY(_frames);
 
+        _cmd_pool->DeleteBuffer(_copy_cmd);
+        _context->DestroyFence(_copy_fence);
+
         _context->DestroyCommandBufferPool(_cmd_pool);
         _context->DestroySwapchain(_swapchain);
         _context->DestroySurface(_surface);
@@ -99,22 +106,24 @@ namespace gear {
         }
         _queue->WaitIdle();
 
-        // 处理资源
-        for (auto resource : _using_resources) {
-            for (auto task : _destroy_task_map) {
-                if (task.first == resource.first) {
-                    task.second();
-                    _destroy_task_map.erase(task.first);
+        // 处理之前绑定在渲染命令的资源
+        for (uint32_t i = 0; i < _num_images; i++) {
+            for (auto resource : _frames[i]->resources) {
+                _using_resources[resource] = _using_resources[resource] - 1;
+                if (_using_resources[resource] == 0) {
+                    _using_resources.erase(resource);
+                    for (auto iter = _destroy_task_map.begin(); iter!=_destroy_task_map.end();) {
+                        if (iter->first == resource) {
+                            iter->second();
+                            iter = _destroy_task_map.erase(iter);
+                        } else {
+                            iter++;
+                        }
+                    }
                 }
             }
-
-            // 回收暂缓缓存
-            auto iter = find(_stage_buffer_pool.begin(), _stage_buffer_pool.end(), resource.first);
-            if (iter != _stage_buffer_pool.end()) {
-                _usable_stage_buffer_list.push_back((blast::GfxBuffer*)resource.first);
-            }
+            _frames[i]->resources.clear();
         }
-        _using_resources.clear();
 
         blast::GfxSwapchain* old_swapchain = _swapchain;
         blast::GfxSwapchainDesc swapchain_desc;
@@ -177,6 +186,47 @@ namespace gear {
     }
 
     void Renderer::BeginFrame(void* window, uint32_t width, uint32_t height) {
+        _copy_fence->WaitForComplete();
+        // 处理之前绑定在Copy命令的资源
+        for (auto resource : _copy_resources.resources) {
+            _using_resources[resource] = _using_resources[resource] - 1;
+            if (_using_resources[resource] == 0) {
+                _using_resources.erase(resource);
+                for (auto iter = _destroy_task_map.begin(); iter!=_destroy_task_map.end();) {
+                    if (iter->first == resource) {
+                        iter->second();
+                        iter = _destroy_task_map.erase(iter);
+                    } else {
+                        iter++;
+                    }
+                }
+
+                // 回收暂缓缓存
+                if (find(_stage_buffer_pool.begin(), _stage_buffer_pool.end(), resource) != _stage_buffer_pool.end()) {
+                    _usable_stage_buffer_list.push_back((blast::GfxBuffer*)resource);
+                }
+            }
+        }
+        _copy_resources.resources.clear();
+
+        // 处理Copy任务
+        _copy_cmd->Begin();
+        while (_render_task_queue.size() > 0) {
+            auto task = _render_task_queue.front();
+            task(_copy_cmd);
+            _render_task_queue.pop();
+        }
+        _copy_cmd->End();
+        blast::GfxSubmitInfo submit_info;
+        submit_info.num_cmd_bufs = 1;
+        submit_info.cmd_bufs = &_copy_cmd;
+        submit_info.signal_fence = _copy_fence;
+        submit_info.num_wait_semaphores = 0;
+        submit_info.wait_semaphores = nullptr;
+        submit_info.num_signal_semaphores = 0;
+        submit_info.signal_semaphores = nullptr;
+        _queue->Submit(submit_info);
+
         _skip_frame = false;
         if (width == 0 || height == 0) {
             _skip_frame = true;
@@ -203,7 +253,7 @@ namespace gear {
         }
         _render_complete_fences[_frame_index]->WaitForComplete();
 
-        // 处理资源
+        // 处理之前绑定在渲染命令的资源
         for (auto resource : _frames[_frame_index]->resources) {
             _using_resources[resource] = _using_resources[resource] - 1;
             if (_using_resources[resource] == 0) {
@@ -216,11 +266,6 @@ namespace gear {
                         iter++;
                     }
                 }
-
-                // 回收暂缓缓存
-                if (find(_stage_buffer_pool.begin(), _stage_buffer_pool.end(), resource) != _stage_buffer_pool.end()) {
-                    _usable_stage_buffer_list.push_back((blast::GfxBuffer*)resource);
-                }
             }
         }
         _frames[_frame_index]->resources.clear();
@@ -229,13 +274,6 @@ namespace gear {
         blast::GfxTexture* depth_rt = _swapchain->GetDepthRenderTarget(_frame_index);
 
         _cmds[_frame_index]->Begin();
-
-        // 处理渲染任务
-        while (_render_task_queue.size() > 0) {
-            auto task = _render_task_queue.front();
-            task(_cmds[_frame_index]);
-            _render_task_queue.pop();
-        }
 
         {
             // 设置交换链RT为可写状态
@@ -321,6 +359,14 @@ namespace gear {
         auto iter = _frames[_frame_index]->resources.find(resource);
         if(iter == _frames[_frame_index]->resources.end()) {
             _frames[_frame_index]->resources.insert(resource);
+            _using_resources[resource] = _using_resources[resource] + 1;
+        }
+    }
+
+    void Renderer::UseCopy(void* resource) {
+        auto iter = _copy_resources.resources.find(resource);
+        if(iter == _copy_resources.resources.end()) {
+            _copy_resources.resources.insert(resource);
             _using_resources[resource] = _using_resources[resource] + 1;
         }
     }

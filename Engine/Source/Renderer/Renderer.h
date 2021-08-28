@@ -70,6 +70,8 @@ namespace gear {
 
         blast::GfxBuffer* AllocStageBuffer(uint32_t size);
 
+        void UseCopy(void* resource);
+
         void UseResource(void* resource);
 
         void Destroy(blast::GfxBuffer*);
@@ -97,13 +99,14 @@ namespace gear {
         blast::GfxCommandBufferPool* _cmd_pool = nullptr;
         blast::GfxCommandBuffer** _cmds = nullptr;
         blast::GfxRootSignature* _root_signature = nullptr;
+        blast::GfxFence* _copy_fence = nullptr;
+        blast::GfxCommandBuffer* _copy_cmd = nullptr;
         bool _skip_frame = false;
         uint32_t  _swapchain_image_index;
         uint32_t _num_images = 0;
         uint32_t _frame_index = 0;
         uint32_t _frame_width = 0;
         uint32_t _frame_height = 0;
-        Frame** _frames = nullptr;
         // 外部window
         void* _window = nullptr;
         // shader编译器
@@ -123,6 +126,8 @@ namespace gear {
         std::vector<blast::GfxBuffer*> _stage_buffer_pool;
         std::vector<blast::GfxBuffer*> _usable_stage_buffer_list;
         // 记录gpu正在使用的资源
+        Frame** _frames = nullptr;
+        Frame _copy_resources;
         std::map<void*, uint32_t> _using_resources;
         // 渲染器的任务队列
         std::queue<std::function<void(blast::GfxCommandBuffer*)>> _render_task_queue;

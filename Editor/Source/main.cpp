@@ -78,10 +78,21 @@ int main()
 
         ImGui::BeginUI();
         // 在此插入ui代码
-        bool show_demo_window = true;
-        ImGui::ShowDemoWindow(&show_demo_window);
+//        bool show_demo_window = true;
+//        ImGui::ShowDemoWindow(&show_demo_window);
 
-
+        ImGui::Begin("Change Camera");
+        if (ImGui::Button("Main Camera")) {
+            main_camera->GetComponent<gear::CCamera>()->SetDisplay(true);
+            debug_camera->GetComponent<gear::CCamera>()->SetDisplay(false);
+            camera_controller->SetCamera(main_camera);
+        }
+        if (ImGui::Button("Debug Camera")) {
+            main_camera->GetComponent<gear::CCamera>()->SetDisplay(false);
+            debug_camera->GetComponent<gear::CCamera>()->SetDisplay(true);
+            camera_controller->SetCamera(debug_camera);
+        }
+        ImGui::End();
 
         ImGui::EndUI();
 
