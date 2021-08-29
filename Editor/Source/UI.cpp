@@ -175,7 +175,7 @@ namespace ImGui {
         // 初始化ui实例
         g_ui_pawn = gear::gEngine.GetEntityManager()->CreateEntity();
         g_ui_pawn->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0));
-        g_ui_pawn->AddComponent<gear::CRenderable>();
+        g_ui_pawn->AddComponent<gear::CRenderable>()->SetRenderableType(gear::RENDERABLE_UI);
         g_ui_scene->AddEntity(g_ui_pawn);
 
         // 创建ui管线

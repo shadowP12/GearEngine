@@ -13,6 +13,7 @@
 #include <Entity/Components/CTransform.h>
 #include <Entity/Components/CRenderable.h>
 #include <Resource/GpuBuffer.h>
+#include <Resource/BuiltinResources.h>
 #include <Renderer/Renderer.h>
 #include <RenderPipeline/RenderPipeline.h>
 #include <Input/InputSystem.h>
@@ -31,6 +32,8 @@ void MouseScrollCB(GLFWwindow * window, double offset_x, double offset_y) {
 
 int main()
 {
+    gear::gEngine.GetBuiltinResources()->Prepare();
+
     gear::Entity* main_camera = gear::gEngine.GetEntityManager()->CreateEntity();
     main_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
     main_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(6.0f, 6.0f, 12.0f));
@@ -47,6 +50,7 @@ int main()
     gear::Scene* editor_scene = gear::gEngine.CreateScene();
     gear::RenderPipeline* editor_pipeline = gear::gEngine.CreateRenderPipeline();
     editor_pipeline->SetScene(editor_scene);
+    editor_pipeline->EnableDebug(true);
 
     GltfAsset* gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/test.gltf");
     for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {

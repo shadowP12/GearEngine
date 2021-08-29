@@ -2,6 +2,9 @@
 #include "Renderer/RenderData.h"
 #include "Utility/Flags.h"
 
+#define MAX_DEBUG_POINTS 2048
+#define MAX_DEBUG_LINES 2048
+
 namespace gear {
     class Renderer;
     class Scene;
@@ -26,6 +29,12 @@ namespace gear {
 
     struct RenderView {
 
+    };
+
+    //
+    enum RenderableType {
+        RENDERABLE_COMMON = 0,
+        RENDERABLE_UI = 1
     };
 
     struct RenderPrimitive {
@@ -58,9 +67,26 @@ namespace gear {
 
         void Exec();
 
+        void EnableDebug(bool enable) { _enable_debug = enable; }
+
+    private:
+        void AddDebugLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& c);
+
+        void DrawDebugBox(const BBox& bbox, const glm::vec4& c);
+
+        void DrawDebugFrustum(const Frustum& frustum, const glm::vec4& c);
+
+        void ExecDebugStage();
+
+        void ExecUiStage();
+
     private:
         Scene* _scene = nullptr;
         // renderable
+        uint32_t _num_ui_renderables;
+        std::vector<uint32_t> _ui_renderables;
+        uint32_t _num_common_renderables;
+        std::vector<uint32_t> _common_renderables;
         uint32_t _num_renderables;
         std::vector<Renderable> _renderables;
         UniformBuffer* _renderable_ub = nullptr;
@@ -81,5 +107,14 @@ namespace gear {
         // draw call
         uint32_t _dc_head = 0;
         DrawCall _dc_list[10240];
+
+        // debug
+        UniformBuffer* _debug_ub = nullptr;
+        uint32_t _num_debug_lines;
+        std::vector<float> _debug_lines;
+        VertexBuffer* _debug_line_vb = nullptr;
+
+        // setting
+        bool _enable_debug = false;
     };
 }

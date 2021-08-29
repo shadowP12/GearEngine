@@ -1,0 +1,10 @@
+{
+    "state": {
+        "shading_model": "unlit",
+        "blending_mode": "opaque"
+    },
+    "require": [
+        "color"
+    ],
+    "fragment_code": "void ProcessMaterialFragmentParams(inout MaterialFragmentParams params) {\n    params.base_color = vertex_color;\n    params.base_color.rgb *= params.base_color.a;\n }"
+}

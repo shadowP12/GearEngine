@@ -88,6 +88,8 @@ namespace gear {
 
         void ExecuteDrawCall(const DrawCall& draw_call);
 
+        void ExecuteDebugDrawCall(const DrawCall& draw_call);
+
     private:
         blast::GfxContext* _context = nullptr;
         blast::GfxSurface* _surface = nullptr;

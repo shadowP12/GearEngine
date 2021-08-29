@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/GearDefine.h"
 #include "Math/Math.h"
+#include "Math/Geometry.h"
 #include <Blast/Gfx/GfxPipeline.h>
 #include <Blast/Gfx/GfxBuffer.h>
 #include <Blast/Gfx/GfxTexture.h>
@@ -11,6 +12,12 @@
 #include <vector>
 
 namespace gear {
+    // Shader应用的范围
+    enum ShaderDomain {
+        SHADER_GLOBAL = 0,
+        SHADER_SURFACE = 1
+    };
+
     // 着色模型
     enum ShadingModel {
         SHADING_MODEL_UNLIT,
@@ -27,6 +34,15 @@ namespace gear {
     struct RenderState {
         ShadingModel shading_model;
         BlendingMode blending_mode;
+    };
+
+    struct CameraInfo {
+        float zn;
+        float zf;
+        glm::vec3 position;
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
     };
 
     struct CascadeParameters {
@@ -64,6 +80,8 @@ namespace gear {
         blast::GfxShader* vs = nullptr;
         blast::GfxShader* fs = nullptr;
 
+        uint32_t vb_offset = 0;
+        uint32_t vb_count = 0;
         blast::GfxVertexLayout vertex_layout;
         blast::GfxBuffer* vb = nullptr;
 

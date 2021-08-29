@@ -556,4 +556,57 @@ namespace gear {
         cmd->BindIndexBuffer(dc.ib, 0, dc.ib_type);
         cmd->DrawIndexed(dc.ib_count, 1, dc.ib_offset, 0, 0);
     }
+
+    void Renderer::ExecuteDebugDrawCall(const DrawCall& dc) {
+        if (_skip_frame) {
+            return;
+        }
+
+        blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
+
+        // 标记使用的外部资源
+        UseResource(dc.vb);
+        UseResource(dc.vs);
+        UseResource(dc.fs);
+        UseResource(dc.renderable_ub);
+        UseResource(_bind_frame_uniform_buffer);
+
+        DescriptorKey descriptor_key = {};
+
+        // 绑定frameUB
+        descriptor_key.uniform_buffers[1] = _bind_frame_uniform_buffer;
+        descriptor_key.uniform_buffer_sizes[1] = _bind_frame_uniform_buffer_size;
+        descriptor_key.uniform_buffer_offsets[1] = _bind_frame_uniform_buffer_offset;
+
+        // 绑定renderableUB
+        descriptor_key.uniform_buffers[2] = dc.renderable_ub;
+        descriptor_key.uniform_buffer_sizes[2] = dc.renderable_ub_size;
+        descriptor_key.uniform_buffer_offsets[2] = dc.renderable_ub_offset;
+
+        DescriptorBundle descriptor_bundle = _descriptor_cache->GetDescriptor(descriptor_key);
+
+        blast::GfxGraphicsPipelineDesc pipeline_desc = {};
+        pipeline_desc.framebuffer = _bind_fb;
+        pipeline_desc.root_signature = _root_signature;
+        pipeline_desc.vertex_shader = dc.vs;
+        pipeline_desc.pixel_shader = dc.fs;
+        pipeline_desc.vertex_layout = dc.vertex_layout;
+
+        pipeline_desc.depth_state.depth_test = false;
+        pipeline_desc.depth_state.depth_write = false;
+
+        pipeline_desc.blend_state.src_factors[0] = blast::BLEND_ONE;
+        pipeline_desc.blend_state.dst_factors[0] = blast::BLEND_ZERO;
+        pipeline_desc.blend_state.src_alpha_factors[0] = blast::BLEND_ONE;
+        pipeline_desc.blend_state.dst_alpha_factors[0] = blast::BLEND_ZERO;
+        pipeline_desc.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
+
+        pipeline_desc.rasterizer_state.primitive_topo = dc.topo;
+
+        blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(pipeline_desc);
+        cmd->BindGraphicsPipeline(pipeline);
+        cmd->BindDescriptorSets(_root_signature, 2, descriptor_bundle.handles);
+        cmd->BindVertexBuffer(dc.vb, 0);
+        cmd->Draw(dc.vb_count, 1, dc.vb_offset, 0);
+    }
 }

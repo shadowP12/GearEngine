@@ -5,6 +5,7 @@
 #include "Entity/EntityManager.h"
 #include "Input/InputSystem.h"
 #include "MaterialCompiler/MaterialCompiler.h"
+#include "Resource/BuiltinResources.h"
 
 namespace gear {
     GearEngine::GearEngine() {
@@ -12,9 +13,11 @@ namespace gear {
         _entity_manager = new EntityManager();
         _input_system = new InputSystem();
         _material_compiler = new MaterialCompiler();
+        _builtin_resources = new BuiltinResources();
     }
 
     GearEngine::~GearEngine() {
+        SAFE_DELETE(_builtin_resources);
         SAFE_DELETE(_renderer);
         SAFE_DELETE(_entity_manager);
         SAFE_DELETE(_input_system);
@@ -35,6 +38,10 @@ namespace gear {
 
     MaterialCompiler* GearEngine::GetMaterialCompiler() {
         return _material_compiler;
+    }
+
+    BuiltinResources* GearEngine::GetBuiltinResources() {
+        return _builtin_resources;
     }
 
     RenderPipeline* GearEngine::CreateRenderPipeline() {

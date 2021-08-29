@@ -15,12 +15,6 @@ namespace blast {
 namespace gear {
     class Texture;
 
-    // 材质应用的范围
-    enum class MaterialDomain {
-        SURFACE = 0,
-        POST_PROCESS = 1,
-    };
-
     // 材质属性
     static constexpr size_t MATERIAL_PROPERTIES_COUNT = 1;
     enum class MaterialProperty {

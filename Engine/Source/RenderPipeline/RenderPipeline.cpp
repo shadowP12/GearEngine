@@ -18,11 +18,28 @@ namespace gear {
     RenderPipeline::RenderPipeline() {
         _view_ub = new UniformBuffer(sizeof(ViewUniforms));
         _renderable_ub = new UniformBuffer(sizeof(RenderableUniforms) * 1000);
+
+        _debug_lines.resize(MAX_DEBUG_LINES * 14);
+
+        glm::mat4 identity_matrix = glm::mat4(1.0f);
+        _debug_ub = new UniformBuffer(sizeof(RenderableUniforms));
+        _debug_ub->Update(&identity_matrix, offsetof(RenderableUniforms, model_matrix), sizeof(glm::mat4));
+        _debug_ub->Update(&identity_matrix, offsetof(RenderableUniforms, normal_matrix), sizeof(glm::mat4));
+
+        gear::VertexBuffer::Builder builder;
+        builder.SetVertexCount(MAX_DEBUG_POINTS);
+        builder.SetAttribute(blast::SEMANTIC_POSITION, blast::FORMAT_R32G32B32_FLOAT);
+        builder.SetAttribute(blast::SEMANTIC_COLOR, blast::FORMAT_R32G32B32A32_FLOAT);
+
+        builder.SetVertexCount(MAX_DEBUG_LINES);
+        _debug_line_vb = builder.Build();
     }
 
     RenderPipeline::~RenderPipeline() {
         SAFE_DELETE(_view_ub);
         SAFE_DELETE(_renderable_ub);
+        SAFE_DELETE(_debug_ub);
+        SAFE_DELETE(_debug_line_vb);
     }
 
     void RenderPipeline::SetScene(Scene* scene) {
@@ -35,12 +52,18 @@ namespace gear {
         if (!_scene) {
             return;
         }
+
+        _num_debug_lines = 0;
         _num_views = 0;
         _num_lights = 0;
         _num_renderables = 0;
+        _num_ui_renderables = 0;
+        _num_common_renderables = 0;
 
         if (_renderables.size() < _scene->_entities.size()) {
             _renderables.resize(_scene->_entities.size());
+            _ui_renderables.resize(_scene->_entities.size());
+            _common_renderables.resize(_scene->_entities.size());
         }
 
         if (_renderable_ub->GetSize() < sizeof(RenderableUniforms) * _scene->_entities.size()) {
@@ -120,13 +143,24 @@ namespace gear {
                 for (uint32_t i = 0; i < crenderable->_primitives.size(); ++i) {
                     _renderables[_num_renderables].primitives.push_back(crenderable->_primitives[i]);
                     BBox& bbox = _renderables[_num_renderables].primitives[i].bbox;
-                    bbox.mMin = TransformPoint(bbox.mMin, model_matrix);
-                    bbox.mMax = TransformPoint(bbox.mMax, model_matrix);
+                    bbox.bb_min = TransformPoint(bbox.bb_min, model_matrix);
+                    bbox.bb_max = TransformPoint(bbox.bb_max, model_matrix);
                 }
 
                 // 更新renderable_ub
                 _renderable_ub->Update(&model_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, model_matrix), sizeof(glm::mat4));
                 _renderable_ub->Update(&normal_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, normal_matrix), sizeof(glm::mat4));
+
+                // 归类
+                RenderableType type = crenderable->GetRenderableType();
+                if (type == RENDERABLE_COMMON) {
+                    _common_renderables[_num_common_renderables] = _num_renderables;
+                    _num_common_renderables++;
+                } else if (type == RENDERABLE_UI) {
+                    _ui_renderables[_num_ui_renderables] = _num_renderables;
+                    _num_ui_renderables++;
+                }
+
                 _num_renderables++;
             }
         }
@@ -140,11 +174,11 @@ namespace gear {
         _dc_head = 0;
         renderer->BindFrameUniformBuffer(_view_ub->GetHandle(), _view_ub->GetSize(), 0);
 
-        // common stage
+        // render comon renderable
         uint32_t common_dc_head = _dc_head;
         uint32_t num_common_dc = 0;
-        for (uint32_t i = 0; i < _num_renderables; ++i) {
-            Renderable* rb = &_renderables[i];
+        for (uint32_t i = 0; i < _num_common_renderables; ++i) {
+            Renderable* rb = &_renderables[_common_renderables[i]];
             for (uint32_t j = 0; j < rb->primitives.size(); ++j) {
                 RenderPrimitive* rp = &rb->primitives[j];
                 _dc_list[common_dc_head + num_common_dc].key = 0;
@@ -157,7 +191,6 @@ namespace gear {
                 } else {
                     _dc_list[common_dc_head + num_common_dc].bone_ub = nullptr;
                 }
-
 
                 _dc_list[common_dc_head + num_common_dc].vertex_layout = rp->vb->GetVertexLayout();
                 _dc_list[common_dc_head + num_common_dc].vb = rp->vb->GetHandle();
@@ -193,7 +226,7 @@ namespace gear {
                 num_common_dc++;
             }
         }
-        _dc_head = num_common_dc;
+        _dc_head += num_common_dc;
 
         // 排序
         std::sort(&_dc_list[common_dc_head], &_dc_list[common_dc_head] + num_common_dc);
@@ -203,5 +236,11 @@ namespace gear {
             renderer->ExecuteDrawCall(_dc_list[i]);
         }
         renderer->UnbindFramebuffer();
+
+        // debug
+        ExecDebugStage();
+
+        // ui
+        ExecUiStage();
     }
 }

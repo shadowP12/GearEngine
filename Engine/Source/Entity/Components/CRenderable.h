@@ -35,8 +35,13 @@ namespace gear {
 
         void SetReceiveShadow(bool receiveShadow);
 
+        RenderableType GetRenderableType() { return _renderable_type; }
+
+        void SetRenderableType(RenderableType type) { _renderable_type = type; }
+
     private:
         friend class RenderPipeline;
+        RenderableType _renderable_type = RENDERABLE_COMMON;
         VertexBuffer* _vb = nullptr;
         IndexBuffer* _ib = nullptr;
         UniformBuffer* _bb = nullptr;
