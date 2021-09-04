@@ -120,6 +120,11 @@ namespace gear {
                             iter++;
                         }
                     }
+
+                    // 回收暂缓缓存
+                    if (find(_stage_buffer_pool.begin(), _stage_buffer_pool.end(), resource) != _stage_buffer_pool.end()) {
+                        _usable_stage_buffer_list.push_back((blast::GfxBuffer*)resource);
+                    }
                 }
             }
             _frames[i]->resources.clear();
@@ -266,6 +271,11 @@ namespace gear {
                         iter++;
                     }
                 }
+
+                // 回收暂缓缓存
+                if (find(_stage_buffer_pool.begin(), _stage_buffer_pool.end(), resource) != _stage_buffer_pool.end()) {
+                    _usable_stage_buffer_list.push_back((blast::GfxBuffer*)resource);
+                }
             }
         }
         _frames[_frame_index]->resources.clear();
@@ -274,6 +284,9 @@ namespace gear {
         blast::GfxTexture* depth_rt = _swapchain->GetDepthRenderTarget(_frame_index);
 
         _cmds[_frame_index]->Begin();
+
+        // 设置标记
+        _in_frame = true;
 
         {
             // 设置交换链RT为可写状态
@@ -324,6 +337,9 @@ namespace gear {
         }
         _cmds[_frame_index]->End();
 
+        // 设置标记
+        _in_frame = false;
+
         blast::GfxSubmitInfo submit_info;
         submit_info.num_cmd_bufs = 1;
         submit_info.cmd_bufs = &_cmds[_frame_index];
@@ -351,23 +367,34 @@ namespace gear {
         return _swapchain->GetDepthRenderTarget(_frame_index);
     }
 
+    blast::GfxCommandBuffer* Renderer::GetCommandBuffer() {
+        if (_in_frame) {
+            return _cmds[_frame_index];
+        }
+        return _copy_cmd;
+    }
+
     void Renderer::ExecRenderTask(std::function<void(blast::GfxCommandBuffer*)> task) {
+        if (_in_frame) {
+            task(_cmds[_frame_index]);
+            return;
+        }
         _render_task_queue.push(task);
     }
 
     void Renderer::UseResource(void* resource) {
-        auto iter = _frames[_frame_index]->resources.find(resource);
-        if(iter == _frames[_frame_index]->resources.end()) {
-            _frames[_frame_index]->resources.insert(resource);
-            _using_resources[resource] = _using_resources[resource] + 1;
-        }
-    }
-
-    void Renderer::UseCopy(void* resource) {
-        auto iter = _copy_resources.resources.find(resource);
-        if(iter == _copy_resources.resources.end()) {
-            _copy_resources.resources.insert(resource);
-            _using_resources[resource] = _using_resources[resource] + 1;
+        if (_in_frame) {
+            auto iter = _frames[_frame_index]->resources.find(resource);
+            if(iter == _frames[_frame_index]->resources.end()) {
+                _frames[_frame_index]->resources.insert(resource);
+                _using_resources[resource] = _using_resources[resource] + 1;
+            }
+        } else {
+            auto iter = _copy_resources.resources.find(resource);
+            if(iter == _copy_resources.resources.end()) {
+                _copy_resources.resources.insert(resource);
+                _using_resources[resource] = _using_resources[resource] + 1;
+            }
         }
     }
 

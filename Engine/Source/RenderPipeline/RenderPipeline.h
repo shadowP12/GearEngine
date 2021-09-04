@@ -8,10 +8,48 @@
 namespace gear {
     class Renderer;
     class Scene;
+    class Texture;
     class IndexBuffer;
     class VertexBuffer;
     class UniformBuffer;
     class MaterialInstance;
+
+    struct LightInfo {
+        glm::vec3 sun_direction;
+    };
+
+    struct CameraInfo {
+        float zn;
+        float zf;
+        glm::vec3 position;
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+    };
+
+    struct CascadeParameters {
+        // clip space的远近平面
+        glm::vec2 cs_near_far = { -1.0f, 1.0f };
+
+        // light space的远近平面
+        glm::vec2 ls_near_far;
+
+        // view space的远近平面
+        glm::vec2 vs_near_far;
+
+        // 世界坐标的灯光位置
+        glm::vec3 ws_light_position;
+
+        BBox ws_shadow_casters_volume;
+        BBox ws_shadow_receivers_volume;
+    };
+
+    struct ShadowMapInfo {
+        glm::mat4 light_projection_matrix;
+        glm::vec3 camera_position;
+        glm::vec3 camera_direction;
+        bool has_visible_shadows;
+    };
 
     struct ViewUniforms {
         glm::mat4 view_matrix;
@@ -80,6 +118,12 @@ namespace gear {
 
         void ExecUiStage();
 
+        void ComputeCascadeParams(CascadeParameters& cascade_params);
+
+        void UpdateShadowMapInfo(const CascadeParameters& cascade_params, ShadowMapInfo& shadow_map_info);
+
+        void ExecShadowStage();
+
     private:
         Scene* _scene = nullptr;
         // renderable
@@ -92,14 +136,20 @@ namespace gear {
         UniformBuffer* _renderable_ub = nullptr;
 
         // view
+        CameraInfo _main_camera_info;
         uint32_t _num_views;
         std::vector<RenderView> _views;
         UniformBuffer* _view_ub = nullptr;
 
         // light
+        LightInfo _light_info;
         uint32_t _num_lights;
         std::vector<RenderLight> _lights;
         UniformBuffer* _light_ub = nullptr;
+
+        // shadow
+        Texture* _shadow_maps[SHADOW_CASCADE_COUNT];
+        FramebufferInfo _shadow_map_fb;
 
         // display
         FramebufferInfo _display_fb;

@@ -106,6 +106,15 @@ namespace gear {
         return out;
     }
 
+    std::stringstream& CodeGenerator::GenerateShaderDepthMain(std::stringstream& out, blast::ShaderStage stage) const {
+        if (stage == blast::SHADER_STAGE_VERT) {
+            out << DEPTH_MAIN_VS_DATA << "\n";
+        } else if (stage == blast::SHADER_STAGE_FRAG) {
+            out << DEPTH_MAIN_FS_DATA << "\n";
+        }
+        return out;
+    }
+
     std::stringstream& CodeGenerator::GenerateUniforms(std::stringstream& out, const std::unordered_map<std::string, blast::UniformType>& uniforms) const {
         static const std::unordered_map<blast::UniformType, std::string> type_to_str {
                 { blast::UNIFORM_BOOL, "bool" },

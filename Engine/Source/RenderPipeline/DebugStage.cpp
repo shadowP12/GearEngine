@@ -34,7 +34,7 @@ namespace gear {
             return;
         }
 
-        glm::vec3* corners = BBox::Corners(bbox);
+        glm::vec3* corners = bbox.GetCorners().vertices;
         AddDebugLine(corners[0], corners[1], c);
         AddDebugLine(corners[1], corners[3], c);
         AddDebugLine(corners[3], corners[2], c);

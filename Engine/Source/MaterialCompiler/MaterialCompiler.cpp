@@ -149,6 +149,11 @@ namespace gear {
                 }
             }
 
+            // depth变种只需要一个就够
+            if (variant.HasDepth() && !variant.IsValidDepthVariant()) {
+                continue;
+            }
+
             // 生成vertex shader
             if (variant.FilterVariantVertex(key) == key) {
                 std::stringstream vs;
@@ -167,7 +172,13 @@ namespace gear {
 
                 cg.GenerateCommonMaterial(vs, blast::SHADER_STAGE_VERT);
                 cg.GenerateCustomCode(vs, vertex_code);
-                cg.GenerateShaderMain(vs, blast::SHADER_STAGE_VERT);
+
+                if (variant.HasDepth()) {
+                    cg.GenerateShaderDepthMain(vs, blast::SHADER_STAGE_VERT);
+                } else {
+                    cg.GenerateShaderMain(vs, blast::SHADER_STAGE_VERT);
+                }
+
                 cg.GenerateEpilog(vs);
 
                 blast::ShaderCompileDesc compile_desc;
@@ -198,7 +209,13 @@ namespace gear {
 
                 cg.GenerateCommonMaterial(fs, blast::SHADER_STAGE_FRAG);
                 cg.GenerateCustomCode(fs, fragment_code);
-                cg.GenerateShaderMain(fs, blast::SHADER_STAGE_FRAG);
+
+                if (variant.HasDepth()) {
+                    cg.GenerateShaderDepthMain(fs, blast::SHADER_STAGE_FRAG);
+                } else {
+                    cg.GenerateShaderMain(fs, blast::SHADER_STAGE_FRAG);
+                }
+
                 cg.GenerateEpilog(fs);
 
                 blast::ShaderCompileDesc compile_desc;

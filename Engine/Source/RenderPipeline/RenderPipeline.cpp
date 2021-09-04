@@ -19,6 +19,15 @@ namespace gear {
         _view_ub = new UniformBuffer(sizeof(ViewUniforms));
         _renderable_ub = new UniformBuffer(sizeof(RenderableUniforms) * 1000);
 
+        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
+            // 阴影贴图的默认分辨率为1024
+            gear::Texture::Builder tex_builder;
+            tex_builder.SetWidth(1024);
+            tex_builder.SetHeight(1024);
+            tex_builder.SetFormat(blast::FORMAT_D24_UNORM_S8_UINT);
+            _shadow_maps[i] = tex_builder.Build();
+        }
+
         _debug_lines.resize(MAX_DEBUG_LINES * 14);
 
         glm::mat4 identity_matrix = glm::mat4(1.0f);
@@ -40,6 +49,10 @@ namespace gear {
         SAFE_DELETE(_renderable_ub);
         SAFE_DELETE(_debug_ub);
         SAFE_DELETE(_debug_line_vb);
+
+        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
+            SAFE_DELETE(_shadow_maps[i]);
+        }
     }
 
     void RenderPipeline::SetScene(Scene* scene) {
@@ -119,7 +132,12 @@ namespace gear {
                     }
 
                     if (ccamera->GetMain()) {
-                        //
+                        _main_camera_info.zn = ccamera->GetNear();
+                        _main_camera_info.zf = ccamera->GetFar();
+                        _main_camera_info.model = ccamera->GetModelMatrix();
+                        _main_camera_info.view = ccamera->GetViewMatrix();
+                        _main_camera_info.projection = ccamera->GetProjMatrix();
+                        _main_camera_info.position = GetTranslate(_main_camera_info.model);
                     }
 
                     _num_views++;
@@ -127,6 +145,7 @@ namespace gear {
             }
 
             if (entity->HasComponent<CLight>()) {
+                _light_info.sun_direction = entity->GetComponent<CTransform>()->GetFrontVector();
                 _num_lights++;
             }
 
@@ -173,6 +192,8 @@ namespace gear {
         // 管线开始前的初始化
         _dc_head = 0;
         renderer->BindFrameUniformBuffer(_view_ub->GetHandle(), _view_ub->GetSize(), 0);
+
+        ExecShadowStage();
 
         // render comon renderable
         uint32_t common_dc_head = _dc_head;

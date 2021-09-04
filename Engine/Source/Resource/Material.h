@@ -53,11 +53,16 @@ namespace gear {
         inline bool HasDirectionalLighting() const noexcept { return key & DIRECTIONAL_LIGHTING; }
         inline bool HasDynamicLighting() const noexcept { return key & DYNAMIC_LIGHTING; }
         inline bool HasShadowReceiver() const noexcept { return key & SHADOW_RECEIVER; }
+        inline bool HasDepth() noexcept { return key & DEPTH; }
 
         inline void SetSkinning(bool v) noexcept { Set(v, SKINNING_OR_MORPHING); }
         inline void SetDirectionalLighting(bool v) noexcept { Set(v, DIRECTIONAL_LIGHTING); }
         inline void SetDynamicLighting(bool v) noexcept { Set(v, DYNAMIC_LIGHTING); }
         inline void SetShadowReceiver(bool v) noexcept { Set(v, SHADOW_RECEIVER); }
+
+        inline bool IsValidDepthVariant() noexcept {
+            return key == DEPTH;
+        }
 
         // 过滤掉不需要的顶点变体
         static constexpr Key FilterVariantVertex(Key variant) noexcept {

@@ -47,7 +47,7 @@ namespace gear {
         texture_desc.width = _width;
         texture_desc.height = _height;
         texture_desc.format = _format;
-        texture_desc.type = blast::RESOURCE_TYPE_TEXTURE | blast::RESOURCE_TYPE_RW_TEXTURE;
+        texture_desc.type = blast::RESOURCE_TYPE_TEXTURE;
         texture_desc.usage = blast::RESOURCE_USAGE_GPU_ONLY;
         _texture = context->CreateTexture(texture_desc);
     }
@@ -82,8 +82,8 @@ namespace gear {
 
         renderer->ExecRenderTask([renderer, texture, staging_buffer, image_size, array](blast::GfxCommandBuffer* cmd) {
 
-            renderer->UseCopy(texture);
-            renderer->UseCopy(staging_buffer);
+            renderer->UseResource(texture);
+            renderer->UseResource(staging_buffer);
 
             {
                 // 设置纹理为读写状态

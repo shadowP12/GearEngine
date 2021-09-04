@@ -9,6 +9,7 @@
 #include <Entity/Entity.h>
 #include <Entity/Scene.h>
 #include <Entity/EntityManager.h>
+#include <Entity/Components/CLight.h>
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
 #include <Entity/Components/CRenderable.h>
@@ -34,6 +35,12 @@ int main()
 {
     gear::gEngine.GetBuiltinResources()->Prepare();
 
+    gear::Entity* sun = gear::gEngine.GetEntityManager()->CreateEntity();
+    sun->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
+    sun->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
+    sun->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(-0.358f, 0.46f, 0.0f));
+    sun->AddComponent<gear::CLight>();
+
     gear::Entity* main_camera = gear::gEngine.GetEntityManager()->CreateEntity();
     main_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
     main_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(6.0f, 6.0f, 12.0f));
@@ -54,8 +61,13 @@ int main()
 
     GltfAsset* gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/test.gltf");
     for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
+        if (gltf_asset->entities[i]->HasComponent<gear::CRenderable>()) {
+            gltf_asset->entities[i]->GetComponent<gear::CRenderable>()->SetCastShadow(true);
+            gltf_asset->entities[i]->GetComponent<gear::CRenderable>()->SetReceiveShadow(true);
+        }
         editor_scene->AddEntity(gltf_asset->entities[i]);
     }
+    editor_scene->AddEntity(sun);
     editor_scene->AddEntity(main_camera);
     editor_scene->AddEntity(debug_camera);
 
@@ -119,6 +131,7 @@ int main()
 
     DestroyGltfAsset(gltf_asset);
     gear::gEngine.DestroyScene(editor_scene);
+    gear::gEngine.GetEntityManager()->DestroyEntity(sun);
     gear::gEngine.GetEntityManager()->DestroyEntity(main_camera);
     gear::gEngine.GetEntityManager()->DestroyEntity(debug_camera);
     gear::gEngine.DestroyRenderPipeline(editor_pipeline);

@@ -32,5 +32,7 @@ namespace gear {
         std::stringstream& GenerateCommonMaterial(std::stringstream& out, blast::ShaderStage stage) const;
 
         std::stringstream& GenerateShaderMain(std::stringstream& out, blast::ShaderStage stage) const;
+
+        std::stringstream& GenerateShaderDepthMain(std::stringstream& out, blast::ShaderStage stage) const;
     };
 }

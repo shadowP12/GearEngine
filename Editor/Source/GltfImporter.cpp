@@ -425,8 +425,8 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
 
                 const float* minp = &posAccessor->min[0];
                 const float* maxp = &posAccessor->max[0];
-                gear::BBox::Grow(bbox, glm::vec3(minp[0], minp[1], minp[2]));
-                gear::BBox::Grow(bbox, glm::vec3(maxp[0], maxp[1], maxp[2]));
+                bbox.Grow(glm::vec3(minp[0], minp[1], minp[2]));
+                bbox.Grow(glm::vec3(maxp[0], maxp[1], maxp[2]));
             }
 
             if (colorOffset != -1) {

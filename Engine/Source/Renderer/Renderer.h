@@ -66,11 +66,11 @@ namespace gear {
 
         uint32_t GetHeight() { return _frame_height; }
 
+        blast::GfxCommandBuffer* GetCommandBuffer();
+
         void ExecRenderTask(std::function<void(blast::GfxCommandBuffer*)>);
 
         blast::GfxBuffer* AllocStageBuffer(uint32_t size);
-
-        void UseCopy(void* resource);
 
         void UseResource(void* resource);
 
@@ -103,6 +103,7 @@ namespace gear {
         blast::GfxRootSignature* _root_signature = nullptr;
         blast::GfxFence* _copy_fence = nullptr;
         blast::GfxCommandBuffer* _copy_cmd = nullptr;
+        bool _in_frame = false;
         bool _skip_frame = false;
         uint32_t  _swapchain_image_index;
         uint32_t _num_images = 0;

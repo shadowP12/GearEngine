@@ -36,32 +36,6 @@ namespace gear {
         BlendingMode blending_mode;
     };
 
-    struct CameraInfo {
-        float zn;
-        float zf;
-        glm::vec3 position;
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::mat4 projection;
-    };
-
-    struct CascadeParameters {
-        // clip space的远近平面
-        glm::vec2 csNearFar = { -1.0f, 1.0f };
-
-        // light space的远近平面
-        glm::vec2 lsNearFar;
-
-        // view space的远近平面
-        glm::vec2 vsNearFar;
-
-        // 世界坐标的灯光位置
-        glm::vec3 wsLightPosition;
-
-        BBox wsShadowCastersVolume;
-        BBox wsShadowReceiversVolume;
-    };
-
     struct FramebufferInfo {
         uint32_t width;
         uint32_t height;
