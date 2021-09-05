@@ -153,6 +153,7 @@ namespace gear {
 
             if (entity->HasComponent<CLight>()) {
                 _light_info.sun_direction = entity->GetComponent<CTransform>()->GetFrontVector();
+                glm::normalize(_light_info.sun_direction);
                 _num_lights++;
             }
 
@@ -200,6 +201,7 @@ namespace gear {
         _dc_head = 0;
         renderer->BindFrameUniformBuffer(_view_ub->GetHandle(), _view_ub->GetSize(), 0);
 
+        // shadow
         ExecShadowStage();
 
         // render comon renderable

@@ -38,14 +38,13 @@ int main()
     gear::Entity* sun = gear::gEngine.GetEntityManager()->CreateEntity();
     sun->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
     sun->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
-    sun->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(-0.358f, 0.46f, 0.0f));
+    sun->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(glm::radians(120.0f), 0.0f, 0.0f));
     sun->AddComponent<gear::CLight>();
 
     gear::Entity* main_camera = gear::gEngine.GetEntityManager()->CreateEntity();
     main_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-    // main_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(6.0f, 6.0f, 12.0f));
-    main_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 0.0f, 12.0f));
-    //main_camera->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(-0.358f, 0.46f, 0.0f));
+    main_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(6.0f, 6.0f, 12.0f));
+    main_camera->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(-0.358f, 0.46f, 0.0f));
     main_camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 100.0);
 
     gear::Entity* debug_camera = gear::gEngine.GetEntityManager()->CreateEntity();

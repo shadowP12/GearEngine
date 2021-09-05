@@ -310,7 +310,7 @@ namespace gear {
                 MaterialVariant::Key material_variant = 0;
                 material_variant |= MaterialVariant::DEPTH;
 
-                _dc_list[shadow_dc_head + num_shadow_dc].key = 111;
+                _dc_list[shadow_dc_head + num_shadow_dc].key = 0;
                 _dc_list[shadow_dc_head + num_shadow_dc].renderable_ub = rb->renderable_ub->GetHandle();
                 _dc_list[shadow_dc_head + num_shadow_dc].renderable_ub_size = rb->renderable_ub_size;
                 _dc_list[shadow_dc_head + num_shadow_dc].renderable_ub_offset = rb->renderable_ub_offset;
