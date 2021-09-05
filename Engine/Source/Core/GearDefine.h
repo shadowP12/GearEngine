@@ -19,7 +19,7 @@
 #define MATERIAL_SAMPLER_COUNT 4
 
 // CSM的Cascade个数
-#define SHADOW_CASCADE_COUNT 3
+#define SHADOW_CASCADE_COUNT 1
 
 #define SAFE_DELETE(x) \
     { \

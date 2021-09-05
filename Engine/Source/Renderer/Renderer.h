@@ -121,6 +121,7 @@ namespace gear {
         GraphicsPipelineCache* _graphics_pipeline_cache;
         DescriptorCache* _descriptor_cache;
         // 当前渲染器绑定的资源
+        FramebufferInfo _bind_fb_info;
         blast::GfxFramebuffer* _bind_fb = nullptr;
         blast::GfxBuffer* _bind_frame_uniform_buffer = nullptr;
         uint32_t _bind_frame_uniform_buffer_size = 0;

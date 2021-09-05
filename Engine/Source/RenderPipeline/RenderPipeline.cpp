@@ -101,6 +101,7 @@ namespace gear {
                     if (ccamera->GetDisplay()) {
                         // 设置display_fb
                         if (ccamera->GetRenderTarget() == nullptr) {
+                            _display_fb.is_screen_fb = true;
                             _display_fb.clear_value.flags = blast::CLEAR_NONE;
                             _display_fb.width = renderer->GetWidth();
                             _display_fb.height = renderer->GetHeight();
@@ -125,10 +126,16 @@ namespace gear {
                             std::get<1>(_display_fb.depth_stencil) = std::get<1>(d);
                             std::get<2>(_display_fb.depth_stencil) = std::get<2>(d);
                         }
-                        glm::mat4 view_matrix = ccamera->GetViewMatrix();
-                        glm::mat4 proj_matrix = ccamera->GetProjMatrix();
-                        _view_ub->Update(&view_matrix, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
-                        _view_ub->Update(&proj_matrix, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
+
+                        _display_camera_info.zn = ccamera->GetNear();
+                        _display_camera_info.zf = ccamera->GetFar();
+                        _display_camera_info.model = ccamera->GetModelMatrix();
+                        _display_camera_info.view = ccamera->GetViewMatrix();
+                        _display_camera_info.projection = ccamera->GetProjMatrix();
+                        _display_camera_info.position = GetTranslate(_display_camera_info.model);
+
+                        _view_ub->Update(&_display_camera_info.view, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
+                        _view_ub->Update(&_display_camera_info.projection, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
                     }
 
                     if (ccamera->GetMain()) {
@@ -253,7 +260,7 @@ namespace gear {
         std::sort(&_dc_list[common_dc_head], &_dc_list[common_dc_head] + num_common_dc);
 
         renderer->BindFramebuffer(_display_fb);
-        for (uint32_t i = common_dc_head; i < num_common_dc; ++i) {
+        for (uint32_t i = common_dc_head; i < common_dc_head + num_common_dc; ++i) {
             renderer->ExecuteDrawCall(_dc_list[i]);
         }
         renderer->UnbindFramebuffer();

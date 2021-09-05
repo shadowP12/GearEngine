@@ -300,6 +300,7 @@ namespace gear {
 
         // 在每一帧的开始清空当前fb
         FramebufferInfo screen_fb = {};
+        screen_fb.is_screen_fb = true;
         screen_fb.clear_value.flags = blast::CLEAR_ALL;
         screen_fb.clear_value.color[0] = 0.2f;
         screen_fb.clear_value.color[1] = 0.3f;
@@ -439,7 +440,12 @@ namespace gear {
             return;
         }
 
+        _bind_fb_info = info;
+
         blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
+
+        uint32_t num_barriers = 0;
+        blast::GfxTextureBarrier barriers[TARGET_COUNT + 1];
 
         blast::GfxClearValue clear_value;
 
@@ -450,6 +456,10 @@ namespace gear {
 
         for (int i = 0; i < TARGET_COUNT; ++i) {
             if (std::get<0>(info.colors[i]) != nullptr) {
+                barriers[num_barriers].texture = std::get<0>(info.colors[i]);
+                barriers[num_barriers].new_state = blast::RESOURCE_STATE_RENDER_TARGET;
+                num_barriers++;
+
                 blast::GfxTextureViewDesc texture_view_desc;
                 texture_view_desc.texture = std::get<0>(info.colors[i]);
                 texture_view_desc.layer = std::get<1>(info.colors[i]);
@@ -459,12 +469,21 @@ namespace gear {
             }
         }
         if (std::get<0>(info.depth_stencil) != nullptr) {
+            barriers[num_barriers].texture = std::get<0>(info.depth_stencil);
+            barriers[num_barriers].new_state = blast::RESOURCE_STATE_DEPTH_WRITE;
+            num_barriers++;
+
             blast::GfxTextureViewDesc texture_view_desc;
             texture_view_desc.texture = std::get<0>(info.depth_stencil);
             texture_view_desc.layer = std::get<1>(info.depth_stencil);
             texture_view_desc.level = std::get<2>(info.depth_stencil);
             framebuffer_desc.depth_stencil = _texture_view_cache->GetTextureView(texture_view_desc);
             framebuffer_desc.has_depth_stencil = true;
+        }
+
+        // 屏幕的帧缓存不需要进行布局转换
+        if (!info.is_screen_fb) {
+            cmd->SetBarrier(0, nullptr, num_barriers, barriers);
         }
 
         blast::GfxFramebuffer* fb = _framebuffer_cache->GetFramebuffer(framebuffer_desc);
@@ -482,6 +501,27 @@ namespace gear {
 
         blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
         cmd->UnbindFramebuffer();
+
+        uint32_t num_barriers = 0;
+        blast::GfxTextureBarrier barriers[TARGET_COUNT + 1];
+
+        for (int i = 0; i < TARGET_COUNT; ++i) {
+            if (std::get<0>(_bind_fb_info.colors[i]) != nullptr) {
+                barriers[num_barriers].texture = std::get<0>(_bind_fb_info.colors[i]);
+                barriers[num_barriers].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+                num_barriers++;
+            }
+        }
+        if (std::get<0>(_bind_fb_info.depth_stencil) != nullptr) {
+            barriers[num_barriers].texture = std::get<0>(_bind_fb_info.depth_stencil);
+            barriers[num_barriers].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+            num_barriers++;
+        }
+
+        // 屏幕的帧缓存不需要进行布局转换
+        if (!_bind_fb_info.is_screen_fb) {
+            cmd->SetBarrier(0, nullptr, num_barriers, barriers);
+        }
     }
 
     void Renderer::BindFrameUniformBuffer(blast::GfxBuffer* buffer, uint32_t size, uint32_t offset) {

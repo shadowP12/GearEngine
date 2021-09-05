@@ -66,7 +66,7 @@ namespace gear {
         std::sort(&_dc_list[ui_dc_head], &_dc_list[ui_dc_head] + num_ui_dc);
 
         renderer->BindFramebuffer(_display_fb);
-        for (uint32_t i = ui_dc_head; i < num_ui_dc; ++i) {
+        for (uint32_t i = ui_dc_head; i < ui_dc_head + num_ui_dc; ++i) {
             renderer->ExecuteDrawCall(_dc_list[i]);
         }
         renderer->UnbindFramebuffer();

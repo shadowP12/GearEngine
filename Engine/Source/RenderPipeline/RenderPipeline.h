@@ -45,6 +45,7 @@ namespace gear {
     };
 
     struct ShadowMapInfo {
+        glm::mat4 light_view_matrix;
         glm::mat4 light_projection_matrix;
         glm::vec3 camera_position;
         glm::vec3 camera_direction;
@@ -136,6 +137,7 @@ namespace gear {
         UniformBuffer* _renderable_ub = nullptr;
 
         // view
+        CameraInfo _display_camera_info;
         CameraInfo _main_camera_info;
         uint32_t _num_views;
         std::vector<RenderView> _views;

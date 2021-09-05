@@ -61,7 +61,8 @@ namespace gear {
         inline void SetShadowReceiver(bool v) noexcept { Set(v, SHADOW_RECEIVER); }
 
         inline bool IsValidDepthVariant() noexcept {
-            return key == DEPTH;
+            // 深度变体只有两种情况
+            return key == DEPTH || key == (DEPTH | SKINNING_OR_MORPHING);
         }
 
         // 过滤掉不需要的顶点变体

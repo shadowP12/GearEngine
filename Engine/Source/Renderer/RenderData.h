@@ -37,6 +37,7 @@ namespace gear {
     };
 
     struct FramebufferInfo {
+        bool is_screen_fb = false;
         uint32_t width;
         uint32_t height;
         blast::GfxClearValue clear_value;

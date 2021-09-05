@@ -149,7 +149,7 @@ namespace gear {
                 }
             }
 
-            // depth变种只需要一个就够
+            // depth
             if (variant.HasDepth() && !variant.IsValidDepthVariant()) {
                 continue;
             }
@@ -224,7 +224,7 @@ namespace gear {
                 blast::ShaderCompileResult compile_result = gEngine.GetRenderer()->GetShaderCompiler()->Compile(compile_desc);
                 if (compile_result.success) {
                     blast::GfxShaderDesc shader_desc;
-                    shader_desc.stage = blast::SHADER_STAGE_VERT;
+                    shader_desc.stage = blast::SHADER_STAGE_FRAG;
                     shader_desc.bytes = compile_result.bytes;
                     blast::GfxShader* frag_shader = gEngine.GetRenderer()->GetContext()->CreateShader(shader_desc);
                     builder.AddFragShader(key, frag_shader);
