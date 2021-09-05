@@ -167,4 +167,18 @@ namespace gear {
         out << code << "\n";
         return out;
     }
+
+    std::stringstream& CodeGenerator::GenerateShadingModel(std::stringstream& out, ShadingModel shading_model) const {
+        if (shading_model == SHADING_MODEL_UNLIT) {
+            out << SHADING_UNLIT_FS_DATA << "\n";
+            return out;
+        }
+
+        if (shading_model == SHADING_MODEL_LIT) {
+            out << LIGHT_DIRECTIONAL_FS_DATA << "\n";
+            out << LIGHT_PUNCTUAL_FS_DATA << "\n";
+            out << SHADING_LIT_FS_DATA << "\n";
+            return out;
+        }
+    }
 }

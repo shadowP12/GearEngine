@@ -7,5 +7,5 @@ void main() {
 
     ProcessMaterialFragmentParams(material_params);
     
-    fragColor = material_params.base_color;
+    fragColor = EvaluateMaterial(material_params);
 }

@@ -159,6 +159,7 @@ namespace gear {
                 std::stringstream vs;
                 CodeGenerator cg;
 
+                // 设置define
                 if (variant.HasSkinningOrMorphing()) {
                     cg.GenerateDefine(vs, "HAS_SKINNING_OR_MORPHING");
                 }
@@ -200,6 +201,20 @@ namespace gear {
             if (variant.FilterVariantFragment(key) == key) {
                 std::stringstream fs;
                 CodeGenerator cg;
+
+                // 设置define
+                if (variant.HasDirectionalLighting()) {
+                    cg.GenerateDefine(fs, "HAS_DIRECTIONAL_LIGHTING");
+                }
+
+                if (variant.HasDynamicLighting()) {
+                    cg.GenerateDefine(fs, "HAS_DYNAMIC_LIGHTING");
+                }
+
+                if (variant.HasShadowReceiver()) {
+                    cg.GenerateDefine(fs, "HAS_SHADOWING");
+                }
+
                 cg.GenerateShaderAttributes(fs, blast::SHADER_STAGE_FRAG, attributes);
                 cg.GenerateShaderInput(fs, blast::SHADER_STAGE_FRAG);
 
@@ -209,6 +224,8 @@ namespace gear {
 
                 cg.GenerateCommonMaterial(fs, blast::SHADER_STAGE_FRAG);
                 cg.GenerateCustomCode(fs, fragment_code);
+
+                cg.GenerateShadingModel(fs, builder._render_state.shading_model);
 
                 if (variant.HasDepth()) {
                     cg.GenerateShaderDepthMain(fs, blast::SHADER_STAGE_FRAG);

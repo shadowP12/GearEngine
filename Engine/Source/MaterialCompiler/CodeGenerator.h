@@ -1,4 +1,5 @@
 #pragma once
+#include "Renderer/RenderData.h"
 #include <Blast/Gfx/GfxDefine.h>
 #include <iosfwd>
 #include <string>
@@ -34,5 +35,7 @@ namespace gear {
         std::stringstream& GenerateShaderMain(std::stringstream& out, blast::ShaderStage stage) const;
 
         std::stringstream& GenerateShaderDepthMain(std::stringstream& out, blast::ShaderStage stage) const;
+
+        std::stringstream& GenerateShadingModel(std::stringstream& out, ShadingModel shading_model) const;
     };
 }
