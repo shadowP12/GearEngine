@@ -79,11 +79,11 @@ namespace gear {
     };
 
     struct DescriptorKey {
-        blast::GfxBuffer* uniform_buffers[3];
-        uint32_t uniform_buffer_offsets[3];
-        uint32_t uniform_buffer_sizes[3];
-        blast::GfxTextureView* textures_views[8];
-        blast::GfxSampler* samplers[8];
+        blast::GfxBuffer* uniform_buffers[UBUFFER_BINDING_COUNT];
+        uint32_t uniform_buffer_offsets[UBUFFER_BINDING_COUNT];
+        uint32_t uniform_buffer_sizes[UBUFFER_BINDING_COUNT];
+        blast::GfxTextureView* textures_views[SAMPLER_BINDING_COUNT];
+        blast::GfxSampler* samplers[SAMPLER_BINDING_COUNT];
     };
 
     struct DescriptorBundle {

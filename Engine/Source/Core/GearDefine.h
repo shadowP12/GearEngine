@@ -13,13 +13,13 @@
 #define UBUFFER_BINDING_COUNT 3
 
 // 纹理采样器个数
-#define SAMPLER_BINDING_COUNT 8
-
-// 材质纹理采样器个数
-#define MATERIAL_SAMPLER_COUNT 4
+#define SAMPLER_BINDING_COUNT 16
 
 // CSM的Cascade个数
 #define SHADOW_CASCADE_COUNT 1
+
+// 阴影贴图个数
+#define SHADOW_MAP_COUNT 4
 
 #define SAFE_DELETE(x) \
     { \

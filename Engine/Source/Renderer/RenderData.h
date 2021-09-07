@@ -71,14 +71,14 @@ namespace gear {
         uint32_t renderable_ub_offset = 0;
         blast::GfxBuffer* renderable_ub = nullptr;
 
-        std::pair<blast::GfxTexture*, blast::GfxSamplerDesc> material_samplers[MATERIAL_SAMPLER_COUNT];
-
         uint32_t material_ub_size = 0;
         uint32_t material_ub_offset = 0;
         blast::GfxBuffer* material_ub = nullptr;
 
         blast::PrimitiveTopology topo;
         RenderState render_state;
+
+        std::pair<blast::GfxTexture*, blast::GfxSamplerDesc> samplers[SAMPLER_BINDING_COUNT];
 
         bool operator < (DrawCall const& rhs) { return key < rhs.key; }
     };

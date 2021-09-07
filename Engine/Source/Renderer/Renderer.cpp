@@ -565,15 +565,15 @@ namespace gear {
         descriptor_key.uniform_buffer_sizes[2] = dc.renderable_ub_size;
         descriptor_key.uniform_buffer_offsets[2] = dc.renderable_ub_offset;
 
-        // 绑定materialSamplers
-        for (int i = 0; i < MATERIAL_SAMPLER_COUNT; ++i) {
-            if (dc.material_samplers->first != nullptr) {
+        // 绑定samplers
+        for (uint32_t i = 0; i < SAMPLER_BINDING_COUNT; ++i) {
+            if (dc.samplers[i].first != nullptr) {
                 blast::GfxTextureViewDesc texture_view_desc;
-                texture_view_desc.texture = dc.material_samplers->first;
+                texture_view_desc.texture = dc.samplers[i].first;
                 texture_view_desc.layer = 0;
                 texture_view_desc.level = 0;
-                descriptor_key.textures_views[i + 4] = _texture_view_cache->GetTextureView(texture_view_desc);
-                descriptor_key.samplers[i + 4] = _sampler_cache->GetSampler(dc.material_samplers->second);
+                descriptor_key.textures_views[i] = _texture_view_cache->GetTextureView(texture_view_desc);
+                descriptor_key.samplers[i] = _sampler_cache->GetSampler(dc.samplers[i].second);
             }
         }
 

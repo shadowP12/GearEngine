@@ -15,6 +15,7 @@ namespace gear {
             Renderable* rb = &_renderables[_ui_renderables[i]];
             for (uint32_t j = 0; j < rb->primitives.size(); ++j) {
                 RenderPrimitive* rp = &rb->primitives[j];
+                _dc_list[ui_dc_head + num_ui_dc] = {};
                 _dc_list[ui_dc_head + num_ui_dc].key = 0;
                 _dc_list[ui_dc_head + num_ui_dc].renderable_ub = rb->renderable_ub->GetHandle();
                 _dc_list[ui_dc_head + num_ui_dc].renderable_ub_size = rb->renderable_ub_size;
@@ -53,9 +54,10 @@ namespace gear {
                     _dc_list[ui_dc_head + num_ui_dc].material_ub_offset = 0;
                 }
 
+                // 材质采样器
                 for (uint32_t k = 0; k < rp->mi->GetGfxSamplerGroup().size(); ++k) {
-                    std::get<0>(_dc_list[ui_dc_head + num_ui_dc].material_samplers[k]) = rp->mi->GetGfxSamplerGroup().at(k).first->GetTexture();
-                    std::get<1>(_dc_list[ui_dc_head + num_ui_dc].material_samplers[k]) = rp->mi->GetGfxSamplerGroup().at(k).second;
+                    std::get<0>(_dc_list[ui_dc_head + num_ui_dc].samplers[4 + k]) = rp->mi->GetGfxSamplerGroup().at(k).first->GetTexture();
+                    std::get<1>(_dc_list[ui_dc_head + num_ui_dc].samplers[4 + k]) = rp->mi->GetGfxSamplerGroup().at(k).second;
                 }
                 num_ui_dc++;
             }

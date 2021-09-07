@@ -310,6 +310,7 @@ namespace gear {
                 MaterialVariant::Key material_variant = 0;
                 material_variant |= MaterialVariant::DEPTH;
 
+                _dc_list[shadow_dc_head + num_shadow_dc] = {};
                 _dc_list[shadow_dc_head + num_shadow_dc].key = 0;
                 _dc_list[shadow_dc_head + num_shadow_dc].renderable_ub = rb->renderable_ub->GetHandle();
                 _dc_list[shadow_dc_head + num_shadow_dc].renderable_ub_size = rb->renderable_ub_size;
@@ -341,6 +342,8 @@ namespace gear {
                 _dc_list[shadow_dc_head + num_shadow_dc].material_ub_size = 0;
                 _dc_list[shadow_dc_head + num_shadow_dc].material_ub_offset = 0;
 
+
+
                 num_shadow_dc++;
             }
         }
@@ -370,8 +373,12 @@ namespace gear {
             renderer->UnbindFramebuffer();
         }
 
-        // 重置设置view ub
+        // 设置view ub
         _view_ub->Update(&_display_camera_info.view, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
         _view_ub->Update(&_display_camera_info.projection, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
+        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
+            glm::mat4 light_matrix = shadow_map_infos[i].light_projection_matrix * shadow_map_infos[i].light_view_matrix;
+            _view_ub->Update(&light_matrix, offsetof(ViewUniforms, light_matrixs[i]), sizeof(glm::mat4));
+        }
     }
 }

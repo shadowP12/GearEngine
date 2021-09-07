@@ -152,6 +152,7 @@ namespace gear {
             }
 
             if (entity->HasComponent<CLight>()) {
+                _light_info.has_direction_light = true;
                 _light_info.sun_direction = entity->GetComponent<CTransform>()->GetFrontVector();
                 glm::normalize(_light_info.sun_direction);
                 _num_lights++;
@@ -211,12 +212,24 @@ namespace gear {
             Renderable* rb = &_renderables[_common_renderables[i]];
             for (uint32_t j = 0; j < rb->primitives.size(); ++j) {
                 RenderPrimitive* rp = &rb->primitives[j];
+
+                MaterialVariant::Key material_variant = 0;
+                if (_light_info.has_direction_light) {
+                    material_variant |= MaterialVariant::DIRECTIONAL_LIGHTING;
+                }
+
+                if (rp->receive_shadow) {
+                    material_variant |= MaterialVariant::SHADOW_RECEIVER;
+                }
+
+                _dc_list[common_dc_head + num_common_dc] = {};
                 _dc_list[common_dc_head + num_common_dc].key = 0;
                 _dc_list[common_dc_head + num_common_dc].renderable_ub = rb->renderable_ub->GetHandle();
                 _dc_list[common_dc_head + num_common_dc].renderable_ub_size = rb->renderable_ub_size;
                 _dc_list[common_dc_head + num_common_dc].renderable_ub_offset = rb->renderable_ub_offset;
 
                 if (rb->bone_ub) {
+                    material_variant |= MaterialVariant::SKINNING_OR_MORPHING;
                     _dc_list[common_dc_head + num_common_dc].bone_ub = rb->bone_ub->GetHandle();
                 } else {
                     _dc_list[common_dc_head + num_common_dc].bone_ub = nullptr;
@@ -231,8 +244,6 @@ namespace gear {
                 _dc_list[common_dc_head + num_common_dc].ib = rp->ib->GetHandle();
 
                 _dc_list[common_dc_head + num_common_dc].topo = rp->topo;
-
-                MaterialVariant::Key material_variant = 0;
 
                 _dc_list[common_dc_head + num_common_dc].render_state = rp->mi->GetMaterial()->GetRenderState();
 
@@ -250,8 +261,8 @@ namespace gear {
                 }
 
                 for (uint32_t k = 0; k < rp->mi->GetGfxSamplerGroup().size(); ++k) {
-                    std::get<0>(_dc_list[common_dc_head + num_common_dc].material_samplers[k]) = rp->mi->GetGfxSamplerGroup().at(k).first->GetTexture();
-                    std::get<1>(_dc_list[common_dc_head + num_common_dc].material_samplers[k]) = rp->mi->GetGfxSamplerGroup().at(k).second;
+                    std::get<0>(_dc_list[common_dc_head + num_common_dc].samplers[4 + k]) = rp->mi->GetGfxSamplerGroup().at(k).first->GetTexture();
+                    std::get<1>(_dc_list[common_dc_head + num_common_dc].samplers[4 + k]) = rp->mi->GetGfxSamplerGroup().at(k).second;
                 }
                 num_common_dc++;
             }

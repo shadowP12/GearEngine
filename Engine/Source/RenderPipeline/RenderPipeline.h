@@ -15,6 +15,7 @@ namespace gear {
     class MaterialInstance;
 
     struct LightInfo {
+        bool has_direction_light = false;
         glm::vec3 sun_direction;
     };
 
@@ -55,6 +56,7 @@ namespace gear {
     struct ViewUniforms {
         glm::mat4 view_matrix;
         glm::mat4 proj_matrix;
+        glm::mat4 light_matrixs[SHADOW_MAP_COUNT];
     };
 
     struct RenderableUniforms {
