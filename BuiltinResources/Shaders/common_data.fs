@@ -1,7 +1,8 @@
 layout(std140, set = 0, binding = 1) uniform FrameUniforms {
     mat4 view_matrix;
     mat4 proj_matrix;
-    mat4 light_matrixs[4];
+    mat4 sun_matrixs[SHADOW_CASCADE_COUNT];
+    vec4 sun_direction;
 } frame_uniforms;
 
 layout(std140, set = 0, binding = 2) uniform ObjectUniforms {

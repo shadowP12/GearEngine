@@ -160,6 +160,8 @@ namespace gear {
                 CodeGenerator cg;
 
                 // 设置define
+                cg.GenerateDefine(vs, "SHADOW_CASCADE_COUNT", std::to_string(SHADOW_CASCADE_COUNT).c_str());
+
                 if (variant.HasSkinningOrMorphing()) {
                     cg.GenerateDefine(vs, "HAS_SKINNING_OR_MORPHING");
                 }
@@ -203,6 +205,8 @@ namespace gear {
                 CodeGenerator cg;
 
                 // 设置define
+                cg.GenerateDefine(fs, "SHADOW_CASCADE_COUNT", std::to_string(SHADOW_CASCADE_COUNT).c_str());
+
                 if (variant.HasDirectionalLighting()) {
                     cg.GenerateDefine(fs, "HAS_DIRECTIONAL_LIGHTING");
                 }

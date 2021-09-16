@@ -310,6 +310,10 @@ namespace gear {
         screen_fb.clear_value.stencil = 0;
         screen_fb.width = _frame_width;
         screen_fb.height = _frame_height;
+        screen_fb.viewport[0] = 0.0f;
+        screen_fb.viewport[1] = 0.0f;
+        screen_fb.viewport[2] = _frame_width;
+        screen_fb.viewport[3] = _frame_height;
         std::get<0>(screen_fb.colors[0]) = color_rt;
         std::get<1>(screen_fb.colors[0]) = 0;
         std::get<2>(screen_fb.colors[0]) = 0;
@@ -489,7 +493,7 @@ namespace gear {
         blast::GfxFramebuffer* fb = _framebuffer_cache->GetFramebuffer(framebuffer_desc);
         cmd->BindFramebuffer(fb);
         cmd->ClearFramebuffer(fb, info.clear_value);
-        cmd->SetViewport(0.0, 0.0, info.width, info.height);
+        cmd->SetViewport(info.viewport[0], info.viewport[1], info.viewport[2], info.viewport[3]);
         cmd->SetScissor(0, 0, info.width, info.height);
         _bind_fb = fb;
     }
@@ -615,6 +619,8 @@ namespace gear {
         }
 
         pipeline_desc.rasterizer_state.primitive_topo = dc.topo;
+        pipeline_desc.rasterizer_state.front_face = blast::FRONT_FACE_CCW;
+        pipeline_desc.rasterizer_state.cull_mode = dc.render_state.cull_mode;
 
         blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(pipeline_desc);
         cmd->BindGraphicsPipeline(pipeline);
@@ -669,6 +675,7 @@ namespace gear {
         pipeline_desc.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
 
         pipeline_desc.rasterizer_state.primitive_topo = dc.topo;
+        pipeline_desc.rasterizer_state.cull_mode = dc.render_state.cull_mode;
 
         blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(pipeline_desc);
         cmd->BindGraphicsPipeline(pipeline);

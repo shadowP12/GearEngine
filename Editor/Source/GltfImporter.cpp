@@ -550,7 +550,7 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             primitive.count = indexCount;
             primitive.offset = 0;
             primitive.bbox = bbox;
-            primitive.topo = blast::PRIMITIVE_TOPO_TRI_STRIP;
+            primitive.topo = blast::PRIMITIVE_TOPO_TRI_LIST;
             primitive.mi = material_helper[cmaterial];
             primitive.vb = vertex_buffer;
             primitive.ib = indexBuffer;

@@ -45,6 +45,18 @@ inline glm::vec3 TransformPoint(const glm::vec3& point, const glm::mat4& inMat)
     glm::vec4 r = inMat * p;
     return glm::vec3(r.x / r.w, r.y / r.w, r.z / r.w);
 }
+
+inline glm::mat4 MakeViewMatrix(const glm::vec3& position, const glm::quat& orientation) {
+    // 有更高效的方法
+    // 利用orientation的正交性避免进行求逆计算
+    glm::mat4 r, t;
+    r = glm::toMat4(orientation);
+    t = glm::translate(glm::mat4(1.0), position);
+    return glm::inverse(t * r);
+}
+
+
+
 /*
 inline glm::quat fromEulerAngles(const float& xAngle, const float& yAngle, const float& zAngle)
 {

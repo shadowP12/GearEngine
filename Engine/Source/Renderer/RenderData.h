@@ -34,12 +34,14 @@ namespace gear {
     struct RenderState {
         ShadingModel shading_model;
         BlendingMode blending_mode;
+        blast::CullMode cull_mode = blast::CULL_MODE_NONE;
     };
 
     struct FramebufferInfo {
         bool is_screen_fb = false;
         uint32_t width;
         uint32_t height;
+        float viewport[4];
         blast::GfxClearValue clear_value;
         blast::SampleCount sample_count;
         // texture/layer/level

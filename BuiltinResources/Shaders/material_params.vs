@@ -19,7 +19,7 @@ struct MaterialVertexParams {
 };
 
 void InitMaterialVertexParams(out MaterialVertexParams params) {
-    params.world_position = frame_uniforms.proj_matrix * frame_uniforms.view_matrix * object_uniforms.model_matrix * mesh_position;
+    params.world_position = object_uniforms.model_matrix * mesh_position;
 
 #ifdef HAS_ATTRIBUTE_COLOR
     params.color = mesh_color;
@@ -31,5 +31,9 @@ void InitMaterialVertexParams(out MaterialVertexParams params) {
 
 #ifdef HAS_ATTRIBUTE_UV1
     params.uv1 = mesh_uv1;
+#endif
+
+#ifdef HAS_ATTRIBUTE_NORMAL
+    params.world_normal = normalize(mat3(object_uniforms.normal_matrix) * mesh_normal);
 #endif
 }

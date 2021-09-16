@@ -45,14 +45,14 @@ int main()
     main_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
     main_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(6.0f, 6.0f, 12.0f));
     main_camera->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(-0.358f, 0.46f, 0.0f));
-    main_camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 100.0);
+    main_camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.5, 45.0);
 
     gear::Entity* debug_camera = gear::gEngine.GetEntityManager()->CreateEntity();
     debug_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
     debug_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 0.0f, 12.0f));
     debug_camera->AddComponent<gear::CCamera>()->SetMain(false);
     debug_camera->GetComponent<gear::CCamera>()->SetDisplay(false);
-    debug_camera->GetComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 100.0);
+    debug_camera->GetComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 1000.0);
 
     gear::Scene* editor_scene = gear::gEngine.CreateScene();
     gear::RenderPipeline* editor_pipeline = gear::gEngine.CreateRenderPipeline();

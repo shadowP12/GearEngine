@@ -48,14 +48,18 @@ layout(location = LOCATION_CUSTOM4) in vec4 mesh_custom4;
 layout(location = LOCATION_CUSTOM5) in vec4 mesh_custom5;
 #endif
 
-layout(location = 4) out highp vec3 vertex_world_position;
+layout(location = 0) out highp vec3 vertex_world_position;
 
-layout(location = 6) out highp vec4 vertex_position;
+layout(location = 1) out highp vec4 vertex_position;
 
 #if defined(HAS_ATTRIBUTE_UV0) && !defined(HAS_ATTRIBUTE_UV1)
 layout(location = 5) out highp vec2 vertex_uv01;
 #elif defined(HAS_ATTRIBUTE_UV1)
 layout(location = 5) out highp vec4 vertex_uv01;
+#endif
+
+#if defined(HAS_ATTRIBUTE_NORMAL)
+layout(location = 6) out highp vec3 vertex_normal;
 #endif
 
 #if defined(HAS_ATTRIBUTE_COLOR)

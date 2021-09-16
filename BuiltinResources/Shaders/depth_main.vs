@@ -5,5 +5,5 @@ void main() {
 
     ProcessMaterialVertexParams(material_params);
 
-    gl_Position = material_params.world_position;
+    gl_Position = frame_uniforms.proj_matrix * frame_uniforms.view_matrix * material_params.world_position;
 }

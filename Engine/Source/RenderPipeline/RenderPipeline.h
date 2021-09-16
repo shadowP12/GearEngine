@@ -50,13 +50,17 @@ namespace gear {
         glm::mat4 light_projection_matrix;
         glm::vec3 camera_position;
         glm::vec3 camera_direction;
-        bool has_visible_shadows;
+        // 阴影贴图原始分辨率
+        uint32_t texture_dimension = 0;
+        // 实际使用的阴影贴图分辨率，牺牲最外围像素做边界
+        uint32_t shadow_dimension = 0;
     };
 
     struct ViewUniforms {
         glm::mat4 view_matrix;
         glm::mat4 proj_matrix;
-        glm::mat4 light_matrixs[SHADOW_MAP_COUNT];
+        glm::mat4 sun_matrixs[SHADOW_CASCADE_COUNT];
+        glm::vec4 sun_direction;
     };
 
     struct RenderableUniforms {
@@ -87,7 +91,7 @@ namespace gear {
         MaterialInstance* mi = nullptr;
         VertexBuffer* vb = nullptr;
         IndexBuffer* ib = nullptr;
-        blast::PrimitiveTopology topo = blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_STRIP;
+        blast::PrimitiveTopology topo = blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_LIST;
     };
 
     struct Renderable {
@@ -152,7 +156,8 @@ namespace gear {
         UniformBuffer* _light_ub = nullptr;
 
         // shadow
-        Texture* _shadow_maps[SHADOW_CASCADE_COUNT];
+        ShadowMapInfo _cascade_shadow_map_infos[SHADOW_CASCADE_COUNT];
+        Texture* _cascade_shadow_maps[SHADOW_CASCADE_COUNT];
         FramebufferInfo _shadow_map_fb;
 
         // display

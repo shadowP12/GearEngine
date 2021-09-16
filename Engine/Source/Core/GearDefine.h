@@ -16,7 +16,7 @@
 #define SAMPLER_BINDING_COUNT 16
 
 // CSM的Cascade个数
-#define SHADOW_CASCADE_COUNT 1
+#define SHADOW_CASCADE_COUNT 3
 
 // 阴影贴图个数
 #define SHADOW_MAP_COUNT 4

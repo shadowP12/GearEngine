@@ -25,7 +25,10 @@ namespace gear {
             tex_builder.SetWidth(1024);
             tex_builder.SetHeight(1024);
             tex_builder.SetFormat(blast::FORMAT_D24_UNORM_S8_UINT);
-            _shadow_maps[i] = tex_builder.Build();
+            _cascade_shadow_maps[i] = tex_builder.Build();
+
+            _cascade_shadow_map_infos[i].texture_dimension = 1024;
+            _cascade_shadow_map_infos[i].shadow_dimension = _cascade_shadow_map_infos[i].texture_dimension - 2;
         }
 
         _debug_lines.resize(MAX_DEBUG_LINES * 14);
@@ -51,7 +54,7 @@ namespace gear {
         SAFE_DELETE(_debug_line_vb);
 
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
-            SAFE_DELETE(_shadow_maps[i]);
+            SAFE_DELETE(_cascade_shadow_maps[i]);
         }
     }
 
@@ -105,6 +108,10 @@ namespace gear {
                             _display_fb.clear_value.flags = blast::CLEAR_NONE;
                             _display_fb.width = renderer->GetWidth();
                             _display_fb.height = renderer->GetHeight();
+                            _display_fb.viewport[0] = 0.0f;
+                            _display_fb.viewport[1] = 0.0f;
+                            _display_fb.viewport[2] = renderer->GetWidth();
+                            _display_fb.viewport[3] = renderer->GetHeight();
                             std::get<0>(_display_fb.colors[0]) = renderer->GetColor();
                             std::get<1>(_display_fb.colors[0]) = 0;
                             std::get<2>(_display_fb.colors[0]) = 0;
@@ -115,6 +122,11 @@ namespace gear {
                             _display_fb.clear_value.flags = blast::CLEAR_NONE;
                             _display_fb.width = ccamera->GetRenderTarget()->GetWidth();
                             _display_fb.height = ccamera->GetRenderTarget()->GetHeight();
+                            _display_fb.viewport[0] = 0.0f;
+                            _display_fb.viewport[1] = 0.0f;
+                            _display_fb.viewport[2] = ccamera->GetRenderTarget()->GetWidth();
+                            _display_fb.viewport[3] = ccamera->GetRenderTarget()->GetHeight();
+
                             for (int i = 0; i < TARGET_COUNT; ++i) {
                                 auto c = ccamera->GetRenderTarget()->GetColor(i);
                                 std::get<0>(_display_fb.colors[i]) = std::get<0>(c)->GetTexture();
@@ -246,6 +258,7 @@ namespace gear {
                 _dc_list[common_dc_head + num_common_dc].topo = rp->topo;
 
                 _dc_list[common_dc_head + num_common_dc].render_state = rp->mi->GetMaterial()->GetRenderState();
+                _dc_list[common_dc_head + num_common_dc].render_state.cull_mode = blast::CULL_MODE_BACK;
 
                 _dc_list[common_dc_head + num_common_dc].vs = rp->mi->GetMaterial()->GetVertShader(material_variant);
                 _dc_list[common_dc_head + num_common_dc].fs = rp->mi->GetMaterial()->GetFragShader(material_variant);
@@ -260,6 +273,19 @@ namespace gear {
                     _dc_list[common_dc_head + num_common_dc].material_ub_offset = 0;
                 }
 
+                // 阴影贴图
+                if (rp->receive_shadow) {
+                    std::get<0>(_dc_list[common_dc_head + num_common_dc].samplers[0]) = _cascade_shadow_maps[0]->GetTexture();
+                    blast::GfxSamplerDesc shadow_sampler_desc;
+                    shadow_sampler_desc.min_filter = blast::FILTER_NEAREST;
+                    shadow_sampler_desc.mag_filter = blast::FILTER_NEAREST;
+                    shadow_sampler_desc.address_u = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
+                    shadow_sampler_desc.address_v = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
+                    shadow_sampler_desc.address_w = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
+                    std::get<1>(_dc_list[common_dc_head + num_common_dc].samplers[0]) = shadow_sampler_desc;
+                }
+
+                // 材质贴图
                 for (uint32_t k = 0; k < rp->mi->GetGfxSamplerGroup().size(); ++k) {
                     std::get<0>(_dc_list[common_dc_head + num_common_dc].samplers[4 + k]) = rp->mi->GetGfxSamplerGroup().at(k).first->GetTexture();
                     std::get<1>(_dc_list[common_dc_head + num_common_dc].samplers[4 + k]) = rp->mi->GetGfxSamplerGroup().at(k).second;

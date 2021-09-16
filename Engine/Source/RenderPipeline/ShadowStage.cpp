@@ -52,7 +52,6 @@ namespace gear {
         return ComputeNearFar(view, ws_vertices, 8);
     }
 
-
     // todo: 后续优化步骤
     void RenderPipeline::ComputeCascadeParams(CascadeParameters& cascade_params) {
         // 方向光取任何位置都没有问题，这里默认设置为相机当前位置
@@ -216,37 +215,66 @@ namespace gear {
     }
 
     void RenderPipeline::UpdateShadowMapInfo(const CascadeParameters& cascade_params, ShadowMapInfo& shadow_map_info) {
-        if (cascade_params.ws_shadow_casters_volume.IsEmpty() || cascade_params.ws_shadow_receivers_volume.IsEmpty()) {
-            shadow_map_info.has_visible_shadows = false;
-            return;
+        // 计算相机视锥体在世界坐标的顶点
+        glm::vec3 cs_view_frustum_corners[8] = {
+                { -1, -1,  -1.0 },
+                {  1, -1,  -1.0 },
+                { -1,  1,  -1.0 },
+                {  1,  1,  -1.0 },
+                { -1, -1,  1.0 },
+                {  1, -1,  1.0 },
+                { -1,  1,  1.0 },
+                {  1,  1,  1.0 },
+        };
+
+        glm::vec3 ws_view_frustum_vertices[8];
+        glm::mat4 projection_view_inverse = glm::inverse(_main_camera_info.projection * _main_camera_info.view);
+        for (uint32_t i = 0; i < 8; i++) {
+            ws_view_frustum_vertices[i] = TransformPoint(cs_view_frustum_corners[i], projection_view_inverse);
         }
 
-        // 计算相机视锥体在世界坐标的顶点
-        glm::vec3 ws_view_frustum_vertices[8];
-        ComputeFrustumCorners(ws_view_frustum_vertices, _main_camera_info.model * glm::inverse(_main_camera_info.projection), cascade_params.cs_near_far);
+        for (uint32_t i = 0; i < 4; i++) {
+            glm::vec3 dist = ws_view_frustum_vertices[i + 4] - ws_view_frustum_vertices[i];
+            ws_view_frustum_vertices[i + 4] = ws_view_frustum_vertices[i] + (dist * cascade_params.cs_near_far.x);
+            ws_view_frustum_vertices[i] = ws_view_frustum_vertices[i] + (dist * cascade_params.cs_near_far.y);
+        }
+
+//        ComputeFrustumCorners(ws_view_frustum_vertices, glm::inverse(_main_camera_info.projection * _main_camera_info.view), cascade_params.cs_near_far);
 
         Frustum frustum(ws_view_frustum_vertices);
         DrawDebugFrustum(frustum, g_current_debug_color);
 
         // 计算投射阴影包围盒与相机视锥体的相交的顶点
         glm::vec3 ws_clipped_shadow_caster_volume[64];
-        uint32_t vertex_count = 0;
-        IntersectFrustumWithBBox(ws_view_frustum_vertices, cascade_params.ws_shadow_casters_volume, ws_clipped_shadow_caster_volume, vertex_count);
-        // 相交顶点小于等于2时，说明当前没有一个renderable受阴影影响，所以说不需要阴影贴图
-        shadow_map_info.has_visible_shadows = vertex_count >= 2;
-        if (!shadow_map_info.has_visible_shadows) {
-            return;
-        }
-        // bebug包围盒
-        BBox ws_light_frustum_bounds;
+        uint32_t vertex_count = 8;
         for (uint32_t i = 0; i < vertex_count; ++i) {
-            ws_light_frustum_bounds.Grow(ws_clipped_shadow_caster_volume[i]);
+            ws_clipped_shadow_caster_volume[i] = ws_view_frustum_vertices[i];
         }
-        DrawDebugBox(ws_light_frustum_bounds, g_current_debug_color);
 
-        // 计算灯光矩阵
-        glm::vec3 center = ws_light_frustum_bounds.Center();
-        float radius = glm::length(ws_light_frustum_bounds.Diagonal()) / 2.0f;
+        // Get frustum center
+        glm::vec3 center = glm::vec3(0.0f);
+        for (uint32_t i = 0; i < vertex_count; i++) {
+            center += ws_clipped_shadow_caster_volume[i];
+        }
+        center /= 8.0f;
+
+        float radius = 0.0f;
+        for (uint32_t i = 0; i < vertex_count; i++) {
+            float distance = glm::length(ws_clipped_shadow_caster_volume[i] - center);
+            radius = glm::max(radius, distance);
+        }
+        radius = std::ceil(radius * 16.0f) / 16.0f;
+
+        // 解决闪烁问题
+        // world_units_per_texel表示每一个阴影贴图纹素的世界坐标
+        float world_units_per_texel = radius * 2.0f / shadow_map_info.shadow_dimension;
+        glm::mat4 shadow_view_matrix = glm::lookAt(glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0, 0.0) + _light_info.sun_direction, glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::vec3 shadow_space_origin = TransformPoint(center, shadow_view_matrix);
+        glm::vec2 snap_offset(fmod(shadow_space_origin.x, world_units_per_texel), fmod(shadow_space_origin.y, world_units_per_texel));
+        shadow_space_origin.x -= snap_offset.x;
+        shadow_space_origin.y -= snap_offset.y;
+        center = TransformPoint(shadow_space_origin, glm::inverse(shadow_view_matrix));
+
         glm::vec3 max_extents = glm::vec3(radius);
         glm::vec3 min_extents = -max_extents;
 
@@ -258,8 +286,6 @@ namespace gear {
         shadow_map_info.light_view_matrix = light_view_matrix;
         shadow_map_info.camera_position = GetTranslate(light_model_matrix);
         shadow_map_info.camera_direction = GetAxisZ(light_model_matrix);
-
-        // 后续优化，通过扭曲灯光投影矩阵的方法去改善阴影贴图
     }
 
     void RenderPipeline::ExecShadowStage() {
@@ -272,27 +298,36 @@ namespace gear {
         CascadeParameters cascade_params;
         ComputeCascadeParams(cascade_params);
 
-        // 划分
-        float vs_near = -_main_camera_info.zn;
-        float vs_far = -_main_camera_info.zf;
+        float camera_near = _main_camera_info.zn;
+        float camera_far = _main_camera_info.zf;
+        float camera_range = camera_far - camera_near;
+        float min_distance = camera_near;
+        float max_distance = camera_near + camera_range;
+        float cascade_splits[SHADOW_CASCADE_COUNT];
 
-        float split_percentages[SHADOW_CASCADE_COUNT + 1];
-        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT + 1; ++i) {
-            split_percentages[i] = i * 0.3f;
+        float pssm_factor = 0.95f;
+        float range = max_distance - min_distance;
+        float ratio = max_distance / min_distance;
+        float log_ratio = glm::clamp(1.0f - pssm_factor, 0.0f, 1.0f);
+        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
+            float distribute = static_cast<float>(i + 1) / SHADOW_CASCADE_COUNT;
+            float log_z = static_cast<float>(min_distance * powf(ratio, distribute));
+            float uniform_z = min_distance + range * distribute;
+            cascade_splits[i] = glm::lerp(uniform_z, log_z, log_ratio);
         }
-        split_percentages[SHADOW_CASCADE_COUNT] = 1.0f;
 
-        float splits_cs[SHADOW_CASCADE_COUNT + 1];
-        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT + 1; i++) {
-            splits_cs[i] = TransformPoint(glm::vec3(0.0f, 0.0f, vs_near + (vs_far - vs_near) * split_percentages[i]), _main_camera_info.projection).z;
+        // 归一化
+        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
+            cascade_splits[i] = (cascade_splits[i] - camera_near) / camera_range;
         }
 
         // 更新shadow map的投影矩阵
-        ShadowMapInfo shadow_map_infos[SHADOW_CASCADE_COUNT];
+        float cascade_split = 0.0f;
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
             g_current_debug_color = g_debug_color[i];
-            cascade_params.cs_near_far = { splits_cs[i], splits_cs[i + 1] };
-            UpdateShadowMapInfo(cascade_params, shadow_map_infos[i]);
+            cascade_params.cs_near_far = { cascade_split, cascade_splits[i] };
+            cascade_split = cascade_splits[i];
+            UpdateShadowMapInfo(cascade_params, _cascade_shadow_map_infos[i]);
         }
 
         // 生成dc
@@ -334,6 +369,7 @@ namespace gear {
                 _dc_list[shadow_dc_head + num_shadow_dc].topo = rp->topo;
 
                 _dc_list[shadow_dc_head + num_shadow_dc].render_state.blending_mode = BLENDING_MODE_OPAQUE;
+                _dc_list[shadow_dc_head + num_shadow_dc].render_state.cull_mode = blast::CULL_MODE_FRONT;
 
                 _dc_list[shadow_dc_head + num_shadow_dc].vs = rp->mi->GetMaterial()->GetVertShader(material_variant);
                 _dc_list[shadow_dc_head + num_shadow_dc].fs = rp->mi->GetMaterial()->GetFragShader(material_variant);
@@ -341,8 +377,6 @@ namespace gear {
                 _dc_list[shadow_dc_head + num_shadow_dc].material_ub = nullptr;
                 _dc_list[shadow_dc_head + num_shadow_dc].material_ub_size = 0;
                 _dc_list[shadow_dc_head + num_shadow_dc].material_ub_offset = 0;
-
-
 
                 num_shadow_dc++;
             }
@@ -356,15 +390,19 @@ namespace gear {
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
             _shadow_map_fb.clear_value.flags = blast::CLEAR_DEPTH;
             _shadow_map_fb.clear_value.depth = 1.0f;
-            _shadow_map_fb.width = _shadow_maps[i]->GetTexture()->GetWidth();
-            _shadow_map_fb.height = _shadow_maps[i]->GetTexture()->GetHeight();
-            std::get<0>(_shadow_map_fb.depth_stencil) = _shadow_maps[i]->GetTexture();
+            _shadow_map_fb.width = _cascade_shadow_maps[i]->GetTexture()->GetWidth();
+            _shadow_map_fb.height = _cascade_shadow_maps[i]->GetTexture()->GetHeight();
+            _shadow_map_fb.viewport[0] = 1;
+            _shadow_map_fb.viewport[1] = 1;
+            _shadow_map_fb.viewport[2] = _cascade_shadow_maps[i]->GetTexture()->GetWidth() - 1;
+            _shadow_map_fb.viewport[3] = _cascade_shadow_maps[i]->GetTexture()->GetHeight() - 1;
+            std::get<0>(_shadow_map_fb.depth_stencil) = _cascade_shadow_maps[i]->GetTexture();
             std::get<1>(_shadow_map_fb.depth_stencil) = 0;
             std::get<2>(_shadow_map_fb.depth_stencil) = 0;
 
             // 设置light view ub
-            _view_ub->Update(&shadow_map_infos[i].light_view_matrix, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
-            _view_ub->Update(&shadow_map_infos[i].light_projection_matrix, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
+            _view_ub->Update(&_cascade_shadow_map_infos[i].light_view_matrix, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
+            _view_ub->Update(&_cascade_shadow_map_infos[i].light_projection_matrix, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
 
             renderer->BindFramebuffer(_shadow_map_fb);
             for (uint32_t i = shadow_dc_head; i < shadow_dc_head + num_shadow_dc; ++i) {
@@ -377,8 +415,10 @@ namespace gear {
         _view_ub->Update(&_display_camera_info.view, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
         _view_ub->Update(&_display_camera_info.projection, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
-            glm::mat4 light_matrix = shadow_map_infos[i].light_projection_matrix * shadow_map_infos[i].light_view_matrix;
-            _view_ub->Update(&light_matrix, offsetof(ViewUniforms, light_matrixs[i]), sizeof(glm::mat4));
+            glm::mat4 light_matrix = _cascade_shadow_map_infos[i].light_projection_matrix * _cascade_shadow_map_infos[i].light_view_matrix;
+            _view_ub->Update(&light_matrix, offsetof(ViewUniforms, sun_matrixs[i]), sizeof(glm::mat4));
         }
+        glm::vec4 sun_direction = glm::vec4(_light_info.sun_direction, 1.0f);
+        _view_ub->Update(&sun_direction, offsetof(ViewUniforms, sun_direction), sizeof(glm::vec4));
     }
 }
