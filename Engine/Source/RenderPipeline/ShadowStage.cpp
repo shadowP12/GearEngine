@@ -412,13 +412,17 @@ namespace gear {
         }
 
         // 设置view ub
+        // TODO:使用一个批次进行view_ub更新
+        glm::vec4 shader_cascade_splits = glm::vec4(std::numeric_limits<float>::max());
         _view_ub->Update(&_display_camera_info.view, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
         _view_ub->Update(&_display_camera_info.projection, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
+            shader_cascade_splits[i] = cascade_splits[i] * camera_range + camera_near;
             glm::mat4 light_matrix = _cascade_shadow_map_infos[i].light_projection_matrix * _cascade_shadow_map_infos[i].light_view_matrix;
             _view_ub->Update(&light_matrix, offsetof(ViewUniforms, sun_matrixs[i]), sizeof(glm::mat4));
         }
-        glm::vec4 sun_direction = glm::vec4(_light_info.sun_direction, 1.0f);
-        _view_ub->Update(&sun_direction, offsetof(ViewUniforms, sun_direction), sizeof(glm::vec4));
+
+        _view_ub->Update(&shader_cascade_splits, offsetof(ViewUniforms, cascade_splits), sizeof(glm::vec4));
+
     }
 }

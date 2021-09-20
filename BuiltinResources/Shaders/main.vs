@@ -5,7 +5,7 @@ void main() {
 
     ProcessMaterialVertexParams(material_params);
 
-    vertex_position = mesh_position;
+    vertex_position = frame_uniforms.view_matrix * material_params.world_position;
 
     vertex_world_position = material_params.world_position.xyz;
 

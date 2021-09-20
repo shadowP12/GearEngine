@@ -61,6 +61,8 @@ namespace gear {
         glm::mat4 proj_matrix;
         glm::mat4 sun_matrixs[SHADOW_CASCADE_COUNT];
         glm::vec4 sun_direction;
+        // 级联阴影的划分参数
+        glm::vec4 cascade_splits;
     };
 
     struct RenderableUniforms {

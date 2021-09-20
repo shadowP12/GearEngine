@@ -165,6 +165,9 @@ namespace gear {
                 _light_info.sun_direction = entity->GetComponent<CTransform>()->GetFrontVector();
                 glm::normalize(_light_info.sun_direction);
                 _num_lights++;
+
+                glm::vec4 sun_direction = glm::vec4(_light_info.sun_direction, 1.0f);
+                _view_ub->Update(&sun_direction, offsetof(ViewUniforms, sun_direction), sizeof(glm::vec4));
             }
 
             if (entity->HasComponent<CRenderable>()) {
