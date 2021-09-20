@@ -58,6 +58,7 @@ namespace gear {
 
     struct ViewUniforms {
         glm::mat4 view_matrix;
+        glm::mat4 main_view_matrix;
         glm::mat4 proj_matrix;
         glm::mat4 sun_matrixs[SHADOW_CASCADE_COUNT];
         glm::vec4 sun_direction;

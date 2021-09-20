@@ -154,6 +154,7 @@ namespace gear {
                         _main_camera_info.view = ccamera->GetViewMatrix();
                         _main_camera_info.projection = ccamera->GetProjMatrix();
                         _main_camera_info.position = GetTranslate(_main_camera_info.model);
+                        _view_ub->Update(&_main_camera_info.view, offsetof(ViewUniforms, main_view_matrix), sizeof(glm::mat4));
                     }
 
                     _num_views++;
