@@ -26,6 +26,8 @@ namespace gear {
 
             void SetArray(uint32_t array);
 
+            void SetMapmap(uint32_t level);
+
             void SetFormat(blast::Format format);
 
             Texture* Build();
@@ -36,6 +38,7 @@ namespace gear {
             uint32_t _height = 1;
             uint32_t _depth = 1;
             uint32_t _array = 1;
+            uint32_t _mapmip_level = 1;
             blast::Format _format;
         };
 
@@ -56,6 +59,7 @@ namespace gear {
         uint32_t _height;
         uint32_t _depth;
         uint32_t _array;
+        uint32_t _mapmip_level;
         blast::Format _format;
         // 后续将使用一块大的buffer代替vector
         std::vector<uint8_t*> _datas;

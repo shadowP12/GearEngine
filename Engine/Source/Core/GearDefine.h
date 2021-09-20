@@ -15,6 +15,9 @@
 // 纹理采样器个数
 #define SAMPLER_BINDING_COUNT 16
 
+// shader最大纹理数量
+#define MAX_TEXTURE_COUNT 32
+
 // CSM的Cascade个数
 #define SHADOW_CASCADE_COUNT 3
 

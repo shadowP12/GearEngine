@@ -157,7 +157,7 @@ namespace gear {
 
         // shadow
         ShadowMapInfo _cascade_shadow_map_infos[SHADOW_CASCADE_COUNT];
-        Texture* _cascade_shadow_maps[SHADOW_CASCADE_COUNT];
+        Texture* _cascade_shadow_map;
         FramebufferInfo _shadow_map_fb;
 
         // display

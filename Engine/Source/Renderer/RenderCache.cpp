@@ -184,15 +184,20 @@ namespace gear {
     }
 
     bool DescriptorCache::DescriptorEq::operator()(const DescriptorKey& key1, const DescriptorKey& key2) const {
-        for (int i = 0; i < UBUFFER_BINDING_COUNT; ++i) {
-            if (key1.uniform_buffers[i] != key2.uniform_buffers[i]) return false;
-            if (key1.uniform_buffer_offsets[i] != key2.uniform_buffer_offsets[i]) return false;
-            if (key1.uniform_buffer_sizes[i] != key2.uniform_buffer_sizes[i]) return false;
+        if (key1.num_uniform_buffers != key2.num_uniform_buffers) return false;
+        if (key1.num_samplers != key2.num_samplers) return false;
+
+        for (int i = 0; i < key1.num_uniform_buffers; ++i) {
+            if (key1.uniform_descriptors[i].slot != key2.uniform_descriptors[i].slot) return false;
+            if (key1.uniform_descriptors[i].uniform_buffer != key2.uniform_descriptors[i].uniform_buffer) return false;
+            if (key1.uniform_descriptors[i].uniform_buffer_size != key2.uniform_descriptors[i].uniform_buffer_size) return false;
+            if (key1.uniform_descriptors[i].uniform_buffer_offset != key2.uniform_descriptors[i].uniform_buffer_offset) return false;
         }
 
-        for (int i = 0; i < SAMPLER_BINDING_COUNT; ++i) {
-            if (key1.textures_views[i] != key2.textures_views[i]) return false;
-            if (key1.samplers[i] != key2.samplers[i]) return false;
+        for (int i = 0; i < key1.num_samplers; ++i) {
+            if (key1.sampler_descriptors[i].slot != key2.sampler_descriptors[i].slot) return false;
+            if (key1.sampler_descriptors[i].textures_view != key2.sampler_descriptors[i].textures_view) return false;
+            if (key1.sampler_descriptors[i].sampler != key2.sampler_descriptors[i].sampler) return false;
         }
         return true;
     }
@@ -203,8 +208,8 @@ namespace gear {
 
     DescriptorCache::~DescriptorCache() {
         for (auto iter = _descriptors.begin(); iter != _descriptors.end(); ++iter) {
-            SAFE_DELETE(iter->second.handles[0]);
-            SAFE_DELETE(iter->second.handles[1]);
+            _renderer->GetRootSignature()->DeleteSet(iter->second.handles[0]);
+            _renderer->GetRootSignature()->DeleteSet(iter->second.handles[1]);
         }
         _descriptors.clear();
     }
@@ -219,16 +224,14 @@ namespace gear {
         bundle.handles[0] = _renderer->GetRootSignature()->AllocateSet(0);
         bundle.handles[1] = _renderer->GetRootSignature()->AllocateSet(1);
 
-        for (int i = 0; i < UBUFFER_BINDING_COUNT; ++i) {
-            if (key.uniform_buffers[i] != nullptr) {
-                bundle.handles[0]->SetUniformBuffer(i, key.uniform_buffers[i], key.uniform_buffer_sizes[i], key.uniform_buffer_offsets[i]);
-            }
+        for (int i = 0; i < key.num_uniform_buffers; ++i) {
+            const UniformDescriptor& uniform_descriptor = key.uniform_descriptors[i];
+            bundle.handles[0]->SetUniformBuffer(uniform_descriptor.slot, uniform_descriptor.uniform_buffer, uniform_descriptor.uniform_buffer_size, uniform_descriptor.uniform_buffer_offset);
         }
 
-        for (int i = 0; i < SAMPLER_BINDING_COUNT; ++i) {
-            if (key.textures_views[i] != nullptr) {
-                bundle.handles[1]->SetCombinedSampler(i, key.textures_views[i], key.samplers[i]);
-            }
+        for (int i = 0; i < key.num_samplers; ++i) {
+            const SamplerDescriptor& sampler_descriptor = key.sampler_descriptors[i];
+            bundle.handles[1]->SetCombinedSampler(sampler_descriptor.slot, sampler_descriptor.textures_view, sampler_descriptor.sampler);
         }
 
         _descriptors[key] = bundle;

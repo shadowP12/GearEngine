@@ -19,14 +19,14 @@ namespace gear {
         _view_ub = new UniformBuffer(sizeof(ViewUniforms));
         _renderable_ub = new UniformBuffer(sizeof(RenderableUniforms) * 1000);
 
-        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
-            // 阴影贴图的默认分辨率为1024
-            gear::Texture::Builder tex_builder;
-            tex_builder.SetWidth(1024);
-            tex_builder.SetHeight(1024);
-            tex_builder.SetFormat(blast::FORMAT_D24_UNORM_S8_UINT);
-            _cascade_shadow_maps[i] = tex_builder.Build();
+        gear::Texture::Builder cascade_shadow_map_builder;
+        cascade_shadow_map_builder.SetWidth(1024);
+        cascade_shadow_map_builder.SetHeight(1024);
+        cascade_shadow_map_builder.SetArray(SHADOW_CASCADE_COUNT);
+        cascade_shadow_map_builder.SetFormat(blast::FORMAT_D24_UNORM_S8_UINT);
+        _cascade_shadow_map = cascade_shadow_map_builder.Build();
 
+        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
             _cascade_shadow_map_infos[i].texture_dimension = 1024;
             _cascade_shadow_map_infos[i].shadow_dimension = _cascade_shadow_map_infos[i].texture_dimension - 2;
         }
@@ -52,10 +52,7 @@ namespace gear {
         SAFE_DELETE(_renderable_ub);
         SAFE_DELETE(_debug_ub);
         SAFE_DELETE(_debug_line_vb);
-
-        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
-            SAFE_DELETE(_cascade_shadow_maps[i]);
-        }
+        SAFE_DELETE(_cascade_shadow_map);
     }
 
     void RenderPipeline::SetScene(Scene* scene) {
@@ -223,6 +220,8 @@ namespace gear {
         for (uint32_t i = 0; i < _num_common_renderables; ++i) {
             Renderable* rb = &_renderables[_common_renderables[i]];
             for (uint32_t j = 0; j < rb->primitives.size(); ++j) {
+                uint32_t dc_idx = common_dc_head + num_common_dc;
+                
                 RenderPrimitive* rp = &rb->primitives[j];
 
                 MaterialVariant::Key material_variant = 0;
@@ -234,61 +233,67 @@ namespace gear {
                     material_variant |= MaterialVariant::SHADOW_RECEIVER;
                 }
 
-                _dc_list[common_dc_head + num_common_dc] = {};
-                _dc_list[common_dc_head + num_common_dc].key = 0;
-                _dc_list[common_dc_head + num_common_dc].renderable_ub = rb->renderable_ub->GetHandle();
-                _dc_list[common_dc_head + num_common_dc].renderable_ub_size = rb->renderable_ub_size;
-                _dc_list[common_dc_head + num_common_dc].renderable_ub_offset = rb->renderable_ub_offset;
+                _dc_list[dc_idx] = {};
+                _dc_list[dc_idx].key = 0;
+                _dc_list[dc_idx].renderable_ub = rb->renderable_ub->GetHandle();
+                _dc_list[dc_idx].renderable_ub_size = rb->renderable_ub_size;
+                _dc_list[dc_idx].renderable_ub_offset = rb->renderable_ub_offset;
 
                 if (rb->bone_ub) {
                     material_variant |= MaterialVariant::SKINNING_OR_MORPHING;
-                    _dc_list[common_dc_head + num_common_dc].bone_ub = rb->bone_ub->GetHandle();
+                    _dc_list[dc_idx].bone_ub = rb->bone_ub->GetHandle();
                 } else {
-                    _dc_list[common_dc_head + num_common_dc].bone_ub = nullptr;
+                    _dc_list[dc_idx].bone_ub = nullptr;
                 }
 
-                _dc_list[common_dc_head + num_common_dc].vertex_layout = rp->vb->GetVertexLayout();
-                _dc_list[common_dc_head + num_common_dc].vb = rp->vb->GetHandle();
+                _dc_list[dc_idx].vertex_layout = rp->vb->GetVertexLayout();
+                _dc_list[dc_idx].vb = rp->vb->GetHandle();
 
-                _dc_list[common_dc_head + num_common_dc].ib_count = rp->count;
-                _dc_list[common_dc_head + num_common_dc].ib_offset = rp->offset;
-                _dc_list[common_dc_head + num_common_dc].ib_type = rp->ib->GetIndexType();
-                _dc_list[common_dc_head + num_common_dc].ib = rp->ib->GetHandle();
+                _dc_list[dc_idx].ib_count = rp->count;
+                _dc_list[dc_idx].ib_offset = rp->offset;
+                _dc_list[dc_idx].ib_type = rp->ib->GetIndexType();
+                _dc_list[dc_idx].ib = rp->ib->GetHandle();
 
-                _dc_list[common_dc_head + num_common_dc].topo = rp->topo;
+                _dc_list[dc_idx].topo = rp->topo;
 
-                _dc_list[common_dc_head + num_common_dc].render_state = rp->mi->GetMaterial()->GetRenderState();
-                _dc_list[common_dc_head + num_common_dc].render_state.cull_mode = blast::CULL_MODE_BACK;
+                _dc_list[dc_idx].render_state = rp->mi->GetMaterial()->GetRenderState();
+                _dc_list[dc_idx].render_state.cull_mode = blast::CULL_MODE_BACK;
 
-                _dc_list[common_dc_head + num_common_dc].vs = rp->mi->GetMaterial()->GetVertShader(material_variant);
-                _dc_list[common_dc_head + num_common_dc].fs = rp->mi->GetMaterial()->GetFragShader(material_variant);
+                _dc_list[dc_idx].vs = rp->mi->GetMaterial()->GetVertShader(material_variant);
+                _dc_list[dc_idx].fs = rp->mi->GetMaterial()->GetFragShader(material_variant);
 
                 if (rp->mi->GetUniformBuffer()) {
-                    _dc_list[common_dc_head + num_common_dc].material_ub = rp->mi->GetUniformBuffer()->GetHandle();
-                    _dc_list[common_dc_head + num_common_dc].material_ub_size = rp->mi->GetUniformBuffer()->GetSize();
-                    _dc_list[common_dc_head + num_common_dc].material_ub_offset = 0;
+                    _dc_list[dc_idx].material_ub = rp->mi->GetUniformBuffer()->GetHandle();
+                    _dc_list[dc_idx].material_ub_size = rp->mi->GetUniformBuffer()->GetSize();
+                    _dc_list[dc_idx].material_ub_offset = 0;
                 } else {
-                    _dc_list[common_dc_head + num_common_dc].material_ub = nullptr;
-                    _dc_list[common_dc_head + num_common_dc].material_ub_size = 0;
-                    _dc_list[common_dc_head + num_common_dc].material_ub_offset = 0;
+                    _dc_list[dc_idx].material_ub = nullptr;
+                    _dc_list[dc_idx].material_ub_size = 0;
+                    _dc_list[dc_idx].material_ub_offset = 0;
                 }
 
                 // 阴影贴图
                 if (rp->receive_shadow) {
-                    std::get<0>(_dc_list[common_dc_head + num_common_dc].samplers[0]) = _cascade_shadow_maps[0]->GetTexture();
                     blast::GfxSamplerDesc shadow_sampler_desc;
                     shadow_sampler_desc.min_filter = blast::FILTER_NEAREST;
                     shadow_sampler_desc.mag_filter = blast::FILTER_NEAREST;
                     shadow_sampler_desc.address_u = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
                     shadow_sampler_desc.address_v = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
                     shadow_sampler_desc.address_w = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
-                    std::get<1>(_dc_list[common_dc_head + num_common_dc].samplers[0]) = shadow_sampler_desc;
+                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].slot = 0;
+                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].layer = 0;
+                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].num_layers = SHADOW_CASCADE_COUNT;
+                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].texture = _cascade_shadow_map->GetTexture();
+                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].sampler_desc = shadow_sampler_desc;
+                    _dc_list[dc_idx].num_sampler_infos++;
                 }
 
                 // 材质贴图
                 for (uint32_t k = 0; k < rp->mi->GetGfxSamplerGroup().size(); ++k) {
-                    std::get<0>(_dc_list[common_dc_head + num_common_dc].samplers[4 + k]) = rp->mi->GetGfxSamplerGroup().at(k).first->GetTexture();
-                    std::get<1>(_dc_list[common_dc_head + num_common_dc].samplers[4 + k]) = rp->mi->GetGfxSamplerGroup().at(k).second;
+                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].slot = 4 + k;
+                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].texture = rp->mi->GetGfxSamplerGroup().at(k).first->GetTexture();
+                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].sampler_desc = rp->mi->GetGfxSamplerGroup().at(k).second;
+                    _dc_list[dc_idx].num_sampler_infos++;
                 }
                 num_common_dc++;
             }

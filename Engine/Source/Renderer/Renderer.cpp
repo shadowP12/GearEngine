@@ -554,31 +554,39 @@ namespace gear {
         DescriptorKey descriptor_key = {};
         // 绑定materialUB
         if (dc.material_ub) {
-            descriptor_key.uniform_buffers[0] = dc.material_ub;
-            descriptor_key.uniform_buffer_sizes[0] = dc.material_ub_size;
-            descriptor_key.uniform_buffer_offsets[0] = dc.material_ub_offset;
+            descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].slot = 0;
+            descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer = dc.material_ub;
+            descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_size = dc.material_ub_size;
+            descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_offset = dc.material_ub_offset;
+            descriptor_key.num_uniform_buffers++;
         }
 
         // 绑定frameUB
-        descriptor_key.uniform_buffers[1] = _bind_frame_uniform_buffer;
-        descriptor_key.uniform_buffer_sizes[1] = _bind_frame_uniform_buffer_size;
-        descriptor_key.uniform_buffer_offsets[1] = _bind_frame_uniform_buffer_offset;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].slot = 1;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer = _bind_frame_uniform_buffer;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_size = _bind_frame_uniform_buffer_size;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_offset = _bind_frame_uniform_buffer_offset;
+        descriptor_key.num_uniform_buffers++;
 
         // 绑定renderableUB
-        descriptor_key.uniform_buffers[2] = dc.renderable_ub;
-        descriptor_key.uniform_buffer_sizes[2] = dc.renderable_ub_size;
-        descriptor_key.uniform_buffer_offsets[2] = dc.renderable_ub_offset;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].slot = 2;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer = dc.renderable_ub;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_size = dc.renderable_ub_size;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_offset = dc.renderable_ub_offset;
+        descriptor_key.num_uniform_buffers++;
 
         // 绑定samplers
-        for (uint32_t i = 0; i < SAMPLER_BINDING_COUNT; ++i) {
-            if (dc.samplers[i].first != nullptr) {
-                blast::GfxTextureViewDesc texture_view_desc;
-                texture_view_desc.texture = dc.samplers[i].first;
-                texture_view_desc.layer = 0;
-                texture_view_desc.level = 0;
-                descriptor_key.textures_views[i] = _texture_view_cache->GetTextureView(texture_view_desc);
-                descriptor_key.samplers[i] = _sampler_cache->GetSampler(dc.samplers[i].second);
-            }
+        descriptor_key.num_samplers = dc.num_sampler_infos;
+        for (uint32_t i = 0; i < dc.num_sampler_infos; ++i) {
+            blast::GfxTextureViewDesc texture_view_desc;
+            texture_view_desc.texture = dc.sampler_infos[i].texture;
+            texture_view_desc.layer = dc.sampler_infos[i].layer;
+            texture_view_desc.num_layers = dc.sampler_infos[i].num_layers;
+            texture_view_desc.level = dc.sampler_infos[i].level;
+            texture_view_desc.num_levels = dc.sampler_infos[i].num_levels;
+            descriptor_key.sampler_descriptors[i].slot = dc.sampler_infos[i].slot;
+            descriptor_key.sampler_descriptors[i].textures_view = _texture_view_cache->GetTextureView(texture_view_desc);
+            descriptor_key.sampler_descriptors[i].sampler = _sampler_cache->GetSampler(dc.sampler_infos[i].sampler_desc);
         }
 
         DescriptorBundle descriptor_bundle = _descriptor_cache->GetDescriptor(descriptor_key);
@@ -647,14 +655,18 @@ namespace gear {
         DescriptorKey descriptor_key = {};
 
         // 绑定frameUB
-        descriptor_key.uniform_buffers[1] = _bind_frame_uniform_buffer;
-        descriptor_key.uniform_buffer_sizes[1] = _bind_frame_uniform_buffer_size;
-        descriptor_key.uniform_buffer_offsets[1] = _bind_frame_uniform_buffer_offset;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].slot = 1;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer = _bind_frame_uniform_buffer;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_size = _bind_frame_uniform_buffer_size;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_offset = _bind_frame_uniform_buffer_offset;
+        descriptor_key.num_uniform_buffers++;
 
         // 绑定renderableUB
-        descriptor_key.uniform_buffers[2] = dc.renderable_ub;
-        descriptor_key.uniform_buffer_sizes[2] = dc.renderable_ub_size;
-        descriptor_key.uniform_buffer_offsets[2] = dc.renderable_ub_offset;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].slot = 2;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer = dc.renderable_ub;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_size = dc.renderable_ub_size;
+        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_offset = dc.renderable_ub_offset;
+        descriptor_key.num_uniform_buffers++;
 
         DescriptorBundle descriptor_bundle = _descriptor_cache->GetDescriptor(descriptor_key);
 

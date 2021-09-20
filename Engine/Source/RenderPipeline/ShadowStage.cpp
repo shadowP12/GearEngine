@@ -390,14 +390,14 @@ namespace gear {
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
             _shadow_map_fb.clear_value.flags = blast::CLEAR_DEPTH;
             _shadow_map_fb.clear_value.depth = 1.0f;
-            _shadow_map_fb.width = _cascade_shadow_maps[i]->GetTexture()->GetWidth();
-            _shadow_map_fb.height = _cascade_shadow_maps[i]->GetTexture()->GetHeight();
+            _shadow_map_fb.width = _cascade_shadow_map->GetTexture()->GetWidth();
+            _shadow_map_fb.height = _cascade_shadow_map->GetTexture()->GetHeight();
             _shadow_map_fb.viewport[0] = 1;
             _shadow_map_fb.viewport[1] = 1;
-            _shadow_map_fb.viewport[2] = _cascade_shadow_maps[i]->GetTexture()->GetWidth() - 1;
-            _shadow_map_fb.viewport[3] = _cascade_shadow_maps[i]->GetTexture()->GetHeight() - 1;
-            std::get<0>(_shadow_map_fb.depth_stencil) = _cascade_shadow_maps[i]->GetTexture();
-            std::get<1>(_shadow_map_fb.depth_stencil) = 0;
+            _shadow_map_fb.viewport[2] = _cascade_shadow_map->GetTexture()->GetWidth() - 1;
+            _shadow_map_fb.viewport[3] = _cascade_shadow_map->GetTexture()->GetHeight() - 1;
+            std::get<0>(_shadow_map_fb.depth_stencil) = _cascade_shadow_map->GetTexture();
+            std::get<1>(_shadow_map_fb.depth_stencil) = i;
             std::get<2>(_shadow_map_fb.depth_stencil) = 0;
 
             // 设置light view ub

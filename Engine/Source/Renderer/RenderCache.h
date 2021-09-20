@@ -78,12 +78,24 @@ namespace gear {
         std::unordered_map<blast::GfxGraphicsPipelineDesc, blast::GfxGraphicsPipeline*, MurmurHash<blast::GfxGraphicsPipelineDesc>, PipelineEq> _pipelines;
     };
 
+    struct UniformDescriptor {
+        uint32_t slot;
+        blast::GfxBuffer* uniform_buffer;
+        uint32_t uniform_buffer_offset;
+        uint32_t uniform_buffer_size;
+    };
+
+    struct SamplerDescriptor {
+        uint32_t slot;
+        blast::GfxTextureView* textures_view;
+        blast::GfxSampler* sampler;
+    };
+
     struct DescriptorKey {
-        blast::GfxBuffer* uniform_buffers[UBUFFER_BINDING_COUNT];
-        uint32_t uniform_buffer_offsets[UBUFFER_BINDING_COUNT];
-        uint32_t uniform_buffer_sizes[UBUFFER_BINDING_COUNT];
-        blast::GfxTextureView* textures_views[SAMPLER_BINDING_COUNT];
-        blast::GfxSampler* samplers[SAMPLER_BINDING_COUNT];
+        uint32_t num_uniform_buffers = 0;
+        uint32_t num_samplers = 0;
+        UniformDescriptor uniform_descriptors[UBUFFER_BINDING_COUNT];
+        SamplerDescriptor sampler_descriptors[MAX_TEXTURE_COUNT];
     };
 
     struct DescriptorBundle {

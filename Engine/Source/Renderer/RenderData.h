@@ -49,6 +49,16 @@ namespace gear {
         std::tuple<blast::GfxTexture*, uint32_t, uint32_t> depth_stencil;
     };
 
+    struct SamplerInfo {
+        uint32_t slot;
+        uint32_t level = 0;
+        uint32_t num_levels = 1;
+        uint32_t layer = 0;
+        uint32_t num_layers = 1;
+        blast::GfxTexture* texture;
+        blast::GfxSamplerDesc sampler_desc;
+    };
+
     using DrawCallKey = uint64_t;
 
     struct DrawCall {
@@ -80,7 +90,8 @@ namespace gear {
         blast::PrimitiveTopology topo;
         RenderState render_state;
 
-        std::pair<blast::GfxTexture*, blast::GfxSamplerDesc> samplers[SAMPLER_BINDING_COUNT];
+        uint32_t num_sampler_infos = 0;
+        SamplerInfo sampler_infos[MAX_TEXTURE_COUNT];
 
         bool operator < (DrawCall const& rhs) { return key < rhs.key; }
     };

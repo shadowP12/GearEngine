@@ -23,6 +23,10 @@ namespace gear {
         _array = array;
     }
 
+    void Texture::Builder::SetMapmap(uint32_t level) {
+        _mapmip_level = level;
+    }
+
     void Texture::Builder::SetFormat(blast::Format format) {
         _format = format;
     }
@@ -36,7 +40,9 @@ namespace gear {
         _height = builder->_height;
         _depth = builder->_depth;
         _array = builder->_array;
+        _mapmip_level = builder->_mapmip_level;
         _format = builder->_format;
+
         for (int i = 0; i < _array; ++i) {
             uint8_t* data = new uint8_t[_width * _height * _depth * blast::GetFormatStride(_format)];
             _datas.push_back(data);
@@ -46,6 +52,9 @@ namespace gear {
         blast::GfxTextureDesc texture_desc;
         texture_desc.width = _width;
         texture_desc.height = _height;
+        texture_desc.depth = _depth;
+        texture_desc.num_layers = _array;
+        texture_desc.num_mips = _mapmip_level;
         texture_desc.format = _format;
         texture_desc.type = blast::RESOURCE_TYPE_TEXTURE;
         texture_desc.usage = blast::RESOURCE_USAGE_GPU_ONLY;

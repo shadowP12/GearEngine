@@ -9,7 +9,7 @@ void EvaluateDirectionalLight(const MaterialFragmentParams material_params, inou
     vec4 light_space_position = (frame_uniforms.sun_matrixs[0] * vec4(vertex_world_position, 1.0));
     vec3 proj_coords = light_space_position.xyz / light_space_position.w;
     proj_coords.xy = proj_coords.xy * 0.5 + 0.5;
-    float closest_depth = texture(shadow_map, vec2(proj_coords.x, proj_coords.y)).r; 
+    float closest_depth = texture(cascade_shadow_map, vec3(proj_coords.x, proj_coords.y, 0)).r; 
     float current_depth = clamp(proj_coords.z, 0.0, 1.0);
 
     float bias = 0.0005;
