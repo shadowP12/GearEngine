@@ -22,7 +22,7 @@ namespace gear {
         gear::Texture::Builder cascade_shadow_map_builder;
         cascade_shadow_map_builder.SetWidth(1024);
         cascade_shadow_map_builder.SetHeight(1024);
-        cascade_shadow_map_builder.SetArray(SHADOW_CASCADE_COUNT);
+        cascade_shadow_map_builder.SetLayer(SHADOW_CASCADE_COUNT);
         cascade_shadow_map_builder.SetFormat(blast::FORMAT_D24_UNORM_S8_UINT);
         _cascade_shadow_map = cascade_shadow_map_builder.Build();
 

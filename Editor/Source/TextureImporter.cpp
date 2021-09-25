@@ -27,7 +27,7 @@ gear::Texture* ImportTexture2D(const std::string& file) {
     builder.SetHeight(height);
     builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
     gear::Texture* texture = builder.Build();
-    texture->SetData(0, pixels, size);
+    texture->SetData(pixels);
     stbi_image_free(pixels);
     return texture;
 }

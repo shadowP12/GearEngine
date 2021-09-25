@@ -19,12 +19,12 @@ namespace gear {
         _depth = depth;
     }
 
-    void Texture::Builder::SetArray(uint32_t array) {
-        _array = array;
+    void Texture::Builder::SetLayer(uint32_t layer) {
+        _layer = layer;
     }
 
-    void Texture::Builder::SetMapmap(uint32_t level) {
-        _mapmip_level = level;
+    void Texture::Builder::SetLevel(uint32_t level) {
+        _level = level;
     }
 
     void Texture::Builder::SetFormat(blast::Format format) {
@@ -39,22 +39,44 @@ namespace gear {
         _width = builder->_width;
         _height = builder->_height;
         _depth = builder->_depth;
-        _array = builder->_array;
-        _mapmip_level = builder->_mapmip_level;
+        _layer = builder->_layer;
+        _level = builder->_level;
         _format = builder->_format;
 
-        for (int i = 0; i < _array; ++i) {
-            uint8_t* data = new uint8_t[_width * _height * _depth * blast::GetFormatStride(_format)];
-            _datas.push_back(data);
+        // 计算cpu data size
+        uint32_t total_image_size = 0;
+        for (uint32_t i = 0; i < _layer; ++i) {
+            for (uint32_t j = 0; j < _level; ++j) {
+                uint32_t image_size = 0;
+                if (_depth > 1)
+                {
+                    image_size = _width >> j;
+                    image_size *= _height >> j;
+                    image_size *= _depth >> j;
+                    image_size *= blast::GetFormatStride(_format);
+
+                } else if (_height > 1)
+                {
+                    image_size = _width >> j;
+                    image_size *= _height >> j;
+                    image_size *= blast::GetFormatStride(_format);
+                } else {
+                    image_size = _width >> j;
+                    image_size *= blast::GetFormatStride(_format);
+                }
+                total_image_size += image_size;
+            }
         }
+        _data_size = total_image_size;
+        _data = new uint8_t[total_image_size];
 
         blast::GfxContext* context = gEngine.GetRenderer()->GetContext();
         blast::GfxTextureDesc texture_desc;
         texture_desc.width = _width;
         texture_desc.height = _height;
         texture_desc.depth = _depth;
-        texture_desc.num_layers = _array;
-        texture_desc.num_mips = _mapmip_level;
+        texture_desc.num_layers = _layer;
+        texture_desc.num_mips = _level;
         texture_desc.format = _format;
         texture_desc.type = blast::RESOURCE_TYPE_TEXTURE;
         texture_desc.usage = blast::RESOURCE_USAGE_GPU_ONLY;
@@ -62,34 +84,50 @@ namespace gear {
     }
 
     Texture::~Texture() {
-        for (int i = 0; i < _datas.size(); ++i) {
-            SAFE_DELETE_ARRAY(_datas[i]);
-        }
-        _datas.clear();
+        SAFE_DELETE(_data);
 
         Renderer* renderer = gEngine.GetRenderer();
         renderer->Destroy(_texture);
     }
 
-    void Texture::SetData(uint32_t i, void* data, uint32_t size) {
+    void Texture::SetData(void* data, uint32_t layer, uint32_t level) {
         Renderer* renderer = gEngine.GetRenderer();
+        uint32_t layer_offset = _data_size / _layer * layer;
+        uint32_t level_offset = 0;
+        uint32_t total_size = 0;
+        for (uint32_t i = 0; i < level; ++i) {
+            uint32_t image_size = 0;
+            if (_depth > 1)
+            {
+                image_size = _width >> i;
+                image_size *= _height >> i;
+                image_size *= _depth >> i;
+                image_size *= blast::GetFormatStride(_format);
 
-        uint8_t* dst = _datas[i];
+            } else if (_height > 1)
+            {
+                image_size = _width >> i;
+                image_size *= _height >> i;
+                image_size *= blast::GetFormatStride(_format);
+            } else {
+                image_size = _width >> i;
+                image_size *= blast::GetFormatStride(_format);
+            }
+
+            total_size = image_size;
+            level_offset += image_size;
+        }
+        uint32_t offset = layer_offset + level_offset;
+
+        uint8_t* dst = _data + offset;
         uint8_t* src = (uint8_t*)data;
-        memcpy(dst, src, size);
+        memcpy(dst, src, total_size);
 
         blast::GfxTexture* texture = _texture;
-        uint32_t array = _array;
-        uint32_t image_size = _width * _height * _depth * blast::GetFormatStride(_format);
-        uint32_t total_size = image_size * _array;
         blast::GfxBuffer* staging_buffer = renderer->AllocStageBuffer(total_size);
-        uint32_t offset = 0;
-        for (int i = 0; i < _array; ++i) {
-            staging_buffer->WriteData(offset, image_size, _datas[i]);
-            offset += image_size;
-        }
+        staging_buffer->WriteData(0, total_size, data);
 
-        renderer->ExecRenderTask([renderer, texture, staging_buffer, image_size, array](blast::GfxCommandBuffer* cmd) {
+        renderer->ExecRenderTask([renderer, texture, staging_buffer, layer, level](blast::GfxCommandBuffer* cmd) {
 
             renderer->UseResource(texture);
             renderer->UseResource(staging_buffer);
@@ -102,17 +140,103 @@ namespace gear {
                 cmd->SetBarrier(0, nullptr, 1, &barrier);
             }
 
-            uint32_t offset = 0;
             blast::GfxCopyToImageRange range;
             range.buffer_offset = 0;
-            range.layer = 0;
-            range.level = 0;
-            for (int i = 0; i < array; ++i) {
-                range.buffer_offset = offset;
-                range.layer = i;
-                range.level = 0;
-                cmd->CopyToImage(staging_buffer, texture, range);
+            range.layer = layer;
+            range.level = level;
+            cmd->CopyToImage(staging_buffer, texture, range);
+
+            {
+                // 设置纹理为Shader可读状态
+                blast::GfxTextureBarrier barrier;
+                barrier.texture = texture;
+                barrier.new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+                cmd->SetBarrier(0, nullptr, 1, &barrier);
+            }
+        });
+    }
+
+    void Texture::SetData(void* data) {
+        Renderer* renderer = gEngine.GetRenderer();
+        uint8_t* dst = _data;
+        uint8_t* src = (uint8_t*)data;
+        memcpy(dst, src, _data_size);
+
+        blast::GfxTexture* texture = _texture;
+        blast::GfxBuffer* staging_buffer = renderer->AllocStageBuffer(_data_size);
+
+        uint32_t offset = 0;
+        for (uint32_t i = 0; i < _layer; ++i) {
+            for (uint32_t j = 0; j < _level; ++j) {
+                uint32_t image_size = 0;
+                if (_depth > 1)
+                {
+                    image_size = _width >> j;
+                    image_size *= _height >> j;
+                    image_size *= _depth >> j;
+                    image_size *= blast::GetFormatStride(_format);
+
+                } else if (_height > 1)
+                {
+                    image_size = _width >> j;
+                    image_size *= _height >> j;
+                    image_size *= blast::GetFormatStride(_format);
+                } else {
+                    image_size = _width >> j;
+                    image_size *= blast::GetFormatStride(_format);
+                }
+                staging_buffer->WriteData(offset, image_size, _data);
                 offset += image_size;
+            }
+        }
+
+        uint32_t layer = _layer;
+        uint32_t level = _level;
+        renderer->ExecRenderTask([renderer, texture, staging_buffer, layer, level](blast::GfxCommandBuffer* cmd) {
+
+            renderer->UseResource(texture);
+            renderer->UseResource(staging_buffer);
+
+            uint32_t width = texture->GetWidth();
+            uint32_t height = texture->GetHeight();
+            uint32_t depth = texture->GetDepth();
+            blast::Format format = texture->GetFormat();
+
+            {
+                // 设置纹理为读写状态
+                blast::GfxTextureBarrier barrier;
+                barrier.texture = texture;
+                barrier.new_state = blast::RESOURCE_STATE_COPY_DEST;
+                cmd->SetBarrier(0, nullptr, 1, &barrier);
+            }
+
+            blast::GfxCopyToImageRange range;
+            uint32_t offset = 0;
+            for (uint32_t i = 0; i < layer; ++i) {
+                for (uint32_t j = 0; j < level; ++j) {
+                    uint32_t image_size = 0;
+                    if (depth > 1)
+                    {
+                        image_size = width >> j;
+                        image_size *= height >> j;
+                        image_size *= depth >> j;
+                        image_size *= blast::GetFormatStride(format);
+
+                    } else if (height > 1)
+                    {
+                        image_size = width >> j;
+                        image_size *= height >> j;
+                        image_size *= blast::GetFormatStride(format);
+                    } else {
+                        image_size = width >> j;
+                        image_size *= blast::GetFormatStride(format);
+                    }
+                    range.buffer_offset = offset;
+                    range.layer = i;
+                    range.level = j;
+                    cmd->CopyToImage(staging_buffer, texture, range);
+                    offset += image_size;
+                }
             }
 
             {

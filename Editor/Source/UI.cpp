@@ -192,7 +192,7 @@ namespace ImGui {
         tex_builder.SetHeight(height);
         tex_builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
         g_ui_texture = tex_builder.Build();
-        g_ui_texture->SetData(0, pixels, size);
+        g_ui_texture->SetData(pixels);
 
         // 加载材质
         std::string material_code = gear::ReadFileData("./BuiltinResources/Materials/ui.mat");
