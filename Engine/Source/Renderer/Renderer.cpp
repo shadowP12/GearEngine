@@ -633,9 +633,15 @@ namespace gear {
         blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(pipeline_desc);
         cmd->BindGraphicsPipeline(pipeline);
         cmd->BindDescriptorSets(_root_signature, 2, descriptor_bundle.handles);
-        cmd->BindVertexBuffer(dc.vb, 0);
-        cmd->BindIndexBuffer(dc.ib, 0, dc.ib_type);
-        cmd->DrawIndexed(dc.ib_count, 1, dc.ib_offset, 0, 0);
+
+        if (dc.ib != nullptr) {
+            cmd->BindVertexBuffer(dc.vb, 0);
+            cmd->BindIndexBuffer(dc.ib, 0, dc.ib_type);
+            cmd->DrawIndexed(dc.ib_count, 1, dc.ib_offset, 0, 0);
+        } else {
+            cmd->BindVertexBuffer(dc.vb, 0);
+            cmd->Draw(dc.vb_count, 1, dc.vb_offset, 0);
+        }
     }
 
     void Renderer::ExecuteDebugDrawCall(const DrawCall& dc) {
