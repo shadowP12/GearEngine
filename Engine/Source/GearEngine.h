@@ -8,6 +8,8 @@ namespace gear {
     class InputSystem;
     class MaterialCompiler;
     class BuiltinResources;
+    class RenderUtility;
+
     class GearEngine {
     public:
         GearEngine();
@@ -24,6 +26,8 @@ namespace gear {
 
         BuiltinResources* GetBuiltinResources();
 
+        RenderUtility* GetRenderUtility();
+
         RenderPipeline* CreateRenderPipeline();
 
         void DestroyRenderPipeline(RenderPipeline*);
@@ -38,6 +42,7 @@ namespace gear {
         InputSystem* _input_system = nullptr;
         MaterialCompiler* _material_compiler = nullptr;
         BuiltinResources* _builtin_resources = nullptr;
+        RenderUtility* _render_utility = nullptr;
     };
 
     extern GearEngine gEngine;

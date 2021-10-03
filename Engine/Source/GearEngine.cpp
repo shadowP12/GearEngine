@@ -6,6 +6,7 @@
 #include "Input/InputSystem.h"
 #include "MaterialCompiler/MaterialCompiler.h"
 #include "Resource/BuiltinResources.h"
+#include "RenderUtility/RenderUtility.h"
 
 namespace gear {
     GearEngine::GearEngine() {
@@ -22,6 +23,7 @@ namespace gear {
         SAFE_DELETE(_entity_manager);
         SAFE_DELETE(_input_system);
         SAFE_DELETE(_material_compiler);
+        SAFE_DELETE(_render_utility);
     }
 
     Renderer* GearEngine::GetRenderer() {
@@ -42,6 +44,10 @@ namespace gear {
 
     BuiltinResources* GearEngine::GetBuiltinResources() {
         return _builtin_resources;
+    }
+
+    RenderUtility* GearEngine::GetRenderUtility() {
+        return _render_utility;
     }
 
     RenderPipeline* GearEngine::CreateRenderPipeline() {

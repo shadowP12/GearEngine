@@ -37,6 +37,12 @@ namespace gear {
         blast::CullMode cull_mode = blast::CULL_MODE_NONE;
     };
 
+    struct FramebufferAttachment {
+        blast::GfxTexture* texture = nullptr;
+        uint32_t layer = 0;
+        uint32_t level = 0;
+    };
+
     struct FramebufferInfo {
         bool is_screen_fb = false;
         uint32_t width;
@@ -44,9 +50,8 @@ namespace gear {
         float viewport[4];
         blast::GfxClearValue clear_value;
         blast::SampleCount sample_count;
-        // texture/layer/level
-        std::tuple<blast::GfxTexture*, uint32_t, uint32_t> colors[TARGET_COUNT];
-        std::tuple<blast::GfxTexture*, uint32_t, uint32_t> depth_stencil;
+        FramebufferAttachment colors[TARGET_COUNT];
+        FramebufferAttachment depth_stencil;
     };
 
     struct SamplerInfo {

@@ -109,12 +109,12 @@ namespace gear {
                             _display_fb.viewport[1] = 0.0f;
                             _display_fb.viewport[2] = renderer->GetWidth();
                             _display_fb.viewport[3] = renderer->GetHeight();
-                            std::get<0>(_display_fb.colors[0]) = renderer->GetColor();
-                            std::get<1>(_display_fb.colors[0]) = 0;
-                            std::get<2>(_display_fb.colors[0]) = 0;
-                            std::get<0>(_display_fb.depth_stencil) = renderer->GetDepthStencil();
-                            std::get<1>(_display_fb.depth_stencil) = 0;
-                            std::get<2>(_display_fb.depth_stencil) = 0;
+                            _display_fb.colors[0].texture = renderer->GetColor();
+                            _display_fb.colors[0].layer = 0;
+                            _display_fb.colors[0].level = 0;
+                            _display_fb.depth_stencil.texture = renderer->GetDepthStencil();
+                            _display_fb.depth_stencil.layer = 0;
+                            _display_fb.depth_stencil.level = 0;
                         } else {
                             _display_fb.clear_value.flags = blast::CLEAR_NONE;
                             _display_fb.width = ccamera->GetRenderTarget()->GetWidth();
@@ -126,14 +126,14 @@ namespace gear {
 
                             for (int i = 0; i < TARGET_COUNT; ++i) {
                                 auto c = ccamera->GetRenderTarget()->GetColor(i);
-                                std::get<0>(_display_fb.colors[i]) = std::get<0>(c)->GetTexture();
-                                std::get<1>(_display_fb.colors[i]) = std::get<1>(c);
-                                std::get<2>(_display_fb.colors[i]) = std::get<2>(c);
+                                _display_fb.colors[i].texture = std::get<0>(c)->GetTexture();
+                                _display_fb.colors[i].layer = std::get<1>(c);
+                                _display_fb.colors[i].level = std::get<2>(c);
                             }
                             auto d = ccamera->GetRenderTarget()->GetDepthStencil();
-                            std::get<0>(_display_fb.depth_stencil) = std::get<0>(d)->GetTexture();
-                            std::get<1>(_display_fb.depth_stencil) = std::get<1>(d);
-                            std::get<2>(_display_fb.depth_stencil) = std::get<2>(d);
+                            _display_fb.depth_stencil.texture = std::get<0>(d)->GetTexture();
+                            _display_fb.depth_stencil.layer = std::get<1>(d);
+                            _display_fb.depth_stencil.level = std::get<2>(d);
                         }
 
                         _display_camera_info.zn = ccamera->GetNear();

@@ -314,12 +314,12 @@ namespace gear {
         screen_fb.viewport[1] = 0.0f;
         screen_fb.viewport[2] = _frame_width;
         screen_fb.viewport[3] = _frame_height;
-        std::get<0>(screen_fb.colors[0]) = color_rt;
-        std::get<1>(screen_fb.colors[0]) = 0;
-        std::get<2>(screen_fb.colors[0]) = 0;
-        std::get<0>(screen_fb.depth_stencil) = depth_rt;
-        std::get<1>(screen_fb.depth_stencil) = 0;
-        std::get<2>(screen_fb.depth_stencil) = 0;
+        screen_fb.colors[0].texture = color_rt;
+        screen_fb.colors[0].layer = 0;
+        screen_fb.colors[0].level = 0;
+        screen_fb.depth_stencil.texture = depth_rt;
+        screen_fb.depth_stencil.layer = 0;
+        screen_fb.depth_stencil.level = 0;
         BindFramebuffer(screen_fb);
         UnbindFramebuffer();
     }
@@ -459,28 +459,28 @@ namespace gear {
         framebuffer_desc.sample_count = info.sample_count;
 
         for (int i = 0; i < TARGET_COUNT; ++i) {
-            if (std::get<0>(info.colors[i]) != nullptr) {
-                barriers[num_barriers].texture = std::get<0>(info.colors[i]);
+            if (info.colors[i].texture != nullptr) {
+                barriers[num_barriers].texture = info.colors[i].texture;
                 barriers[num_barriers].new_state = blast::RESOURCE_STATE_RENDER_TARGET;
                 num_barriers++;
 
                 blast::GfxTextureViewDesc texture_view_desc;
-                texture_view_desc.texture = std::get<0>(info.colors[i]);
-                texture_view_desc.layer = std::get<1>(info.colors[i]);
-                texture_view_desc.level = std::get<2>(info.colors[i]);
+                texture_view_desc.texture = info.colors[i].texture;
+                texture_view_desc.layer = info.colors[i].layer;
+                texture_view_desc.level = info.colors[i].level;
                 framebuffer_desc.colors[i] = _texture_view_cache->GetTextureView(texture_view_desc);
                 framebuffer_desc.num_colors++;
             }
         }
-        if (std::get<0>(info.depth_stencil) != nullptr) {
-            barriers[num_barriers].texture = std::get<0>(info.depth_stencil);
+        if (info.depth_stencil.texture != nullptr) {
+            barriers[num_barriers].texture = info.depth_stencil.texture;
             barriers[num_barriers].new_state = blast::RESOURCE_STATE_DEPTH_WRITE;
             num_barriers++;
 
             blast::GfxTextureViewDesc texture_view_desc;
-            texture_view_desc.texture = std::get<0>(info.depth_stencil);
-            texture_view_desc.layer = std::get<1>(info.depth_stencil);
-            texture_view_desc.level = std::get<2>(info.depth_stencil);
+            texture_view_desc.texture = info.depth_stencil.texture;
+            texture_view_desc.layer = info.depth_stencil.layer;
+            texture_view_desc.level = info.depth_stencil.level;
             framebuffer_desc.depth_stencil = _texture_view_cache->GetTextureView(texture_view_desc);
             framebuffer_desc.has_depth_stencil = true;
         }
@@ -510,14 +510,14 @@ namespace gear {
         blast::GfxTextureBarrier barriers[TARGET_COUNT + 1];
 
         for (int i = 0; i < TARGET_COUNT; ++i) {
-            if (std::get<0>(_bind_fb_info.colors[i]) != nullptr) {
-                barriers[num_barriers].texture = std::get<0>(_bind_fb_info.colors[i]);
+            if (_bind_fb_info.colors[i].texture != nullptr) {
+                barriers[num_barriers].texture = _bind_fb_info.colors[i].texture;
                 barriers[num_barriers].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
                 num_barriers++;
             }
         }
-        if (std::get<0>(_bind_fb_info.depth_stencil) != nullptr) {
-            barriers[num_barriers].texture = std::get<0>(_bind_fb_info.depth_stencil);
+        if (_bind_fb_info.depth_stencil.texture != nullptr) {
+            barriers[num_barriers].texture = _bind_fb_info.depth_stencil.texture;
             barriers[num_barriers].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
             num_barriers++;
         }

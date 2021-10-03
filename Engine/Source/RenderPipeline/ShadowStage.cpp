@@ -396,9 +396,9 @@ namespace gear {
             _shadow_map_fb.viewport[1] = 1;
             _shadow_map_fb.viewport[2] = _cascade_shadow_map->GetTexture()->GetWidth() - 1;
             _shadow_map_fb.viewport[3] = _cascade_shadow_map->GetTexture()->GetHeight() - 1;
-            std::get<0>(_shadow_map_fb.depth_stencil) = _cascade_shadow_map->GetTexture();
-            std::get<1>(_shadow_map_fb.depth_stencil) = i;
-            std::get<2>(_shadow_map_fb.depth_stencil) = 0;
+            _shadow_map_fb.depth_stencil.texture = _cascade_shadow_map->GetTexture();
+            _shadow_map_fb.depth_stencil.layer = i;
+            _shadow_map_fb.depth_stencil.level = 0;
 
             // 设置light view ub
             _view_ub->Update(&_cascade_shadow_map_infos[i].light_view_matrix, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
