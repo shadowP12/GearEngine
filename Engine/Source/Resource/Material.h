@@ -119,6 +119,8 @@ namespace gear {
 
         ~Material();
 
+        uint32_t GetMaterialID() { return _material_id; }
+
         blast::GfxShader* GetVertShader(MaterialVariant::Key variant);
 
         blast::GfxShader* GetFragShader(MaterialVariant::Key variant);
@@ -134,6 +136,9 @@ namespace gear {
         friend class Renderer;
         friend class MaterialCompiler;
         friend class MaterialInstance;
+        static uint32_t _global_material_id;
+        uint32_t _material_id = 0;
+        uint32_t _current_material_instance_id = 0;
         RenderState _render_state;
         std::unordered_map<std::string, blast::UniformType> _uniforms;
         std::unordered_map<std::string, blast::TextureDimension> _samplers;
@@ -149,6 +154,8 @@ namespace gear {
         ~MaterialInstance();
 
         Material* GetMaterial() { return _material; }
+
+        uint32_t GetMaterialInstanceID() { return _material_instance_id; }
 
         UniformBuffer* GetUniformBuffer();
 
@@ -177,6 +184,7 @@ namespace gear {
         friend class Renderer;
         friend class Material;
         Material* _material = nullptr;
+        uint32_t _material_instance_id = 0;
 
         // uniform
         uint8_t _storage[128];

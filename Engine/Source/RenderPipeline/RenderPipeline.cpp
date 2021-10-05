@@ -3,7 +3,7 @@
 #include "Entity/Entity.h"
 #include "Entity/Components/CCamera.h"
 #include "Entity/Components/CLight.h"
-#include "Entity/Components/CRenderable.h"
+#include "Entity/Components/CMesh.h"
 #include "Entity/Components/CTransform.h"
 #include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
@@ -59,6 +59,10 @@ namespace gear {
         _scene = scene;
     }
 
+    void RenderPipeline::Draw() {
+        gEngine.GetRenderer()->EnqueueDisplayTask([this](){ this->Exec(); });
+    }
+
     void RenderPipeline::Exec() {
         Renderer* renderer = gEngine.GetRenderer();
 
@@ -73,24 +77,14 @@ namespace gear {
         _num_ui_renderables = 0;
         _num_common_renderables = 0;
 
-        if (_renderables.size() < _scene->_entities.size()) {
-            _renderables.resize(_scene->_entities.size());
-            _ui_renderables.resize(_scene->_entities.size());
-            _common_renderables.resize(_scene->_entities.size());
-        }
+        if (_renderables.size() < _scene->_num_renderables) {
+            _renderables.resize(_scene->_num_renderables);
+            _ui_renderables.resize(_scene->_num_renderables);
+            _common_renderables.resize(_scene->_num_renderables);
 
-        if (_renderable_ub->GetSize() < sizeof(RenderableUniforms) * _scene->_entities.size()) {
             UniformBuffer* old_renderable_ub = _renderable_ub;
             SAFE_DELETE(old_renderable_ub);
-            _renderable_ub = new UniformBuffer(sizeof(RenderableUniforms) * _scene->_entities.size());
-        }
-
-        if (_lights.size() < _scene->_entities.size()) {
-            _lights.resize(_scene->_entities.size());
-        }
-
-        if (_views.size() < MAX_NUM_VIEWS) {
-            _views.resize(MAX_NUM_VIEWS);
+            _renderable_ub = new UniformBuffer(sizeof(RenderableUniforms) * _scene->_num_renderables);
         }
 
         for (auto entity : _scene->_entities) {
@@ -171,38 +165,50 @@ namespace gear {
                 _view_ub->Update(&sun_direction, offsetof(ViewUniforms, sun_direction), sizeof(glm::vec4));
             }
 
-            if (entity->HasComponent<CRenderable>()) {
-                CRenderable* crenderable = entity->GetComponent<CRenderable>();
+            if (entity->HasComponent<CMesh>()) {
                 glm::mat4 model_matrix = entity->GetComponent<CTransform>()->GetWorldTransform();
                 glm::mat4 normal_matrix = glm::transpose(glm::inverse(glm::mat3(model_matrix)));
-                // 设置renderable
-                _renderables[_num_renderables].renderable_ub_size = sizeof(RenderableUniforms);
-                _renderables[_num_renderables].renderable_ub_offset = _num_renderables * sizeof(RenderableUniforms);
-                _renderables[_num_renderables].renderable_ub = _renderable_ub;
-                _renderables[_num_renderables].bone_ub = crenderable->_bb;
-                _renderables[_num_renderables].primitives.clear();
-                for (uint32_t i = 0; i < crenderable->_primitives.size(); ++i) {
-                    _renderables[_num_renderables].primitives.push_back(crenderable->_primitives[i]);
-                    BBox& bbox = _renderables[_num_renderables].primitives[i].bbox;
-                    bbox.bb_min = TransformPoint(bbox.bb_min, model_matrix);
-                    bbox.bb_max = TransformPoint(bbox.bb_max, model_matrix);
+                CMesh* cmesh = entity->GetComponent<CMesh>();
+                for (uint32_t i = 0; i < cmesh->_sub_meshs.size(); ++i) {
+                    // 更新材质信息
+                    _renderables[_num_renderables].mi = cmesh->_sub_meshs[i].mi;
+                    _renderables[_num_renderables].cast_shadow = cmesh->_sub_meshs[i].cast_shadow;
+                    _renderables[_num_renderables].receive_shadow = cmesh->_sub_meshs[i].receive_shadow;
+
+                    // 更新绘制信息
+                    _renderables[_num_renderables].ib = cmesh->_sub_meshs[i].ib;
+                    _renderables[_num_renderables].vb = cmesh->_sub_meshs[i].vb;
+                    _renderables[_num_renderables].topo = cmesh->_sub_meshs[i].topo;
+                    _renderables[_num_renderables].count = cmesh->_sub_meshs[i].count;
+                    _renderables[_num_renderables].offset = cmesh->_sub_meshs[i].offset;
+
+                    // 更新包围盒
+                    _renderables[_num_renderables].bbox = cmesh->_sub_meshs[i].bbox;
+                    _renderables[_num_renderables].bbox.bb_min = TransformPoint(_renderables[_num_renderables].bbox.bb_min, model_matrix);
+                    _renderables[_num_renderables].bbox.bb_max = TransformPoint(_renderables[_num_renderables].bbox.bb_max, model_matrix);
+
+                    // todo：更新bone_ub
+                    _renderables[_num_renderables].bone_ub = nullptr;
+
+                    // 更新renderable_ub
+                    _renderables[_num_renderables].renderable_ub = _renderable_ub;
+                    _renderables[_num_renderables].renderable_ub_size = sizeof(RenderableUniforms);
+                    _renderables[_num_renderables].renderable_ub_offset = _num_renderables * sizeof(RenderableUniforms);
+                    _renderable_ub->Update(&model_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, model_matrix), sizeof(glm::mat4));
+                    _renderable_ub->Update(&normal_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, normal_matrix), sizeof(glm::mat4));
+
+                    // 归类
+                    RenderableType type = cmesh->GetRenderableType();
+                    if (type == RENDERABLE_COMMON) {
+                        _common_renderables[_num_common_renderables] = _num_renderables;
+                        _num_common_renderables++;
+                    } else if (type == RENDERABLE_UI) {
+                        _ui_renderables[_num_ui_renderables] = _num_renderables;
+                        _num_ui_renderables++;
+                    }
+
+                    _num_renderables++;
                 }
-
-                // 更新renderable_ub
-                _renderable_ub->Update(&model_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, model_matrix), sizeof(glm::mat4));
-                _renderable_ub->Update(&normal_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, normal_matrix), sizeof(glm::mat4));
-
-                // 归类
-                RenderableType type = crenderable->GetRenderableType();
-                if (type == RENDERABLE_COMMON) {
-                    _common_renderables[_num_common_renderables] = _num_renderables;
-                    _num_common_renderables++;
-                } else if (type == RENDERABLE_UI) {
-                    _ui_renderables[_num_ui_renderables] = _num_renderables;
-                    _num_ui_renderables++;
-                }
-
-                _num_renderables++;
             }
         }
 
@@ -213,105 +219,12 @@ namespace gear {
 
         // 管线开始前的初始化
         _dc_head = 0;
-        renderer->BindFrameUniformBuffer(_view_ub->GetHandle(), _view_ub->GetSize(), 0);
 
         // shadow
         ExecShadowStage();
 
-        // render comon renderable
-        uint32_t common_dc_head = _dc_head;
-        uint32_t num_common_dc = 0;
-        for (uint32_t i = 0; i < _num_common_renderables; ++i) {
-            Renderable* rb = &_renderables[_common_renderables[i]];
-            for (uint32_t j = 0; j < rb->primitives.size(); ++j) {
-                uint32_t dc_idx = common_dc_head + num_common_dc;
-                
-                RenderPrimitive* rp = &rb->primitives[j];
-
-                MaterialVariant::Key material_variant = 0;
-                if (_light_info.has_direction_light) {
-                    material_variant |= MaterialVariant::DIRECTIONAL_LIGHTING;
-                }
-
-                if (rp->receive_shadow) {
-                    material_variant |= MaterialVariant::SHADOW_RECEIVER;
-                }
-
-                _dc_list[dc_idx] = {};
-                _dc_list[dc_idx].key = 0;
-                _dc_list[dc_idx].renderable_ub = rb->renderable_ub->GetHandle();
-                _dc_list[dc_idx].renderable_ub_size = rb->renderable_ub_size;
-                _dc_list[dc_idx].renderable_ub_offset = rb->renderable_ub_offset;
-
-                if (rb->bone_ub) {
-                    material_variant |= MaterialVariant::SKINNING_OR_MORPHING;
-                    _dc_list[dc_idx].bone_ub = rb->bone_ub->GetHandle();
-                } else {
-                    _dc_list[dc_idx].bone_ub = nullptr;
-                }
-
-                _dc_list[dc_idx].vertex_layout = rp->vb->GetVertexLayout();
-                _dc_list[dc_idx].vb = rp->vb->GetHandle();
-
-                _dc_list[dc_idx].ib_count = rp->count;
-                _dc_list[dc_idx].ib_offset = rp->offset;
-                _dc_list[dc_idx].ib_type = rp->ib->GetIndexType();
-                _dc_list[dc_idx].ib = rp->ib->GetHandle();
-
-                _dc_list[dc_idx].topo = rp->topo;
-
-                _dc_list[dc_idx].render_state = rp->mi->GetMaterial()->GetRenderState();
-                _dc_list[dc_idx].render_state.cull_mode = blast::CULL_MODE_BACK;
-
-                _dc_list[dc_idx].vs = rp->mi->GetMaterial()->GetVertShader(material_variant);
-                _dc_list[dc_idx].fs = rp->mi->GetMaterial()->GetFragShader(material_variant);
-
-                if (rp->mi->GetUniformBuffer()) {
-                    _dc_list[dc_idx].material_ub = rp->mi->GetUniformBuffer()->GetHandle();
-                    _dc_list[dc_idx].material_ub_size = rp->mi->GetUniformBuffer()->GetSize();
-                    _dc_list[dc_idx].material_ub_offset = 0;
-                } else {
-                    _dc_list[dc_idx].material_ub = nullptr;
-                    _dc_list[dc_idx].material_ub_size = 0;
-                    _dc_list[dc_idx].material_ub_offset = 0;
-                }
-
-                // 阴影贴图
-                if (rp->receive_shadow) {
-                    blast::GfxSamplerDesc shadow_sampler_desc;
-                    shadow_sampler_desc.min_filter = blast::FILTER_NEAREST;
-                    shadow_sampler_desc.mag_filter = blast::FILTER_NEAREST;
-                    shadow_sampler_desc.address_u = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
-                    shadow_sampler_desc.address_v = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
-                    shadow_sampler_desc.address_w = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
-                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].slot = 0;
-                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].layer = 0;
-                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].num_layers = SHADOW_CASCADE_COUNT;
-                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].texture = _cascade_shadow_map->GetTexture();
-                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].sampler_desc = shadow_sampler_desc;
-                    _dc_list[dc_idx].num_sampler_infos++;
-                }
-
-                // 材质贴图
-                for (uint32_t k = 0; k < rp->mi->GetGfxSamplerGroup().size(); ++k) {
-                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].slot = 4 + k;
-                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].texture = rp->mi->GetGfxSamplerGroup().at(k).first->GetTexture();
-                    _dc_list[dc_idx].sampler_infos[_dc_list[dc_idx].num_sampler_infos].sampler_desc = rp->mi->GetGfxSamplerGroup().at(k).second;
-                    _dc_list[dc_idx].num_sampler_infos++;
-                }
-                num_common_dc++;
-            }
-        }
-        _dc_head += num_common_dc;
-
-        // 排序
-        std::sort(&_dc_list[common_dc_head], &_dc_list[common_dc_head] + num_common_dc);
-
-        renderer->BindFramebuffer(_display_fb);
-        for (uint32_t i = common_dc_head; i < common_dc_head + num_common_dc; ++i) {
-            renderer->ExecuteDrawCall(_dc_list[i]);
-        }
-        renderer->UnbindFramebuffer();
+        // base
+        ExecBaseStage();
 
         // debug
         ExecDebugStage();

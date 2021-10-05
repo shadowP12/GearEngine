@@ -46,9 +46,7 @@ namespace gear {
 
         void Resize(uint32_t width, uint32_t height);
 
-        void BeginFrame(void* window, uint32_t width, uint32_t height);
-
-        void EndFrame();
+        void Render(void* window, uint32_t width, uint32_t height);
 
         blast::GfxContext* GetContext() { return _context; }
 
@@ -66,13 +64,13 @@ namespace gear {
 
         uint32_t GetHeight() { return _frame_height; }
 
-        blast::GfxCommandBuffer* GetCommandBuffer();
+        // 渲染器执行display任务
+        void EnqueueDisplayTask(std::function<void()>);
 
-        void ExecRenderTask(std::function<void(blast::GfxCommandBuffer*)>);
+        // 渲染器执行upload任务
+        void EnqueueUploadTask(std::function<void()>);
 
         blast::GfxBuffer* AllocStageBuffer(uint32_t size);
-
-        void UseResource(void* resource);
 
         void Destroy(blast::GfxBuffer*);
 
@@ -80,15 +78,56 @@ namespace gear {
 
         void Destroy(blast::GfxShader*);
 
+        void SetBarrier(const blast::GfxBufferBarrier&);
+
+        void SetBarrier(const blast::GfxTextureBarrier&);
+
+        void CopyToBuffer(const blast::GfxCopyToBufferRange&);
+
+        void CopyToImage(const blast::GfxCopyToImageRange&);
+
         void BindFramebuffer(const FramebufferInfo& info);
 
         void UnbindFramebuffer();
 
+        void BindVertexShader(blast::GfxShader* vs);
+
+        void BindFragmentShader(blast::GfxShader* fs);
+
+        void ResetUniformBufferSlot();
+
         void BindFrameUniformBuffer(blast::GfxBuffer* buffer, uint32_t size, uint32_t offset);
 
-        void ExecuteDrawCall(const DrawCall& draw_call);
+        void BindRenderableUniformBuffer(blast::GfxBuffer* buffer, uint32_t size, uint32_t offset);
 
-        void ExecuteDebugDrawCall(const DrawCall& draw_call);
+        void BindMaterialUniformBuffer(blast::GfxBuffer* buffer, uint32_t size, uint32_t offset);
+
+        void ResetSamplerSlot();
+
+        void BindSampler(const SamplerInfo& info);
+
+        void SetDepthState(bool enable_warte, bool enable_test = true);
+
+        void SetBlendingMode(const BlendingMode& blending_mode);
+
+        void SetPrimitiveTopo(const blast::PrimitiveTopology&);
+
+        void SetFrontFace(const blast::FrontFace& front_face = blast::FRONT_FACE_CCW);
+
+        void SetCullMode(const blast::CullMode&);
+
+        void BindVertexBuffer(blast::GfxBuffer* buffer, const blast::GfxVertexLayout& layout, uint32_t size, uint32_t offset);
+
+        void BindIndexBuffer(blast::GfxBuffer* buffer, const blast::IndexType& type, uint32_t size, uint32_t offset);
+
+        void Draw(uint32_t count, uint32_t offset);
+
+        void DrawIndexed(uint32_t count, uint32_t offset);
+
+    private:
+        blast::GfxCommandBuffer* GetCommandBuffer();
+
+        void UseResource(void* resource);
 
     private:
         blast::GfxContext* _context = nullptr;
@@ -102,7 +141,7 @@ namespace gear {
         blast::GfxCommandBuffer** _cmds = nullptr;
         blast::GfxRootSignature* _root_signature = nullptr;
         blast::GfxFence* _copy_fence = nullptr;
-        blast::GfxCommandBuffer* _copy_cmd = nullptr;
+        blast::GfxCommandBuffer* _upload_cmd = nullptr;
         bool _in_frame = false;
         bool _skip_frame = false;
         uint32_t  _swapchain_image_index;
@@ -120,12 +159,6 @@ namespace gear {
         FramebufferCache* _framebuffer_cache;
         GraphicsPipelineCache* _graphics_pipeline_cache;
         DescriptorCache* _descriptor_cache;
-        // 当前渲染器绑定的资源
-        FramebufferInfo _bind_fb_info;
-        blast::GfxFramebuffer* _bind_fb = nullptr;
-        blast::GfxBuffer* _bind_frame_uniform_buffer = nullptr;
-        uint32_t _bind_frame_uniform_buffer_size = 0;
-        uint32_t _bind_frame_uniform_buffer_offset = 0;
         // 暂存缓存池
         std::vector<blast::GfxBuffer*> _stage_buffer_pool;
         std::vector<blast::GfxBuffer*> _usable_stage_buffer_list;
@@ -134,8 +167,14 @@ namespace gear {
         Frame _copy_resources;
         std::map<void*, uint32_t> _using_resources;
         // 渲染器的任务队列
-        std::queue<std::function<void(blast::GfxCommandBuffer*)>> _render_task_queue;
+        std::queue<std::function<void()>> _display_task_queue;
+        std::queue<std::function<void()>> _upload_task_queue;
         // 资源销毁的回调队列
         std::map<void*, std::function<void()>> _destroy_task_map;
+        // 渲染器绑定的资源
+        FramebufferInfo _bind_fb_info;
+        blast::GfxFramebuffer* _bind_fb = nullptr;
+        DescriptorKey _descriptor_key;
+        blast::GfxGraphicsPipelineDesc _graphics_pipeline_key;
     };
 }

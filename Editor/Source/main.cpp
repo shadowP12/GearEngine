@@ -12,7 +12,7 @@
 #include <Entity/Components/CLight.h>
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
-#include <Entity/Components/CRenderable.h>
+#include <Entity/Components/CMesh.h>
 #include <Resource/GpuBuffer.h>
 #include <Resource/BuiltinResources.h>
 #include <Renderer/Renderer.h>
@@ -61,9 +61,9 @@ int main()
 
     GltfAsset* gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/test.gltf");
     for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
-        if (gltf_asset->entities[i]->HasComponent<gear::CRenderable>()) {
-            gltf_asset->entities[i]->GetComponent<gear::CRenderable>()->SetCastShadow(true);
-            gltf_asset->entities[i]->GetComponent<gear::CRenderable>()->SetReceiveShadow(true);
+        if (gltf_asset->entities[i]->HasComponent<gear::CMesh>()) {
+            gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetCastShadow(true);
+            gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetReceiveShadow(true);
         }
         editor_scene->AddEntity(gltf_asset->entities[i]);
     }
@@ -74,7 +74,6 @@ int main()
     CameraController* camera_controller = new CameraController();
     camera_controller->SetCamera(main_camera);
 
-    // 初始化glfw
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     GLFWwindow* window = glfwCreateWindow(800, 600, "GearEditor", nullptr, nullptr);
@@ -82,7 +81,6 @@ int main()
     glfwSetMouseButtonCallback(window, MouseButtonCB);
     glfwSetScrollCallback(window, MouseScrollCB);
 
-    // 初始化ui层
     ImGui::ImGuiInit(window);
     gear::RenderPipeline* ui_pipeline = nullptr;
     ImGui::GetRenderPipeline(&ui_pipeline);
@@ -93,9 +91,9 @@ int main()
         glfwGetWindowSize(window, &window_width, &window_height);
 
         ImGui::BeginUI();
-        // 在此插入ui代码
-//        bool show_demo_window = true;
-//        ImGui::ShowDemoWindow(&show_demo_window);
+        // 示例ui
+        // bool show_demo_window = true;
+        // ImGui::ShowDemoWindow(&show_demo_window);
 
         ImGui::Begin("Change Camera");
         if (ImGui::Button("Main Camera")) {
@@ -109,22 +107,18 @@ int main()
             camera_controller->SetCamera(debug_camera);
         }
         ImGui::End();
-
         ImGui::EndUI();
 
-        gear::gEngine.GetRenderer()->BeginFrame(glfwGetWin32Window(window), window_width, window_height);
-        editor_pipeline->Exec();
-        ui_pipeline->Exec();
-        gear::gEngine.GetRenderer()->EndFrame();
+        editor_pipeline->Draw();
+        ui_pipeline->Draw();
 
-        // 重置输入系统状态
+        gear::gEngine.GetRenderer()->Render(glfwGetWin32Window(window), window_width, window_height);
+
         gear::gEngine.GetInputSystem()->Reset();
     }
 
-    // 销毁ui层
     ImGui::ImGuiTerminate();
 
-    // 销毁glfw
     glfwTerminate();
 
     SAFE_DELETE(camera_controller);

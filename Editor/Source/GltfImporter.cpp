@@ -8,7 +8,7 @@
 #include <Entity/EntityManager.h>
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
-#include <Entity/Components/CRenderable.h>
+#include <Entity/Components/CMesh.h>
 #include <GearEngine.h>
 #include <MaterialCompiler/MaterialCompiler.h>
 #define CGLTF_IMPLEMENTATION
@@ -307,7 +307,7 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             continue;
         }
 
-        gear::CRenderable* crenderable = node_helper[cnode]->AddComponent<gear::CRenderable>();
+        gear::CMesh* mesh_component = node_helper[cnode]->AddComponent<gear::CMesh>();
 
         for (int i = 0; i < cmesh->primitives_count; i++) {
             cgltf_primitive* cprimitive = &cmesh->primitives[i];
@@ -546,7 +546,7 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             vertex_buffers.push_back(vertex_buffer);
             index_buffers.push_back(indexBuffer);
 
-            gear::RenderPrimitive primitive;
+            gear::SubMesh primitive;
             primitive.count = indexCount;
             primitive.offset = 0;
             primitive.bbox = bbox;
@@ -554,7 +554,7 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             primitive.mi = material_helper[cmaterial];
             primitive.vb = vertex_buffer;
             primitive.ib = indexBuffer;
-            crenderable->AddPrimitive(primitive);
+            mesh_component->AddSubMesh(primitive);
         }
     }
 

@@ -26,7 +26,7 @@ namespace gear {
 
         // Copy Command
         _copy_fence = _context->CreateFence();
-        _copy_cmd = _cmd_pool->AllocBuffer(false);
+        _upload_cmd = _cmd_pool->AllocBuffer(false);
 
         // 创建RootSignature
         blast::GfxRootSignatureDesc root_signature_desc;
@@ -88,7 +88,7 @@ namespace gear {
         SAFE_DELETE_ARRAY(_render_complete_semaphores);
         SAFE_DELETE_ARRAY(_frames);
 
-        _cmd_pool->DeleteBuffer(_copy_cmd);
+        _cmd_pool->DeleteBuffer(_upload_cmd);
         _context->DestroyFence(_copy_fence);
 
         _context->DestroyCommandBufferPool(_cmd_pool);
@@ -190,7 +190,7 @@ namespace gear {
         _queue->WaitIdle();
     }
 
-    void Renderer::BeginFrame(void* window, uint32_t width, uint32_t height) {
+    void Renderer::Render(void* window, uint32_t width, uint32_t height) {
         _copy_fence->WaitForComplete();
         // 处理之前绑定在Copy命令的资源
         for (auto resource : _copy_resources.resources) {
@@ -214,17 +214,17 @@ namespace gear {
         }
         _copy_resources.resources.clear();
 
-        // 处理Copy任务
-        _copy_cmd->Begin();
-        while (_render_task_queue.size() > 0) {
-            auto task = _render_task_queue.front();
-            task(_copy_cmd);
-            _render_task_queue.pop();
+        // 处理Upload任务
+        _upload_cmd->Begin();
+        while (_upload_task_queue.size() > 0) {
+            auto task = _upload_task_queue.front();
+            task();
+            _upload_task_queue.pop();
         }
-        _copy_cmd->End();
+        _upload_cmd->End();
         blast::GfxSubmitInfo submit_info;
         submit_info.num_cmd_bufs = 1;
-        submit_info.cmd_bufs = &_copy_cmd;
+        submit_info.cmd_bufs = &_upload_cmd;
         submit_info.signal_fence = _copy_fence;
         submit_info.num_wait_semaphores = 0;
         submit_info.wait_semaphores = nullptr;
@@ -322,22 +322,21 @@ namespace gear {
         screen_fb.depth_stencil.level = 0;
         BindFramebuffer(screen_fb);
         UnbindFramebuffer();
-    }
 
-    void Renderer::EndFrame() {
-        if (_skip_frame) {
-            return;
+        // 处理display task
+        while (_display_task_queue.size() > 0) {
+            auto task = _display_task_queue.front();
+            task();
+            _display_task_queue.pop();
         }
 
-        blast::GfxTexture* color_rt = _swapchain->GetColorRenderTarget(_frame_index);
-        blast::GfxTexture* depth_rt = _swapchain->GetDepthRenderTarget(_frame_index);
         {
             // 设置交换链RT为显示状态
             blast::GfxTextureBarrier barriers[2];
             barriers[0].texture = color_rt;
-            barriers[0].new_state = blast::RESOURCE_STATE_PRESENT ;
+            barriers[0].new_state = blast::RESOURCE_STATE_PRESENT;
             barriers[1].texture = depth_rt;
-            barriers[1].new_state = blast::RESOURCE_STATE_DEPTH_WRITE ;
+            barriers[1].new_state = blast::RESOURCE_STATE_DEPTH_WRITE;
             _cmds[_frame_index]->SetBarrier(0, nullptr, 2, barriers);
         }
         _cmds[_frame_index]->End();
@@ -345,15 +344,15 @@ namespace gear {
         // 设置标记
         _in_frame = false;
 
-        blast::GfxSubmitInfo submit_info;
-        submit_info.num_cmd_bufs = 1;
-        submit_info.cmd_bufs = &_cmds[_frame_index];
-        submit_info.signal_fence = _render_complete_fences[_frame_index];
-        submit_info.num_wait_semaphores = 1;
-        submit_info.wait_semaphores = &_image_acquired_semaphores[_frame_index];
-        submit_info.num_signal_semaphores = 1;
-        submit_info.signal_semaphores = &_render_complete_semaphores[_frame_index];
-        _queue->Submit(submit_info);
+        blast::GfxSubmitInfo display_submit_info;
+        display_submit_info.num_cmd_bufs = 1;
+        display_submit_info.cmd_bufs = &_cmds[_frame_index];
+        display_submit_info.signal_fence = _render_complete_fences[_frame_index];
+        display_submit_info.num_wait_semaphores = 1;
+        display_submit_info.wait_semaphores = &_image_acquired_semaphores[_frame_index];
+        display_submit_info.num_signal_semaphores = 1;
+        display_submit_info.signal_semaphores = &_render_complete_semaphores[_frame_index];
+        _queue->Submit(display_submit_info);
 
         blast::GfxPresentInfo present_info;
         present_info.swapchain = _swapchain;
@@ -376,15 +375,19 @@ namespace gear {
         if (_in_frame) {
             return _cmds[_frame_index];
         }
-        return _copy_cmd;
+        return _upload_cmd;
     }
-
-    void Renderer::ExecRenderTask(std::function<void(blast::GfxCommandBuffer*)> task) {
+    
+    void Renderer::EnqueueDisplayTask(std::function<void()> task) {
+        _display_task_queue.push(task);
+    }
+    
+    void Renderer::EnqueueUploadTask(std::function<void()> task) {
         if (_in_frame) {
-            task(_cmds[_frame_index]);
+            task();
             return;
         }
-        _render_task_queue.push(task);
+        _upload_task_queue.push(task);
     }
 
     void Renderer::UseResource(void* resource) {
@@ -439,6 +442,32 @@ namespace gear {
         });
     }
 
+    void Renderer::SetBarrier(const blast::GfxBufferBarrier& barrier) {
+        UseResource(barrier.buffer);
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
+        cmd->SetBarrier(1, const_cast<blast::GfxBufferBarrier*>(&barrier), 0, nullptr);
+    }
+
+    void Renderer::SetBarrier(const blast::GfxTextureBarrier& barrier) {
+        UseResource(barrier.texture);
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
+        cmd->SetBarrier(0, nullptr, 1, const_cast<blast::GfxTextureBarrier*>(&barrier));
+    }
+
+    void Renderer::CopyToBuffer(const blast::GfxCopyToBufferRange& range) {
+        UseResource(range.src_buffer);
+        UseResource(range.dst_buffer);
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
+        cmd->CopyToBuffer(range);
+    }
+
+    void Renderer::CopyToImage(const blast::GfxCopyToImageRange& range) {
+        UseResource(range.src_buffer);
+        UseResource(range.dst_texture);
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
+        cmd->CopyToImage(range);
+    }
+
     void Renderer::BindFramebuffer(const FramebufferInfo& info) {
         if (_skip_frame) {
             return;
@@ -446,7 +475,7 @@ namespace gear {
 
         _bind_fb_info = info;
 
-        blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
 
         uint32_t num_barriers = 0;
         blast::GfxTextureBarrier barriers[TARGET_COUNT + 1];
@@ -495,6 +524,10 @@ namespace gear {
         cmd->ClearFramebuffer(fb, info.clear_value);
         cmd->SetViewport(info.viewport[0], info.viewport[1], info.viewport[2], info.viewport[3]);
         cmd->SetScissor(0, 0, info.width, info.height);
+
+        _graphics_pipeline_key.framebuffer = fb;
+
+        // TODO
         _bind_fb = fb;
     }
 
@@ -503,7 +536,7 @@ namespace gear {
             return;
         }
 
-        blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
         cmd->UnbindFramebuffer();
 
         uint32_t num_barriers = 0;
@@ -528,177 +561,131 @@ namespace gear {
         }
     }
 
+    void Renderer::BindVertexShader(blast::GfxShader* vs) {
+        _graphics_pipeline_key.vertex_shader = vs;
+    }
+
+    void Renderer::BindFragmentShader(blast::GfxShader* fs) {
+        _graphics_pipeline_key.pixel_shader = fs;
+    }
+
+    void Renderer::ResetUniformBufferSlot() {
+        _descriptor_key.num_uniform_buffers = 0;
+    }
+
+    void Renderer::BindMaterialUniformBuffer(blast::GfxBuffer* buffer, uint32_t size, uint32_t offset) {
+        UseResource(buffer);
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].slot = 0;
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].uniform_buffer = buffer;
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].uniform_buffer_size = size;
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].uniform_buffer_offset = offset;
+        _descriptor_key.num_uniform_buffers++;
+    }
+
     void Renderer::BindFrameUniformBuffer(blast::GfxBuffer* buffer, uint32_t size, uint32_t offset) {
-        _bind_frame_uniform_buffer = buffer;
-        _bind_frame_uniform_buffer_size = size;
-        _bind_frame_uniform_buffer_offset = offset;
+        UseResource(buffer);
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].slot = 1;
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].uniform_buffer = buffer;
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].uniform_buffer_size = size;
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].uniform_buffer_offset = offset;
+        _descriptor_key.num_uniform_buffers++;
     }
 
-    void Renderer::ExecuteDrawCall(const DrawCall& dc) {
-        if (_skip_frame) {
-            return;
-        }
+    void Renderer::BindRenderableUniformBuffer(blast::GfxBuffer* buffer, uint32_t size, uint32_t offset) {
+        UseResource(buffer);
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].slot = 2;
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].uniform_buffer = buffer;
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].uniform_buffer_size = size;
+        _descriptor_key.uniform_descriptors[_descriptor_key.num_uniform_buffers].uniform_buffer_offset = offset;
+        _descriptor_key.num_uniform_buffers++;
+    }
 
-        blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
+    void Renderer::ResetSamplerSlot() {
+        _descriptor_key.num_samplers = 0;
+    }
 
-        // 标记使用的外部资源
-        UseResource(dc.bone_ub);
-        UseResource(dc.renderable_ub);
-        UseResource(dc.material_ub);
-        UseResource(dc.vb);
-        UseResource(dc.ib);
-        UseResource(dc.vs);
-        UseResource(dc.fs);
-        UseResource(_bind_frame_uniform_buffer);
+    void Renderer::BindSampler(const SamplerInfo& info) {
+        UseResource(info.texture);
+        blast::GfxTextureViewDesc texture_view_desc;
+        texture_view_desc.texture = info.texture;
+        texture_view_desc.layer = info.layer;
+        texture_view_desc.num_layers = info.num_layers;
+        texture_view_desc.level = info.level;
+        texture_view_desc.num_levels = info.num_levels;
+        _descriptor_key.sampler_descriptors[_descriptor_key.num_samplers].slot = info.slot;
+        _descriptor_key.sampler_descriptors[_descriptor_key.num_samplers].textures_view = _texture_view_cache->GetTextureView(texture_view_desc);
+        _descriptor_key.sampler_descriptors[_descriptor_key.num_samplers].sampler = _sampler_cache->GetSampler(info.sampler_desc);
+        _descriptor_key.num_samplers++;
+    }
 
-        DescriptorKey descriptor_key = {};
-        // 绑定materialUB
-        if (dc.material_ub) {
-            descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].slot = 0;
-            descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer = dc.material_ub;
-            descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_size = dc.material_ub_size;
-            descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_offset = dc.material_ub_offset;
-            descriptor_key.num_uniform_buffers++;
-        }
+    void Renderer::SetDepthState(bool enable_write, bool enable_test) {
+        _graphics_pipeline_key.depth_state.depth_write = enable_write;
+        _graphics_pipeline_key.depth_state.depth_test = enable_test;
+    }
 
-        // 绑定frameUB
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].slot = 1;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer = _bind_frame_uniform_buffer;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_size = _bind_frame_uniform_buffer_size;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_offset = _bind_frame_uniform_buffer_offset;
-        descriptor_key.num_uniform_buffers++;
-
-        // 绑定renderableUB
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].slot = 2;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer = dc.renderable_ub;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_size = dc.renderable_ub_size;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_offset = dc.renderable_ub_offset;
-        descriptor_key.num_uniform_buffers++;
-
-        // 绑定samplers
-        descriptor_key.num_samplers = dc.num_sampler_infos;
-        for (uint32_t i = 0; i < dc.num_sampler_infos; ++i) {
-            blast::GfxTextureViewDesc texture_view_desc;
-            texture_view_desc.texture = dc.sampler_infos[i].texture;
-            texture_view_desc.layer = dc.sampler_infos[i].layer;
-            texture_view_desc.num_layers = dc.sampler_infos[i].num_layers;
-            texture_view_desc.level = dc.sampler_infos[i].level;
-            texture_view_desc.num_levels = dc.sampler_infos[i].num_levels;
-            descriptor_key.sampler_descriptors[i].slot = dc.sampler_infos[i].slot;
-            descriptor_key.sampler_descriptors[i].textures_view = _texture_view_cache->GetTextureView(texture_view_desc);
-            descriptor_key.sampler_descriptors[i].sampler = _sampler_cache->GetSampler(dc.sampler_infos[i].sampler_desc);
-        }
-
-        DescriptorBundle descriptor_bundle = _descriptor_cache->GetDescriptor(descriptor_key);
-
-        blast::GfxGraphicsPipelineDesc pipeline_desc = {};
-        pipeline_desc.framebuffer = _bind_fb;
-        pipeline_desc.root_signature = _root_signature;
-        pipeline_desc.vertex_shader = dc.vs;
-        pipeline_desc.pixel_shader = dc.fs;
-        pipeline_desc.vertex_layout = dc.vertex_layout;
-
-        pipeline_desc.depth_state.depth_test = true;
-        pipeline_desc.depth_state.depth_write = true;
-
-        if (dc.render_state.blending_mode == BlendingMode::BLENDING_MODE_OPAQUE) {
-            pipeline_desc.blend_state.src_factors[0] = blast::BLEND_ONE;
-            pipeline_desc.blend_state.dst_factors[0] = blast::BLEND_ZERO;
-            pipeline_desc.blend_state.src_alpha_factors[0] = blast::BLEND_ONE;
-            pipeline_desc.blend_state.dst_alpha_factors[0] = blast::BLEND_ZERO;
-            pipeline_desc.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
-        } else if (dc.render_state.blending_mode == BlendingMode::BLENDING_MODE_TRANSPARENT) {
-            // 半透材质不应该写入深度缓存
-            pipeline_desc.depth_state.depth_write = false;
-
+    void Renderer::SetBlendingMode(const BlendingMode& blending_mode) {
+        if (blending_mode == BlendingMode::BLENDING_MODE_OPAQUE) {
+            _graphics_pipeline_key.blend_state.src_factors[0] = blast::BLEND_ONE;
+            _graphics_pipeline_key.blend_state.dst_factors[0] = blast::BLEND_ZERO;
+            _graphics_pipeline_key.blend_state.src_alpha_factors[0] = blast::BLEND_ONE;
+            _graphics_pipeline_key.blend_state.dst_alpha_factors[0] = blast::BLEND_ZERO;
+            _graphics_pipeline_key.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
+        } else if (blending_mode == BlendingMode::BLENDING_MODE_TRANSPARENT) {
             // 预乘使用的混合方程
-            pipeline_desc.blend_state.src_factors[0] = blast::BLEND_ONE;
-            pipeline_desc.blend_state.dst_factors[0] = blast::BLEND_ONE_MINUS_SRC_ALPHA;
-            pipeline_desc.blend_state.src_alpha_factors[0] = blast::BLEND_ONE;
-            pipeline_desc.blend_state.dst_alpha_factors[0] = blast::BLEND_ONE_MINUS_SRC_ALPHA;
-            pipeline_desc.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
-
-        } else if (dc.render_state.blending_mode == BlendingMode::BLENDING_MODE_MASKED) {
-            pipeline_desc.blend_state.src_factors[0] = blast::BLEND_ONE;
-            pipeline_desc.blend_state.dst_factors[0] = blast::BLEND_ZERO;
-            pipeline_desc.blend_state.src_alpha_factors[0] = blast::BLEND_ZERO;
-            pipeline_desc.blend_state.dst_alpha_factors[0] = blast::BLEND_ONE;
-            pipeline_desc.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
-        }
-
-        pipeline_desc.rasterizer_state.primitive_topo = dc.topo;
-        pipeline_desc.rasterizer_state.front_face = blast::FRONT_FACE_CCW;
-        pipeline_desc.rasterizer_state.cull_mode = dc.render_state.cull_mode;
-
-        blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(pipeline_desc);
-        cmd->BindGraphicsPipeline(pipeline);
-        cmd->BindDescriptorSets(_root_signature, 2, descriptor_bundle.handles);
-
-        if (dc.ib != nullptr) {
-            cmd->BindVertexBuffer(dc.vb, 0);
-            cmd->BindIndexBuffer(dc.ib, 0, dc.ib_type);
-            cmd->DrawIndexed(dc.ib_count, 1, dc.ib_offset, 0, 0);
-        } else {
-            cmd->BindVertexBuffer(dc.vb, 0);
-            cmd->Draw(dc.vb_count, 1, dc.vb_offset, 0);
+            _graphics_pipeline_key.blend_state.src_factors[0] = blast::BLEND_ONE;
+            _graphics_pipeline_key.blend_state.dst_factors[0] = blast::BLEND_ONE_MINUS_SRC_ALPHA;
+            _graphics_pipeline_key.blend_state.src_alpha_factors[0] = blast::BLEND_ONE;
+            _graphics_pipeline_key.blend_state.dst_alpha_factors[0] = blast::BLEND_ONE_MINUS_SRC_ALPHA;
+            _graphics_pipeline_key.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
+        } else if (blending_mode == BlendingMode::BLENDING_MODE_MASKED) {
+            _graphics_pipeline_key.blend_state.src_factors[0] = blast::BLEND_ONE;
+            _graphics_pipeline_key.blend_state.dst_factors[0] = blast::BLEND_ZERO;
+            _graphics_pipeline_key.blend_state.src_alpha_factors[0] = blast::BLEND_ZERO;
+            _graphics_pipeline_key.blend_state.dst_alpha_factors[0] = blast::BLEND_ONE;
+            _graphics_pipeline_key.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
         }
     }
 
-    void Renderer::ExecuteDebugDrawCall(const DrawCall& dc) {
-        if (_skip_frame) {
-            return;
-        }
+    void Renderer::SetPrimitiveTopo(const blast::PrimitiveTopology& topo) {
+        _graphics_pipeline_key.rasterizer_state.primitive_topo = topo;
+    }
 
-        blast::GfxCommandBuffer* cmd = _cmds[_frame_index];
+    void Renderer::SetFrontFace(const blast::FrontFace& front_face) {
+        _graphics_pipeline_key.rasterizer_state.front_face = front_face;
+    }
 
-        // 标记使用的外部资源
-        UseResource(dc.vb);
-        UseResource(dc.vs);
-        UseResource(dc.fs);
-        UseResource(dc.renderable_ub);
-        UseResource(_bind_frame_uniform_buffer);
+    void Renderer::SetCullMode(const blast::CullMode& cull_mode) {
+        _graphics_pipeline_key.rasterizer_state.cull_mode = cull_mode;
+    }
 
-        DescriptorKey descriptor_key = {};
+    void Renderer::BindVertexBuffer(blast::GfxBuffer* buffer, const blast::GfxVertexLayout& layout, uint32_t size, uint32_t offset) {
+        UseResource(buffer);
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
+        cmd->BindVertexBuffer(buffer, offset);
+        _graphics_pipeline_key.vertex_layout = layout;
+    }
 
-        // 绑定frameUB
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].slot = 1;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer = _bind_frame_uniform_buffer;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_size = _bind_frame_uniform_buffer_size;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_offset = _bind_frame_uniform_buffer_offset;
-        descriptor_key.num_uniform_buffers++;
+    void Renderer::BindIndexBuffer(blast::GfxBuffer* buffer, const blast::IndexType& type, uint32_t size, uint32_t offset) {
+        UseResource(buffer);
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
+        cmd->BindIndexBuffer(buffer, offset, type);
+    }
 
-        // 绑定renderableUB
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].slot = 2;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer = dc.renderable_ub;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_size = dc.renderable_ub_size;
-        descriptor_key.uniform_descriptors[descriptor_key.num_uniform_buffers].uniform_buffer_offset = dc.renderable_ub_offset;
-        descriptor_key.num_uniform_buffers++;
-
-        DescriptorBundle descriptor_bundle = _descriptor_cache->GetDescriptor(descriptor_key);
-
-        blast::GfxGraphicsPipelineDesc pipeline_desc = {};
-        pipeline_desc.framebuffer = _bind_fb;
-        pipeline_desc.root_signature = _root_signature;
-        pipeline_desc.vertex_shader = dc.vs;
-        pipeline_desc.pixel_shader = dc.fs;
-        pipeline_desc.vertex_layout = dc.vertex_layout;
-
-        pipeline_desc.depth_state.depth_test = false;
-        pipeline_desc.depth_state.depth_write = false;
-
-        pipeline_desc.blend_state.src_factors[0] = blast::BLEND_ONE;
-        pipeline_desc.blend_state.dst_factors[0] = blast::BLEND_ZERO;
-        pipeline_desc.blend_state.src_alpha_factors[0] = blast::BLEND_ONE;
-        pipeline_desc.blend_state.dst_alpha_factors[0] = blast::BLEND_ZERO;
-        pipeline_desc.blend_state.color_write_masks[0] = blast::COLOR_COMPONENT_ALL;
-
-        pipeline_desc.rasterizer_state.primitive_topo = dc.topo;
-        pipeline_desc.rasterizer_state.cull_mode = dc.render_state.cull_mode;
-
-        blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(pipeline_desc);
+    void Renderer::Draw(uint32_t count, uint32_t offset) {
+        DescriptorBundle descriptor_bundle = _descriptor_cache->GetDescriptor(_descriptor_key);
+        blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(_graphics_pipeline_key);
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
         cmd->BindGraphicsPipeline(pipeline);
         cmd->BindDescriptorSets(_root_signature, 2, descriptor_bundle.handles);
-        cmd->BindVertexBuffer(dc.vb, 0);
-        cmd->Draw(dc.vb_count, 1, dc.vb_offset, 0);
+        cmd->Draw(count, 1, offset, 0);
+    }
+
+    void Renderer::DrawIndexed(uint32_t count, uint32_t offset) {
+        DescriptorBundle descriptor_bundle = _descriptor_cache->GetDescriptor(_descriptor_key);
+        blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(_graphics_pipeline_key);
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
+        cmd->BindGraphicsPipeline(pipeline);
+        cmd->BindDescriptorSets(_root_signature, 2, descriptor_bundle.handles);
+        cmd->DrawIndexed(count, 1, offset, 0, 0);
     }
 }

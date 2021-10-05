@@ -192,11 +192,7 @@ namespace gear {
 
         uint32_t layer = _layer;
         uint32_t level = _level;
-        renderer->ExecRenderTask([renderer, texture, staging_buffer, layer, level](blast::GfxCommandBuffer* cmd) {
-
-            renderer->UseResource(texture);
-            renderer->UseResource(staging_buffer);
-
+        renderer->EnqueueUploadTask([renderer, texture, staging_buffer, layer, level]() {
             uint32_t width = texture->GetWidth();
             uint32_t height = texture->GetHeight();
             uint32_t depth = texture->GetDepth();
@@ -207,7 +203,7 @@ namespace gear {
                 blast::GfxTextureBarrier barrier;
                 barrier.texture = texture;
                 barrier.new_state = blast::RESOURCE_STATE_COPY_DEST;
-                cmd->SetBarrier(0, nullptr, 1, &barrier);
+                renderer->SetBarrier(barrier);
             }
 
             blast::GfxCopyToImageRange range;
@@ -234,7 +230,7 @@ namespace gear {
                     range.buffer_offset = offset;
                     range.layer = i;
                     range.level = j;
-                    cmd->CopyToImage(staging_buffer, texture, range);
+                    renderer->CopyToImage(range);
                     offset += image_size;
                 }
             }
@@ -244,7 +240,7 @@ namespace gear {
                 blast::GfxTextureBarrier barrier;
                 barrier.texture = texture;
                 barrier.new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
-                cmd->SetBarrier(0, nullptr, 1, &barrier);
+                renderer->SetBarrier(barrier);
             }
         });
     }

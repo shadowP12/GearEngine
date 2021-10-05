@@ -16,8 +16,6 @@ namespace gear {
     private:
         friend class RenderPipeline;
         std::vector<Entity*> _entities;
-        std::vector<Entity*> _light_entities;
-        std::vector<Entity*> _camera_entities;
-        std::vector<Entity*> _renderable_entities;
+        uint32_t _num_renderables = 0;
     };
 }

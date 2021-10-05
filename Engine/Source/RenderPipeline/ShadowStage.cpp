@@ -66,17 +66,14 @@ namespace gear {
         // 遍历所有renderable
         for (uint32_t i = 0; i < _num_common_renderables; ++i) {
             Renderable* rb = &_renderables[_common_renderables[i]];
-            for (int j = 0; j < rb->primitives.size(); ++j) {
-                RenderPrimitive* prim = &rb->primitives[j];
-                if (prim->cast_shadow) {
-                    cascade_params.ws_shadow_casters_volume.bb_min = glm::min(cascade_params.ws_shadow_casters_volume.bb_min, prim->bbox.bb_min);
-                    cascade_params.ws_shadow_casters_volume.bb_max = glm::max(cascade_params.ws_shadow_casters_volume.bb_max, prim->bbox.bb_max);
-                }
+            if (rb->cast_shadow) {
+                cascade_params.ws_shadow_casters_volume.bb_min = glm::min(cascade_params.ws_shadow_casters_volume.bb_min, rb->bbox.bb_min);
+                cascade_params.ws_shadow_casters_volume.bb_max = glm::max(cascade_params.ws_shadow_casters_volume.bb_max, rb->bbox.bb_max);
+            }
 
-                if (prim->receive_shadow) {
-                    cascade_params.ws_shadow_receivers_volume.bb_min = min(cascade_params.ws_shadow_receivers_volume.bb_min, prim->bbox.bb_min);
-                    cascade_params.ws_shadow_receivers_volume.bb_max = max(cascade_params.ws_shadow_receivers_volume.bb_max, prim->bbox.bb_max);
-                }
+            if (rb->receive_shadow) {
+                cascade_params.ws_shadow_receivers_volume.bb_min = min(cascade_params.ws_shadow_receivers_volume.bb_min, rb->bbox.bb_min);
+                cascade_params.ws_shadow_receivers_volume.bb_max = max(cascade_params.ws_shadow_receivers_volume.bb_max, rb->bbox.bb_max);
             }
         }
 
@@ -331,58 +328,23 @@ namespace gear {
         }
 
         // 生成dc
-        uint32_t shadow_dc_head = _dc_head;
+        uint32_t shadow_dc_head = 0;
         uint32_t num_shadow_dc = 0;
         for (uint32_t i = 0; i < _num_common_renderables; ++i) {
             Renderable* rb = &_renderables[_common_renderables[i]];
-            for (uint32_t j = 0; j < rb->primitives.size(); ++j) {
-                RenderPrimitive* rp = &rb->primitives[j];
+            uint32_t dc_idx = shadow_dc_head + num_shadow_dc;
+            uint32_t material_id = rb->mi->GetMaterial()->GetMaterialID();
+            uint32_t material_instance_id = rb->mi->GetMaterialInstanceID();
+            uint32_t material_variant = 0;
+            material_variant |= MaterialVariant::DEPTH;
 
-                if (!rp->cast_shadow) {
-                    continue;
-                }
+            _dc_list[dc_idx] = {};
+            _dc_list[dc_idx].renderable_id = _common_renderables[i];
+            _dc_list[dc_idx].material_variant = material_variant;
+            _dc_list[dc_idx].key |= DrawCall::GenMaterialKey(material_id, material_variant, material_instance_id);
 
-                MaterialVariant::Key material_variant = 0;
-                material_variant |= MaterialVariant::DEPTH;
-
-                _dc_list[shadow_dc_head + num_shadow_dc] = {};
-                _dc_list[shadow_dc_head + num_shadow_dc].key = 0;
-                _dc_list[shadow_dc_head + num_shadow_dc].renderable_ub = rb->renderable_ub->GetHandle();
-                _dc_list[shadow_dc_head + num_shadow_dc].renderable_ub_size = rb->renderable_ub_size;
-                _dc_list[shadow_dc_head + num_shadow_dc].renderable_ub_offset = rb->renderable_ub_offset;
-
-                if (rb->bone_ub) {
-                    material_variant |= MaterialVariant::SKINNING_OR_MORPHING;
-                    _dc_list[shadow_dc_head + num_shadow_dc].bone_ub = rb->bone_ub->GetHandle();
-                } else {
-                    _dc_list[shadow_dc_head + num_shadow_dc].bone_ub = nullptr;
-                }
-
-                _dc_list[shadow_dc_head + num_shadow_dc].vertex_layout = rp->vb->GetVertexLayout();
-                _dc_list[shadow_dc_head + num_shadow_dc].vb = rp->vb->GetHandle();
-
-                _dc_list[shadow_dc_head + num_shadow_dc].ib_count = rp->count;
-                _dc_list[shadow_dc_head + num_shadow_dc].ib_offset = rp->offset;
-                _dc_list[shadow_dc_head + num_shadow_dc].ib_type = rp->ib->GetIndexType();
-                _dc_list[shadow_dc_head + num_shadow_dc].ib = rp->ib->GetHandle();
-
-                _dc_list[shadow_dc_head + num_shadow_dc].topo = rp->topo;
-
-                _dc_list[shadow_dc_head + num_shadow_dc].render_state.blending_mode = BLENDING_MODE_OPAQUE;
-                _dc_list[shadow_dc_head + num_shadow_dc].render_state.cull_mode = blast::CULL_MODE_FRONT;
-
-                _dc_list[shadow_dc_head + num_shadow_dc].vs = rp->mi->GetMaterial()->GetVertShader(material_variant);
-                _dc_list[shadow_dc_head + num_shadow_dc].fs = rp->mi->GetMaterial()->GetFragShader(material_variant);
-
-                _dc_list[shadow_dc_head + num_shadow_dc].material_ub = nullptr;
-                _dc_list[shadow_dc_head + num_shadow_dc].material_ub_size = 0;
-                _dc_list[shadow_dc_head + num_shadow_dc].material_ub_offset = 0;
-
-                num_shadow_dc++;
-            }
+            num_shadow_dc++;
         }
-        _dc_head += num_shadow_dc;
-
         // 排序
         std::sort(&_dc_list[shadow_dc_head], &_dc_list[shadow_dc_head] + num_shadow_dc);
 
@@ -404,18 +366,44 @@ namespace gear {
             _view_ub->Update(&_cascade_shadow_map_infos[i].light_view_matrix, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
             _view_ub->Update(&_cascade_shadow_map_infos[i].light_projection_matrix, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
 
+            // 绘制
             renderer->BindFramebuffer(_shadow_map_fb);
             for (uint32_t i = shadow_dc_head; i < shadow_dc_head + num_shadow_dc; ++i) {
-                renderer->ExecuteDrawCall(_dc_list[i]);
+                uint32_t material_variant = _dc_list[i].material_variant;
+                uint32_t randerable_id = _dc_list[i].renderable_id;
+                Renderable& renderable = _renderables[randerable_id];
+
+                renderer->ResetUniformBufferSlot();
+                renderer->BindFrameUniformBuffer(_view_ub->GetHandle(), _view_ub->GetSize(), 0);
+                renderer->BindRenderableUniformBuffer(renderable.renderable_ub->GetHandle(), renderable.renderable_ub_size, renderable.renderable_ub_offset);
+
+                renderer->ResetSamplerSlot();
+
+                renderer->BindVertexShader(renderable.mi->GetMaterial()->GetVertShader(material_variant));
+                renderer->BindFragmentShader(renderable.mi->GetMaterial()->GetFragShader(material_variant));
+
+                const RenderState& render_state = renderable.mi->GetMaterial()->GetRenderState();
+                renderer->SetDepthState(true);
+                renderer->SetBlendingMode(BLENDING_MODE_OPAQUE);
+                renderer->SetFrontFace(blast::FRONT_FACE_CCW);
+                renderer->SetCullMode(blast::CULL_MODE_FRONT);
+                renderer->SetPrimitiveTopo(renderable.topo);
+
+                renderer->BindVertexBuffer(renderable.vb->GetHandle(), renderable.vb->GetVertexLayout(), renderable.vb->GetSize(), 0);
+                renderer->BindIndexBuffer(renderable.ib->GetHandle(), renderable.ib->GetIndexType(), renderable.ib->GetSize(), 0);
+
+                renderer->DrawIndexed(renderable.count, renderable.offset);
             }
             renderer->UnbindFramebuffer();
         }
 
-        // 设置view ub
+        // 设置回主相机的view ub
         // TODO:使用一个批次进行view_ub更新
         glm::vec4 shader_cascade_splits = glm::vec4(std::numeric_limits<float>::max());
         _view_ub->Update(&_display_camera_info.view, offsetof(ViewUniforms, view_matrix), sizeof(glm::mat4));
         _view_ub->Update(&_display_camera_info.projection, offsetof(ViewUniforms, proj_matrix), sizeof(glm::mat4));
+
+        // 更新view_ub的灯光矩阵参数
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
             shader_cascade_splits[i] = cascade_splits[i] * camera_range + camera_near;
             glm::mat4 light_matrix = _cascade_shadow_map_infos[i].light_projection_matrix * _cascade_shadow_map_infos[i].light_view_matrix;

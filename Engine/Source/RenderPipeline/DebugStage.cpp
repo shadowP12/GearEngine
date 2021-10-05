@@ -83,25 +83,27 @@ namespace gear {
         if (_num_debug_lines > 0) {
             _debug_line_vb->Update(_debug_lines.data(), 0, _num_debug_lines * sizeof(float) * 14);
 
-            uint32_t debug_line_dc_head = _dc_head;
-            uint32_t num_debug_line_dc = 1;
-
-            _dc_list[debug_line_dc_head + num_debug_line_dc].key = 0;
-            _dc_list[debug_line_dc_head + num_debug_line_dc].renderable_ub = _debug_ub->GetHandle();
-            _dc_list[debug_line_dc_head + num_debug_line_dc].renderable_ub_size = _debug_ub->GetSize();
-            _dc_list[debug_line_dc_head + num_debug_line_dc].renderable_ub_offset = 0;
-            _dc_list[debug_line_dc_head + num_debug_line_dc].vertex_layout = _debug_line_vb->GetVertexLayout();
-            _dc_list[debug_line_dc_head + num_debug_line_dc].vb = _debug_line_vb->GetHandle();
-            _dc_list[debug_line_dc_head + num_debug_line_dc].vb_count = _num_debug_lines * 2;
-            _dc_list[debug_line_dc_head + num_debug_line_dc].vb_offset = 0;
-            _dc_list[debug_line_dc_head + num_debug_line_dc].topo = blast::PRIMITIVE_TOPO_LINE_LIST;
-            _dc_list[debug_line_dc_head + num_debug_line_dc].vs = builtin_resources->GetDebugMaterial()->GetVertShader(0);
-            _dc_list[debug_line_dc_head + num_debug_line_dc].fs = builtin_resources->GetDebugMaterial()->GetFragShader(0);
-
-            _dc_head += num_debug_line_dc;
-
             renderer->BindFramebuffer(_display_fb);
-            renderer->ExecuteDebugDrawCall(_dc_list[debug_line_dc_head + num_debug_line_dc]);
+
+            renderer->ResetUniformBufferSlot();
+            renderer->BindFrameUniformBuffer(_view_ub->GetHandle(), _view_ub->GetSize(), 0);
+            renderer->BindRenderableUniformBuffer(_debug_ub->GetHandle(), _debug_ub->GetSize(), 0);
+
+            renderer->ResetSamplerSlot();
+
+            renderer->BindVertexShader(builtin_resources->GetDebugMaterial()->GetVertShader(0));
+            renderer->BindFragmentShader(builtin_resources->GetDebugMaterial()->GetFragShader(0));
+
+            renderer->SetDepthState(true);
+            renderer->SetBlendingMode(BLENDING_MODE_OPAQUE);
+            renderer->SetFrontFace(blast::FRONT_FACE_CCW);
+            renderer->SetCullMode(blast::CULL_MODE_BACK);
+            renderer->SetPrimitiveTopo(blast::PRIMITIVE_TOPO_LINE_LIST);
+
+            renderer->BindVertexBuffer(_debug_line_vb->GetHandle(), _debug_line_vb->GetVertexLayout(), _debug_line_vb->GetSize(), 0);
+
+            renderer->Draw(_num_debug_lines * 2, 0);
+
             renderer->UnbindFramebuffer();
         }
     }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/GearDefine.h"
 #include "Utility/Hash.h"
+#include "RenderData.h"
 #include <Blast/Gfx/GfxDefine.h>
 #include <Blast/Gfx/GfxSampler.h>
 #include <Blast/Gfx/GfxTexture.h>
@@ -76,26 +77,6 @@ namespace gear {
 
         Renderer* _renderer = nullptr;
         std::unordered_map<blast::GfxGraphicsPipelineDesc, blast::GfxGraphicsPipeline*, MurmurHash<blast::GfxGraphicsPipelineDesc>, PipelineEq> _pipelines;
-    };
-
-    struct UniformDescriptor {
-        uint32_t slot;
-        blast::GfxBuffer* uniform_buffer;
-        uint32_t uniform_buffer_offset;
-        uint32_t uniform_buffer_size;
-    };
-
-    struct SamplerDescriptor {
-        uint32_t slot;
-        blast::GfxTextureView* textures_view;
-        blast::GfxSampler* sampler;
-    };
-
-    struct DescriptorKey {
-        uint32_t num_uniform_buffers = 0;
-        uint32_t num_samplers = 0;
-        UniformDescriptor uniform_descriptors[UBUFFER_BINDING_COUNT];
-        SamplerDescriptor sampler_descriptors[MAX_TEXTURE_COUNT];
     };
 
     struct DescriptorBundle {

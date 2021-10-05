@@ -71,38 +71,25 @@ namespace gear {
         glm::mat4 normal_matrix;
     };
 
-    struct RenderLight {
-
-    };
-
-    struct RenderView {
-
-    };
-
-    //
     enum RenderableType {
         RENDERABLE_COMMON = 0,
         RENDERABLE_UI = 1
     };
 
-    struct RenderPrimitive {
+    struct Renderable {
+        BBox bbox;
         bool cast_shadow = false;
         bool receive_shadow = true;
-        uint32_t offset = 0;
-        uint32_t count = 0;
-        BBox bbox;
-        MaterialInstance* mi = nullptr;
-        VertexBuffer* vb = nullptr;
-        IndexBuffer* ib = nullptr;
-        blast::PrimitiveTopology topo = blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_LIST;
-    };
-
-    struct Renderable {
         uint32_t renderable_ub_size;
         uint32_t renderable_ub_offset;
         UniformBuffer* renderable_ub = nullptr;
         UniformBuffer* bone_ub = nullptr;
-        std::vector<RenderPrimitive> primitives;
+        MaterialInstance* mi = nullptr;
+        VertexBuffer* vb = nullptr;
+        IndexBuffer* ib = nullptr;
+        uint32_t offset = 0;
+        uint32_t count = 0;
+        blast::PrimitiveTopology topo;
     };
 
     class RenderPipeline {
@@ -113,11 +100,13 @@ namespace gear {
 
         void SetScene(Scene* scene);
 
-        void Exec();
-
         void EnableDebug(bool enable) { _enable_debug = enable; }
 
+        void Draw();
+
     private:
+        void Exec();
+
         void AddDebugLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& c);
 
         void DrawDebugBox(const BBox& bbox, const glm::vec4& c);
@@ -134,6 +123,8 @@ namespace gear {
 
         void ExecShadowStage();
 
+        void ExecBaseStage();
+
     private:
         Scene* _scene = nullptr;
         // renderable
@@ -149,13 +140,11 @@ namespace gear {
         CameraInfo _display_camera_info;
         CameraInfo _main_camera_info;
         uint32_t _num_views;
-        std::vector<RenderView> _views;
         UniformBuffer* _view_ub = nullptr;
 
         // light
         LightInfo _light_info;
         uint32_t _num_lights;
-        std::vector<RenderLight> _lights;
         UniformBuffer* _light_ub = nullptr;
 
         // shadow

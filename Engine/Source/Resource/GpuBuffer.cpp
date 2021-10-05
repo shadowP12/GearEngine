@@ -30,20 +30,17 @@ namespace gear {
         staging_buffer->WriteData(0, size, data);
 
         blast::GfxBuffer* buffer = _buffer;
-        renderer->ExecRenderTask([renderer, buffer, staging_buffer, size, offset](blast::GfxCommandBuffer* cmd) {
-            renderer->UseResource(buffer);
-            renderer->UseResource(staging_buffer);
-
+        renderer->EnqueueUploadTask([renderer, buffer, staging_buffer, size, offset]() {
             blast::GfxCopyToBufferRange range;
             range.size = size;
             range.src_offset = 0;
             range.dst_offset = offset;
-            cmd->CopyToBuffer(staging_buffer, buffer, range);
+            renderer->CopyToBuffer(range);
 
             blast::GfxBufferBarrier barrier;
             barrier.buffer = buffer;
             barrier.new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
-            cmd->SetBarrier(1, &barrier, 0, nullptr);
+            renderer->SetBarrier(barrier);
         });
     }
 

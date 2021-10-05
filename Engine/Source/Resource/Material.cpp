@@ -4,6 +4,8 @@
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
 namespace gear {
+    uint32_t Material::_global_material_id = 0;
+
     static uint32_t GetUniformTypeBaseAlignment(blast::UniformType type) {
         switch (type) {
             case blast::UNIFORM_BOOL:
@@ -50,7 +52,6 @@ namespace gear {
         }
     }
 
-
     void Material::Builder::SetShadingModel(ShadingModel shading_model) {
         _render_state.shading_model = shading_model;
     }
@@ -85,6 +86,8 @@ namespace gear {
         _uniforms = builder->_uniforms;
         _vert_shader_cache = builder->_vert_shader_cache;
         _frag_shader_cache = builder->_frag_shader_cache;
+        _material_id = _global_material_id;
+        _global_material_id++;
     }
 
     Material::~Material() {
@@ -109,7 +112,10 @@ namespace gear {
     }
 
     MaterialInstance* Material::CreateInstance() {
-        return new MaterialInstance(this);
+        MaterialInstance* mi = new MaterialInstance(this);
+        mi->_material_instance_id = _current_material_instance_id;
+        _current_material_instance_id++;
+        return mi;
     }
 
     MaterialInstance::MaterialInstance(Material* material) {

@@ -11,7 +11,7 @@
 #include <Entity/EntityManager.h>
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
-#include <Entity/Components/CRenderable.h>
+#include <Entity/Components/CMesh.h>
 #include <MaterialCompiler/MaterialCompiler.h>
 #include <Input/InputSystem.h>
 
@@ -175,7 +175,7 @@ namespace ImGui {
         // 初始化ui实例
         g_ui_pawn = gear::gEngine.GetEntityManager()->CreateEntity();
         g_ui_pawn->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0));
-        g_ui_pawn->AddComponent<gear::CRenderable>()->SetRenderableType(gear::RENDERABLE_UI);
+        g_ui_pawn->AddComponent<gear::CMesh>()->SetRenderableType(gear::RENDERABLE_UI);
         g_ui_scene->AddEntity(g_ui_pawn);
 
         // 创建ui管线
@@ -298,8 +298,8 @@ namespace ImGui {
         }
 
         // 清空renderable component的prim，并重新设置
-        gear::CRenderable* crenderable = g_ui_pawn->GetComponent<gear::CRenderable>();
-        crenderable->ResetPrimitives();
+        gear::CMesh* cmesh = g_ui_pawn->GetComponent<gear::CMesh>();
+        cmesh->ResetSubMeshs();
         uint32_t buffer_index = 0;
         uint32_t prim_index = 0;
         for (uint32_t cmd_list_index = 0; cmd_list_index < commands->CmdListsCount; cmd_list_index++) {
@@ -325,14 +325,14 @@ namespace ImGui {
                     }
 
                     // 创建对应的prim
-                    gear::RenderPrimitive primitive;
+                    gear::SubMesh primitive;
                     primitive.count = pcmd.ElemCount;
                     primitive.offset = index_offset;
                     primitive.topo = blast::PRIMITIVE_TOPO_TRI_LIST;
                     primitive.mi = mi;
                     primitive.vb = g_vbs[buffer_index];
                     primitive.ib = g_ibs[buffer_index];
-                    crenderable->AddPrimitive(primitive);
+                    cmesh->AddSubMesh(primitive);
                     prim_index++;
                 }
                 index_offset += pcmd.ElemCount;

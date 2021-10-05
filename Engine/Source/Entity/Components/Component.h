@@ -6,7 +6,8 @@ namespace gear {
         Transform,
         Renderable,
         Camera,
-        Light
+        Light,
+        Mesh
     };
 
     class Entity;

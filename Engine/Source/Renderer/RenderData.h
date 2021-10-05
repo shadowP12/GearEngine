@@ -64,10 +64,59 @@ namespace gear {
         blast::GfxSamplerDesc sampler_desc;
     };
 
-    using DrawCallKey = uint64_t;
+    struct UniformDescriptor {
+        uint32_t slot;
+        blast::GfxBuffer* uniform_buffer;
+        uint32_t uniform_buffer_offset;
+        uint32_t uniform_buffer_size;
+    };
+
+    struct SamplerDescriptor {
+        uint32_t slot;
+        blast::GfxTextureView* textures_view;
+        blast::GfxSampler* sampler;
+    };
+
+    struct DescriptorKey {
+        uint32_t num_uniform_buffers = 0;
+        uint32_t num_samplers = 0;
+        UniformDescriptor uniform_descriptors[UBUFFER_BINDING_COUNT];
+        SamplerDescriptor sampler_descriptors[MAX_TEXTURE_COUNT];
+    };
 
     struct DrawCall {
-        DrawCallKey key = 0;
+        static constexpr uint64_t MATERIAL_INSTANCE_ID_MASK     = 0x00000FFFllu;
+        static constexpr unsigned MATERIAL_INSTANCE_ID_SHIFT    = 0;
+
+        static constexpr uint64_t MATERIAL_VARIANT_KEY_MASK     = 0x000FF000llu;
+        static constexpr unsigned MATERIAL_VARIANT_KEY_SHIFT    = 12;
+
+        static constexpr uint64_t MATERIAL_ID_MASK              = 0xFFF00000llu;
+        static constexpr unsigned MATERIAL_ID_SHIFT             = 20;
+
+        static constexpr uint64_t MATERIAL_MASK                 = 0xFFFFFFFFllu;
+        static constexpr unsigned MATERIAL_SHIFT                = 0;
+
+        static uint64_t GetField(uint64_t value, uint64_t mask, unsigned shift) {
+            return uint64_t((value & mask)) >> shift;
+        }
+
+        static uint64_t GenField(uint64_t value, uint64_t mask, unsigned shift) {
+            return uint64_t(value) << shift;
+        }
+
+        static uint64_t GenMaterialKey(uint32_t material_id, uint32_t material_variant, uint32_t instance_id) {
+            uint64_t key = ((material_id << MATERIAL_ID_SHIFT) & MATERIAL_ID_MASK) |
+                           ((material_variant << MATERIAL_VARIANT_KEY_SHIFT) & MATERIAL_VARIANT_KEY_MASK) |
+                           ((instance_id << MATERIAL_INSTANCE_ID_SHIFT) & MATERIAL_INSTANCE_ID_MASK);
+            return (key << MATERIAL_SHIFT) & MATERIAL_MASK;
+        }
+
+        uint64_t key = 0;
+
+        uint32_t material_variant = 0;
+
+        uint32_t renderable_id = 0;
 
         blast::GfxShader* vs = nullptr;
         blast::GfxShader* fs = nullptr;
