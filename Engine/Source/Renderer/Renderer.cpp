@@ -235,6 +235,7 @@ namespace gear {
         _skip_frame = false;
         if (width == 0 || height == 0) {
             _skip_frame = true;
+            ClearDisplayTask();
             return;
         }
 
@@ -254,6 +255,7 @@ namespace gear {
         _context->AcquireNextImage(_swapchain, _image_acquired_semaphores[_frame_index], nullptr, &_swapchain_image_index);
         if (_swapchain_image_index == -1) {
             _skip_frame = true;
+            ClearDisplayTask();
             return;
         }
         _render_complete_fences[_frame_index]->WaitForComplete();
@@ -403,6 +405,12 @@ namespace gear {
                 _copy_resources.resources.insert(resource);
                 _using_resources[resource] = _using_resources[resource] + 1;
             }
+        }
+    }
+
+    void Renderer::ClearDisplayTask() {
+        while (_display_task_queue.size() > 0) {
+            _display_task_queue.pop();
         }
     }
 
@@ -672,6 +680,9 @@ namespace gear {
     }
 
     void Renderer::Draw(uint32_t count, uint32_t offset) {
+        // 不排除开放root_signature设置
+        _graphics_pipeline_key.root_signature = _root_signature;
+
         DescriptorBundle descriptor_bundle = _descriptor_cache->GetDescriptor(_descriptor_key);
         blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(_graphics_pipeline_key);
         blast::GfxCommandBuffer* cmd = GetCommandBuffer();
@@ -681,6 +692,9 @@ namespace gear {
     }
 
     void Renderer::DrawIndexed(uint32_t count, uint32_t offset) {
+        // 不排除开放root_signature设置
+        _graphics_pipeline_key.root_signature = _root_signature;
+
         DescriptorBundle descriptor_bundle = _descriptor_cache->GetDescriptor(_descriptor_key);
         blast::GfxGraphicsPipeline* pipeline = _graphics_pipeline_cache->GetGraphicsPipeline(_graphics_pipeline_key);
         blast::GfxCommandBuffer* cmd = GetCommandBuffer();

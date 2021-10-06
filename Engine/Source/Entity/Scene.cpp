@@ -1,5 +1,7 @@
 #include "Scene.h"
+#include "EntityManager.h"
 #include "Entity/Entity.h"
+#include "GearEngine.h"
 #include "Components/CCamera.h"
 #include "Components/CLight.h"
 #include "Components/CMesh.h"
@@ -18,8 +20,7 @@ namespace gear {
         }
 
         if (entity->HasComponent<CMesh>()) {
-            CMesh* cmesh = entity->GetComponent<CMesh>();
-            _num_renderables += cmesh->_sub_meshs.size();
+            _num_renderables ++;
         }
 
         _entities.push_back(entity);
@@ -29,11 +30,9 @@ namespace gear {
         auto iter = find(_entities.begin( ), _entities.end( ), entity);
         if (iter != _entities.end()) {
             if (entity->HasComponent<CMesh>()) {
-                CMesh* cmesh = entity->GetComponent<CMesh>();
-                _num_renderables -= cmesh->_sub_meshs.size();
+                _num_renderables --;
             }
             _entities.erase(iter);
         }
     }
-    
 }

@@ -35,6 +35,8 @@ namespace gear {
             range.size = size;
             range.src_offset = 0;
             range.dst_offset = offset;
+            range.src_buffer = staging_buffer;
+            range.dst_buffer = buffer;
             renderer->CopyToBuffer(range);
 
             blast::GfxBufferBarrier barrier;

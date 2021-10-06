@@ -1,6 +1,8 @@
 #include "CMesh.h"
 #include "CTransform.h"
 #include "Entity/Entity.h"
+#include "Entity/EntityManager.h"
+#include "GearEngine.h"
 #include "Renderer/Renderer.h"
 #include "Resource/GpuBuffer.h"
 

@@ -129,6 +129,8 @@ namespace gear {
 
         void UseResource(void* resource);
 
+        void ClearDisplayTask();
+
     private:
         blast::GfxContext* _context = nullptr;
         blast::GfxSurface* _surface = nullptr;

@@ -1,4 +1,5 @@
 #pragma once
+#include "Utility/Event.h"
 #include <vector>
 #include <map>
 
@@ -15,11 +16,7 @@ namespace gear {
         void DestroyEntity(Entity* entity);
 
     private:
-        void RegisterCamera(Entity* entity);
-
-        void UnregisterCamera(Entity* entity);
-
-    private:
         std::vector<Entity*> _entities;
+        Event<void, Entity*> _on_cmesh_dirty_event;
     };
 }

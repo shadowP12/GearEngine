@@ -112,41 +112,14 @@ namespace gear {
             return (key << MATERIAL_SHIFT) & MATERIAL_MASK;
         }
 
+        bool operator < (DrawCall const& rhs) { return key < rhs.key; }
+
         uint64_t key = 0;
 
         uint32_t material_variant = 0;
 
         uint32_t renderable_id = 0;
 
-        blast::GfxShader* vs = nullptr;
-        blast::GfxShader* fs = nullptr;
-
-        uint32_t vb_offset = 0;
-        uint32_t vb_count = 0;
-        blast::GfxVertexLayout vertex_layout;
-        blast::GfxBuffer* vb = nullptr;
-
-        uint32_t ib_offset = 0;
-        uint32_t ib_count = 0;
-        blast::IndexType ib_type;
-        blast::GfxBuffer* ib = nullptr;
-
-        blast::GfxBuffer* bone_ub = nullptr;
-
-        uint32_t renderable_ub_size = 0;
-        uint32_t renderable_ub_offset = 0;
-        blast::GfxBuffer* renderable_ub = nullptr;
-
-        uint32_t material_ub_size = 0;
-        uint32_t material_ub_offset = 0;
-        blast::GfxBuffer* material_ub = nullptr;
-
-        blast::PrimitiveTopology topo;
-        RenderState render_state;
-
-        uint32_t num_sampler_infos = 0;
-        SamplerInfo sampler_infos[MAX_TEXTURE_COUNT];
-
-        bool operator < (DrawCall const& rhs) { return key < rhs.key; }
+        uint32_t primitive_id = 0;
     };
 }

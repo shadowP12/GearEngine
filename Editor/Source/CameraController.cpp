@@ -11,7 +11,7 @@
 #include <Entity/EntityManager.h>
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
-#include <Entity/Components/CRenderable.h>
+#include <Entity/Components/CMesh.h>
 #include <MaterialCompiler/MaterialCompiler.h>
 #include <Input/InputSystem.h>
 

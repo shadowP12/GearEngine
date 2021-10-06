@@ -169,46 +169,49 @@ namespace gear {
                 glm::mat4 model_matrix = entity->GetComponent<CTransform>()->GetWorldTransform();
                 glm::mat4 normal_matrix = glm::transpose(glm::inverse(glm::mat3(model_matrix)));
                 CMesh* cmesh = entity->GetComponent<CMesh>();
+
+                _renderables[_num_renderables].num_primitives = cmesh->_sub_meshs.size();
                 for (uint32_t i = 0; i < cmesh->_sub_meshs.size(); ++i) {
                     // 更新材质信息
-                    _renderables[_num_renderables].mi = cmesh->_sub_meshs[i].mi;
-                    _renderables[_num_renderables].cast_shadow = cmesh->_sub_meshs[i].cast_shadow;
-                    _renderables[_num_renderables].receive_shadow = cmesh->_sub_meshs[i].receive_shadow;
+                    _renderables[_num_renderables].primitives[i].mi = cmesh->_sub_meshs[i].mi;
+                    _renderables[_num_renderables].primitives[i].cast_shadow = cmesh->_sub_meshs[i].cast_shadow;
+                    _renderables[_num_renderables].primitives[i].receive_shadow = cmesh->_sub_meshs[i].receive_shadow;
+                    _renderables[_num_renderables].primitives[i].material_ub = cmesh->_sub_meshs[i].mi->GetUniformBuffer();
 
                     // 更新绘制信息
-                    _renderables[_num_renderables].ib = cmesh->_sub_meshs[i].ib;
-                    _renderables[_num_renderables].vb = cmesh->_sub_meshs[i].vb;
-                    _renderables[_num_renderables].topo = cmesh->_sub_meshs[i].topo;
-                    _renderables[_num_renderables].count = cmesh->_sub_meshs[i].count;
-                    _renderables[_num_renderables].offset = cmesh->_sub_meshs[i].offset;
+                    _renderables[_num_renderables].primitives[i].ib = cmesh->_sub_meshs[i].ib;
+                    _renderables[_num_renderables].primitives[i].vb = cmesh->_sub_meshs[i].vb;
+                    _renderables[_num_renderables].primitives[i].topo = cmesh->_sub_meshs[i].topo;
+                    _renderables[_num_renderables].primitives[i].count = cmesh->_sub_meshs[i].count;
+                    _renderables[_num_renderables].primitives[i].offset = cmesh->_sub_meshs[i].offset;
 
                     // 更新包围盒
-                    _renderables[_num_renderables].bbox = cmesh->_sub_meshs[i].bbox;
-                    _renderables[_num_renderables].bbox.bb_min = TransformPoint(_renderables[_num_renderables].bbox.bb_min, model_matrix);
-                    _renderables[_num_renderables].bbox.bb_max = TransformPoint(_renderables[_num_renderables].bbox.bb_max, model_matrix);
-
-                    // todo：更新bone_ub
-                    _renderables[_num_renderables].bone_ub = nullptr;
-
-                    // 更新renderable_ub
-                    _renderables[_num_renderables].renderable_ub = _renderable_ub;
-                    _renderables[_num_renderables].renderable_ub_size = sizeof(RenderableUniforms);
-                    _renderables[_num_renderables].renderable_ub_offset = _num_renderables * sizeof(RenderableUniforms);
-                    _renderable_ub->Update(&model_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, model_matrix), sizeof(glm::mat4));
-                    _renderable_ub->Update(&normal_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, normal_matrix), sizeof(glm::mat4));
-
-                    // 归类
-                    RenderableType type = cmesh->GetRenderableType();
-                    if (type == RENDERABLE_COMMON) {
-                        _common_renderables[_num_common_renderables] = _num_renderables;
-                        _num_common_renderables++;
-                    } else if (type == RENDERABLE_UI) {
-                        _ui_renderables[_num_ui_renderables] = _num_renderables;
-                        _num_ui_renderables++;
-                    }
-
-                    _num_renderables++;
+                    _renderables[_num_renderables].primitives[i].bbox = cmesh->_sub_meshs[i].bbox;
+                    _renderables[_num_renderables].primitives[i].bbox.bb_min = TransformPoint(_renderables[_num_renderables].primitives[i].bbox.bb_min, model_matrix);
+                    _renderables[_num_renderables].primitives[i].bbox.bb_max = TransformPoint(_renderables[_num_renderables].primitives[i].bbox.bb_max, model_matrix);
                 }
+
+                // todo：更新bone_ub
+                _renderables[_num_renderables].bone_ub = nullptr;
+
+                // 更新renderable_ub
+                _renderables[_num_renderables].renderable_ub = _renderable_ub;
+                _renderables[_num_renderables].renderable_ub_size = sizeof(RenderableUniforms);
+                _renderables[_num_renderables].renderable_ub_offset = _num_renderables * sizeof(RenderableUniforms);
+                _renderable_ub->Update(&model_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, model_matrix), sizeof(glm::mat4));
+                _renderable_ub->Update(&normal_matrix, _num_renderables * sizeof(RenderableUniforms) + offsetof(RenderableUniforms, normal_matrix), sizeof(glm::mat4));
+
+                // 归类
+                RenderableType type = cmesh->GetRenderableType();
+                if (type == RENDERABLE_COMMON) {
+                    _common_renderables[_num_common_renderables] = _num_renderables;
+                    _num_common_renderables++;
+                } else if (type == RENDERABLE_UI) {
+                    _ui_renderables[_num_ui_renderables] = _num_renderables;
+                    _num_ui_renderables++;
+                }
+
+                _num_renderables++;
             }
         }
 

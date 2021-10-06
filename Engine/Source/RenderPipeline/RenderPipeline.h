@@ -76,20 +76,26 @@ namespace gear {
         RENDERABLE_UI = 1
     };
 
-    struct Renderable {
-        BBox bbox;
+    struct RenderPrimitive {
         bool cast_shadow = false;
         bool receive_shadow = true;
+        uint32_t count = 0;
+        uint32_t offset = 0;
+        BBox bbox;
+        MaterialInstance* mi = nullptr;
+        UniformBuffer* material_ub = nullptr;
+        VertexBuffer* vb = nullptr;
+        IndexBuffer* ib = nullptr;
+        blast::PrimitiveTopology topo = blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_LIST;
+    };
+
+    struct Renderable {
         uint32_t renderable_ub_size;
         uint32_t renderable_ub_offset;
         UniformBuffer* renderable_ub = nullptr;
         UniformBuffer* bone_ub = nullptr;
-        MaterialInstance* mi = nullptr;
-        VertexBuffer* vb = nullptr;
-        IndexBuffer* ib = nullptr;
-        uint32_t offset = 0;
-        uint32_t count = 0;
-        blast::PrimitiveTopology topo;
+        uint32_t num_primitives = 0;
+        RenderPrimitive primitives[MAX_RENDER_PRIMITIVE_COUNT];
     };
 
     class RenderPipeline {

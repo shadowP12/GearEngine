@@ -127,31 +127,29 @@ namespace gear {
         blast::GfxBuffer* staging_buffer = renderer->AllocStageBuffer(total_size);
         staging_buffer->WriteData(0, total_size, data);
 
-        renderer->ExecRenderTask([renderer, texture, staging_buffer, layer, level](blast::GfxCommandBuffer* cmd) {
-
-            renderer->UseResource(texture);
-            renderer->UseResource(staging_buffer);
-
+        renderer->EnqueueUploadTask([renderer, texture, staging_buffer, layer, level]() {
             {
                 // 设置纹理为读写状态
                 blast::GfxTextureBarrier barrier;
                 barrier.texture = texture;
                 barrier.new_state = blast::RESOURCE_STATE_COPY_DEST;
-                cmd->SetBarrier(0, nullptr, 1, &barrier);
+                renderer->SetBarrier(barrier);
             }
 
             blast::GfxCopyToImageRange range;
             range.buffer_offset = 0;
             range.layer = layer;
             range.level = level;
-            cmd->CopyToImage(staging_buffer, texture, range);
+            range.src_buffer = staging_buffer;
+            range.dst_texture = texture;
+            renderer->CopyToImage(range);
 
             {
                 // 设置纹理为Shader可读状态
                 blast::GfxTextureBarrier barrier;
                 barrier.texture = texture;
                 barrier.new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
-                cmd->SetBarrier(0, nullptr, 1, &barrier);
+                renderer->SetBarrier(barrier);
             }
         });
     }
@@ -230,6 +228,8 @@ namespace gear {
                     range.buffer_offset = offset;
                     range.layer = i;
                     range.level = j;
+                    range.src_buffer = staging_buffer;
+                    range.dst_texture = texture;
                     renderer->CopyToImage(range);
                     offset += image_size;
                 }

@@ -24,6 +24,9 @@
 // 阴影贴图个数
 #define SHADOW_MAP_COUNT 4
 
+// 最大的Primitive个数
+#define MAX_RENDER_PRIMITIVE_COUNT 6
+
 #define SAFE_DELETE(x) \
     { \
         delete x; \

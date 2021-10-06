@@ -66,14 +66,17 @@ namespace gear {
         // 遍历所有renderable
         for (uint32_t i = 0; i < _num_common_renderables; ++i) {
             Renderable* rb = &_renderables[_common_renderables[i]];
-            if (rb->cast_shadow) {
-                cascade_params.ws_shadow_casters_volume.bb_min = glm::min(cascade_params.ws_shadow_casters_volume.bb_min, rb->bbox.bb_min);
-                cascade_params.ws_shadow_casters_volume.bb_max = glm::max(cascade_params.ws_shadow_casters_volume.bb_max, rb->bbox.bb_max);
-            }
+            for (uint32_t j = 0; j < rb->num_primitives; ++j) {
+                RenderPrimitive* rp = &rb->primitives[j];
+                if (rp->cast_shadow) {
+                    cascade_params.ws_shadow_casters_volume.bb_min = glm::min(cascade_params.ws_shadow_casters_volume.bb_min, rp->bbox.bb_min);
+                    cascade_params.ws_shadow_casters_volume.bb_max = glm::max(cascade_params.ws_shadow_casters_volume.bb_max, rp->bbox.bb_max);
+                }
 
-            if (rb->receive_shadow) {
-                cascade_params.ws_shadow_receivers_volume.bb_min = min(cascade_params.ws_shadow_receivers_volume.bb_min, rb->bbox.bb_min);
-                cascade_params.ws_shadow_receivers_volume.bb_max = max(cascade_params.ws_shadow_receivers_volume.bb_max, rb->bbox.bb_max);
+                if (rp->receive_shadow) {
+                    cascade_params.ws_shadow_receivers_volume.bb_min = min(cascade_params.ws_shadow_receivers_volume.bb_min, rp->bbox.bb_min);
+                    cascade_params.ws_shadow_receivers_volume.bb_max = max(cascade_params.ws_shadow_receivers_volume.bb_max, rp->bbox.bb_max);
+                }
             }
         }
 
@@ -332,18 +335,22 @@ namespace gear {
         uint32_t num_shadow_dc = 0;
         for (uint32_t i = 0; i < _num_common_renderables; ++i) {
             Renderable* rb = &_renderables[_common_renderables[i]];
-            uint32_t dc_idx = shadow_dc_head + num_shadow_dc;
-            uint32_t material_id = rb->mi->GetMaterial()->GetMaterialID();
-            uint32_t material_instance_id = rb->mi->GetMaterialInstanceID();
-            uint32_t material_variant = 0;
-            material_variant |= MaterialVariant::DEPTH;
+            for (uint32_t j = 0; j < rb->num_primitives; ++j) {
+                RenderPrimitive* rp = &rb->primitives[j];
+                uint32_t dc_idx = shadow_dc_head + num_shadow_dc;
+                uint32_t material_id = rp->mi->GetMaterial()->GetMaterialID();
+                uint32_t material_instance_id = rp->mi->GetMaterialInstanceID();
+                uint32_t material_variant = 0;
+                material_variant |= MaterialVariant::DEPTH;
 
-            _dc_list[dc_idx] = {};
-            _dc_list[dc_idx].renderable_id = _common_renderables[i];
-            _dc_list[dc_idx].material_variant = material_variant;
-            _dc_list[dc_idx].key |= DrawCall::GenMaterialKey(material_id, material_variant, material_instance_id);
+                _dc_list[dc_idx] = {};
+                _dc_list[dc_idx].renderable_id = _common_renderables[i];
+                _dc_list[dc_idx].primitive_id = j;
+                _dc_list[dc_idx].material_variant = material_variant;
+                _dc_list[dc_idx].key |= DrawCall::GenMaterialKey(material_id, material_variant, material_instance_id);
 
-            num_shadow_dc++;
+                num_shadow_dc++;
+            }
         }
         // 排序
         std::sort(&_dc_list[shadow_dc_head], &_dc_list[shadow_dc_head] + num_shadow_dc);
@@ -371,7 +378,9 @@ namespace gear {
             for (uint32_t i = shadow_dc_head; i < shadow_dc_head + num_shadow_dc; ++i) {
                 uint32_t material_variant = _dc_list[i].material_variant;
                 uint32_t randerable_id = _dc_list[i].renderable_id;
+                uint32_t primitive_id = _dc_list[i].primitive_id;
                 Renderable& renderable = _renderables[randerable_id];
+                RenderPrimitive& primitive = renderable.primitives[primitive_id];
 
                 renderer->ResetUniformBufferSlot();
                 renderer->BindFrameUniformBuffer(_view_ub->GetHandle(), _view_ub->GetSize(), 0);
@@ -379,20 +388,20 @@ namespace gear {
 
                 renderer->ResetSamplerSlot();
 
-                renderer->BindVertexShader(renderable.mi->GetMaterial()->GetVertShader(material_variant));
-                renderer->BindFragmentShader(renderable.mi->GetMaterial()->GetFragShader(material_variant));
+                renderer->BindVertexShader(primitive.mi->GetMaterial()->GetVertShader(material_variant));
+                renderer->BindFragmentShader(primitive.mi->GetMaterial()->GetFragShader(material_variant));
 
-                const RenderState& render_state = renderable.mi->GetMaterial()->GetRenderState();
+                const RenderState& render_state = primitive.mi->GetMaterial()->GetRenderState();
                 renderer->SetDepthState(true);
                 renderer->SetBlendingMode(BLENDING_MODE_OPAQUE);
                 renderer->SetFrontFace(blast::FRONT_FACE_CCW);
                 renderer->SetCullMode(blast::CULL_MODE_FRONT);
-                renderer->SetPrimitiveTopo(renderable.topo);
+                renderer->SetPrimitiveTopo(primitive.topo);
 
-                renderer->BindVertexBuffer(renderable.vb->GetHandle(), renderable.vb->GetVertexLayout(), renderable.vb->GetSize(), 0);
-                renderer->BindIndexBuffer(renderable.ib->GetHandle(), renderable.ib->GetIndexType(), renderable.ib->GetSize(), 0);
+                renderer->BindVertexBuffer(primitive.vb->GetHandle(), primitive.vb->GetVertexLayout(), primitive.vb->GetSize(), 0);
+                renderer->BindIndexBuffer(primitive.ib->GetHandle(), primitive.ib->GetIndexType(), primitive.ib->GetSize(), 0);
 
-                renderer->DrawIndexed(renderable.count, renderable.offset);
+                renderer->DrawIndexed(primitive.count, primitive.offset);
             }
             renderer->UnbindFramebuffer();
         }

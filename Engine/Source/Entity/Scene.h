@@ -1,4 +1,5 @@
 #pragma once
+#include "Utility/Event.h"
 #include <vector>
 
 namespace gear {
@@ -12,6 +13,9 @@ namespace gear {
         void AddEntity(Entity*);
 
         void RemoveEntity(Entity*);
+
+    private:
+        void OnCMeshDirty(Entity*);
 
     private:
         friend class RenderPipeline;
