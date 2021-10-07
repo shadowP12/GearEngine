@@ -37,10 +37,27 @@ namespace gear {
         blast::CullMode cull_mode = blast::CULL_MODE_NONE;
     };
 
+    struct ViewUniforms {
+        glm::mat4 view_matrix;
+        glm::mat4 main_view_matrix;
+        glm::mat4 proj_matrix;
+        glm::mat4 sun_matrixs[SHADOW_CASCADE_COUNT];
+        glm::vec4 sun_direction;
+        // 级联阴影的划分参数
+        glm::vec4 cascade_splits;
+    };
+
+    struct RenderableUniforms {
+        glm::mat4 model_matrix;
+        glm::mat4 normal_matrix;
+    };
+
     struct FramebufferAttachment {
         blast::GfxTexture* texture = nullptr;
-        uint32_t layer = 0;
         uint32_t level = 0;
+        uint32_t num_levels = 1;
+        uint32_t layer = 0;
+        uint32_t num_layers = 1;
     };
 
     struct FramebufferInfo {

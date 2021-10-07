@@ -82,9 +82,11 @@ namespace gear {
 
         void SetBarrier(const blast::GfxTextureBarrier&);
 
-        void CopyToBuffer(const blast::GfxCopyToBufferRange&);
+        void BufferCopyToBuffer(const blast::GfxBufferCopyToBufferRange&);
 
-        void CopyToImage(const blast::GfxCopyToImageRange&);
+        void ImageCopyToImage(const blast::GfxImageCopyToImageRange&);
+
+        void BufferCopyToImage(const blast::GfxBufferCopyToImageRange&);
 
         void BindFramebuffer(const FramebufferInfo& info);
 
@@ -145,6 +147,7 @@ namespace gear {
         blast::GfxFence* _copy_fence = nullptr;
         blast::GfxCommandBuffer* _upload_cmd = nullptr;
         bool _in_frame = false;
+        bool _in_upload = false;
         bool _skip_frame = false;
         uint32_t  _swapchain_image_index;
         uint32_t _num_images = 0;

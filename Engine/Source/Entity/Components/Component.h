@@ -7,7 +7,8 @@ namespace gear {
         Renderable,
         Camera,
         Light,
-        Mesh
+        Mesh,
+        Skybox
     };
 
     class Entity;

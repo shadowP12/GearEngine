@@ -30,6 +30,8 @@ namespace gear {
 
             void SetFormat(blast::Format format);
 
+            void SetCube(bool is_cube_map);
+
             Texture* Build();
 
         private:
@@ -39,6 +41,7 @@ namespace gear {
             uint32_t _depth = 1;
             uint32_t _layer = 1;
             uint32_t _level = 1;
+            bool _is_cube_map = false;
             blast::Format _format;
         };
 
@@ -63,7 +66,7 @@ namespace gear {
         uint32_t _layer;
         uint32_t _level;
         blast::Format _format;
-        // 后续将使用一块大的buffer代替vector
+        bool _is_cube_map = false;
         uint8_t* _data = nullptr;
         uint32_t _data_size = 0;
         blast::GfxTexture* _texture = nullptr;

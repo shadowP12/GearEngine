@@ -31,6 +31,10 @@ namespace gear {
         _format = format;
     }
 
+    void Texture::Builder::SetCube(bool is_cube_map) {
+        _is_cube_map = is_cube_map;
+    }
+
     Texture * Texture::Builder::Build() {
         return new Texture(this);
     }
@@ -70,6 +74,11 @@ namespace gear {
         _data_size = total_image_size;
         _data = new uint8_t[total_image_size];
 
+        blast::ResourceType type = blast::RESOURCE_TYPE_TEXTURE;
+        if (builder->_is_cube_map && _layer == 6) {
+            type = blast::RESOURCE_TYPE_TEXTURE_CUBE;
+        }
+
         blast::GfxContext* context = gEngine.GetRenderer()->GetContext();
         blast::GfxTextureDesc texture_desc;
         texture_desc.width = _width;
@@ -78,7 +87,7 @@ namespace gear {
         texture_desc.num_layers = _layer;
         texture_desc.num_mips = _level;
         texture_desc.format = _format;
-        texture_desc.type = blast::RESOURCE_TYPE_TEXTURE;
+        texture_desc.type = type;
         texture_desc.usage = blast::RESOURCE_USAGE_GPU_ONLY;
         _texture = context->CreateTexture(texture_desc);
     }
@@ -136,13 +145,13 @@ namespace gear {
                 renderer->SetBarrier(barrier);
             }
 
-            blast::GfxCopyToImageRange range;
+            blast::GfxBufferCopyToImageRange range;
             range.buffer_offset = 0;
             range.layer = layer;
             range.level = level;
             range.src_buffer = staging_buffer;
             range.dst_texture = texture;
-            renderer->CopyToImage(range);
+            renderer->BufferCopyToImage(range);
 
             {
                 // 设置纹理为Shader可读状态
@@ -204,7 +213,7 @@ namespace gear {
                 renderer->SetBarrier(barrier);
             }
 
-            blast::GfxCopyToImageRange range;
+            blast::GfxBufferCopyToImageRange range;
             uint32_t offset = 0;
             for (uint32_t i = 0; i < layer; ++i) {
                 for (uint32_t j = 0; j < level; ++j) {
@@ -230,7 +239,7 @@ namespace gear {
                     range.level = j;
                     range.src_buffer = staging_buffer;
                     range.dst_texture = texture;
-                    renderer->CopyToImage(range);
+                    renderer->BufferCopyToImage(range);
                     offset += image_size;
                 }
             }

@@ -1,5 +1,6 @@
 #include "UI.h"
 #include "GltfImporter.h"
+#include "TextureImporter.h"
 #include "CameraController.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -13,11 +14,14 @@
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
 #include <Entity/Components/CMesh.h>
+#include <Entity/Components/CSkybox.h>
 #include <Resource/GpuBuffer.h>
+#include <Resource/Texture.h>
 #include <Resource/BuiltinResources.h>
 #include <Renderer/Renderer.h>
 #include <RenderPipeline/RenderPipeline.h>
 #include <Input/InputSystem.h>
+#include <RenderUtility/RenderUtility.h>
 
 void CursorPositionCB(GLFWwindow * window, double pos_x, double pos_y) {
     gear::gEngine.GetInputSystem()->OnMousePosition(pos_x, pos_y);
@@ -40,6 +44,7 @@ int main()
     sun->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
     sun->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(glm::radians(120.0f), 0.0f, 0.0f));
     sun->AddComponent<gear::CLight>();
+    sun->AddComponent<gear::CSkybox>();
 
     gear::Entity* main_camera = gear::gEngine.GetEntityManager()->CreateEntity();
     main_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
@@ -73,6 +78,12 @@ int main()
 
     CameraController* camera_controller = new CameraController();
     camera_controller->SetCamera(main_camera);
+
+    // 加载skybox
+    gear::Texture* equirectangular_map = ImportTexture2D("./BuiltinResources/Textures/skybox_0.jpg");
+    gear::Texture* skybox_map = gear::gEngine.GetRenderUtility()->EquirectangularMapToCubemap(equirectangular_map, 512);
+    SAFE_DELETE(equirectangular_map);
+    sun->GetComponent<gear::CSkybox>()->SetCubeMap(skybox_map);
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -120,6 +131,8 @@ int main()
     ImGui::ImGuiTerminate();
 
     glfwTerminate();
+
+    SAFE_DELETE(skybox_map);
 
     SAFE_DELETE(camera_controller);
 

@@ -56,21 +56,6 @@ namespace gear {
         uint32_t shadow_dimension = 0;
     };
 
-    struct ViewUniforms {
-        glm::mat4 view_matrix;
-        glm::mat4 main_view_matrix;
-        glm::mat4 proj_matrix;
-        glm::mat4 sun_matrixs[SHADOW_CASCADE_COUNT];
-        glm::vec4 sun_direction;
-        // 级联阴影的划分参数
-        glm::vec4 cascade_splits;
-    };
-
-    struct RenderableUniforms {
-        glm::mat4 model_matrix;
-        glm::mat4 normal_matrix;
-    };
-
     enum RenderableType {
         RENDERABLE_COMMON = 0,
         RENDERABLE_UI = 1
@@ -127,6 +112,8 @@ namespace gear {
 
         void UpdateShadowMapInfo(const CascadeParameters& cascade_params, ShadowMapInfo& shadow_map_info);
 
+        void ExecSkyboxStage();
+
         void ExecShadowStage();
 
         void ExecBaseStage();
@@ -157,6 +144,10 @@ namespace gear {
         ShadowMapInfo _cascade_shadow_map_infos[SHADOW_CASCADE_COUNT];
         Texture* _cascade_shadow_map;
         FramebufferInfo _shadow_map_fb;
+
+        // skybox
+        bool _has_skybox = false;
+        Texture* _skybox_map = nullptr;
 
         // display
         FramebufferInfo _display_fb;

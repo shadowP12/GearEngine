@@ -31,13 +31,13 @@ namespace gear {
 
         blast::GfxBuffer* buffer = _buffer;
         renderer->EnqueueUploadTask([renderer, buffer, staging_buffer, size, offset]() {
-            blast::GfxCopyToBufferRange range;
+            blast::GfxBufferCopyToBufferRange range;
             range.size = size;
             range.src_offset = 0;
             range.dst_offset = offset;
             range.src_buffer = staging_buffer;
             range.dst_buffer = buffer;
-            renderer->CopyToBuffer(range);
+            renderer->BufferCopyToBuffer(range);
 
             blast::GfxBufferBarrier barrier;
             barrier.buffer = buffer;

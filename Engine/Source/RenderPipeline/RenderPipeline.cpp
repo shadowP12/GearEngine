@@ -5,6 +5,7 @@
 #include "Entity/Components/CLight.h"
 #include "Entity/Components/CMesh.h"
 #include "Entity/Components/CTransform.h"
+#include "Entity/Components/CSkybox.h"
 #include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
 #include "Resource/Material.h"
@@ -70,12 +71,15 @@ namespace gear {
             return;
         }
 
+        // 初始化状态
         _num_debug_lines = 0;
         _num_views = 0;
         _num_lights = 0;
         _num_renderables = 0;
         _num_ui_renderables = 0;
         _num_common_renderables = 0;
+        _has_skybox = false;
+        _light_info.has_direction_light = false;
 
         if (_renderables.size() < _scene->_num_renderables) {
             _renderables.resize(_scene->_num_renderables);
@@ -165,6 +169,11 @@ namespace gear {
                 _view_ub->Update(&sun_direction, offsetof(ViewUniforms, sun_direction), sizeof(glm::vec4));
             }
 
+            if (entity->HasComponent<CSkybox>()) {
+                _has_skybox = true;
+                _skybox_map = entity->GetComponent<CSkybox>()->GetCubeMap();
+            }
+
             if (entity->HasComponent<CMesh>()) {
                 glm::mat4 model_matrix = entity->GetComponent<CTransform>()->GetWorldTransform();
                 glm::mat4 normal_matrix = glm::transpose(glm::inverse(glm::mat3(model_matrix)));
@@ -220,8 +229,8 @@ namespace gear {
             return;
         }
 
-        // 管线开始前的初始化
-        _dc_head = 0;
+        // skybox
+        ExecSkyboxStage();
 
         // shadow
         ExecShadowStage();

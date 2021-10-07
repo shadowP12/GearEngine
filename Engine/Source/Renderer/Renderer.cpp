@@ -215,6 +215,7 @@ namespace gear {
         _copy_resources.resources.clear();
 
         // 处理Upload任务
+        _in_upload = true;
         _upload_cmd->Begin();
         while (_upload_task_queue.size() > 0) {
             auto task = _upload_task_queue.front();
@@ -222,6 +223,8 @@ namespace gear {
             _upload_task_queue.pop();
         }
         _upload_cmd->End();
+        _in_upload = false;
+
         blast::GfxSubmitInfo submit_info;
         submit_info.num_cmd_bufs = 1;
         submit_info.cmd_bufs = &_upload_cmd;
@@ -385,7 +388,7 @@ namespace gear {
     }
     
     void Renderer::EnqueueUploadTask(std::function<void()> task) {
-        if (_in_frame) {
+        if (_in_frame || _in_upload) {
             task();
             return;
         }
@@ -462,18 +465,25 @@ namespace gear {
         cmd->SetBarrier(0, nullptr, 1, const_cast<blast::GfxTextureBarrier*>(&barrier));
     }
 
-    void Renderer::CopyToBuffer(const blast::GfxCopyToBufferRange& range) {
+    void Renderer::BufferCopyToBuffer(const blast::GfxBufferCopyToBufferRange& range) {
         UseResource(range.src_buffer);
         UseResource(range.dst_buffer);
         blast::GfxCommandBuffer* cmd = GetCommandBuffer();
-        cmd->CopyToBuffer(range);
+        cmd->BufferCopyToBuffer(range);
     }
 
-    void Renderer::CopyToImage(const blast::GfxCopyToImageRange& range) {
+    void Renderer::ImageCopyToImage(const blast::GfxImageCopyToImageRange& range) {
+        UseResource(range.src_texture);
+        UseResource(range.dst_texture);
+        blast::GfxCommandBuffer* cmd = GetCommandBuffer();
+        cmd->ImageCopyToImage(range);
+    }
+
+    void Renderer::BufferCopyToImage(const blast::GfxBufferCopyToImageRange& range) {
         UseResource(range.src_buffer);
         UseResource(range.dst_texture);
         blast::GfxCommandBuffer* cmd = GetCommandBuffer();
-        cmd->CopyToImage(range);
+        cmd->BufferCopyToImage(range);
     }
 
     void Renderer::BindFramebuffer(const FramebufferInfo& info) {
@@ -504,7 +514,9 @@ namespace gear {
                 blast::GfxTextureViewDesc texture_view_desc;
                 texture_view_desc.texture = info.colors[i].texture;
                 texture_view_desc.layer = info.colors[i].layer;
+                texture_view_desc.num_layers = info.colors[i].num_layers;
                 texture_view_desc.level = info.colors[i].level;
+                texture_view_desc.num_levels = info.colors[i].num_levels;
                 framebuffer_desc.colors[i] = _texture_view_cache->GetTextureView(texture_view_desc);
                 framebuffer_desc.num_colors++;
             }
@@ -517,7 +529,9 @@ namespace gear {
             blast::GfxTextureViewDesc texture_view_desc;
             texture_view_desc.texture = info.depth_stencil.texture;
             texture_view_desc.layer = info.depth_stencil.layer;
+            texture_view_desc.num_layers = info.depth_stencil.num_layers;
             texture_view_desc.level = info.depth_stencil.level;
+            texture_view_desc.num_levels = info.depth_stencil.num_levels;
             framebuffer_desc.depth_stencil = _texture_view_cache->GetTextureView(texture_view_desc);
             framebuffer_desc.has_depth_stencil = true;
         }
