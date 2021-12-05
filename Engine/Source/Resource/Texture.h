@@ -8,8 +8,6 @@ namespace blast {
 }
 
 namespace gear {
-    //TODO: 提供生成mipmap接口
-
     class Texture {
     public:
         class Builder {
@@ -30,46 +28,37 @@ namespace gear {
 
             void SetFormat(blast::Format format);
 
-            void SetCube(bool is_cube_map);
+            void SetCube(bool is_cube);
 
             Texture* Build();
 
         private:
             friend class Texture;
-            uint32_t _width = 1;
-            uint32_t _height = 1;
-            uint32_t _depth = 1;
-            uint32_t _layer = 1;
-            uint32_t _level = 1;
-            bool _is_cube_map = false;
-            blast::Format _format;
+            uint32_t width = 1;
+            uint32_t height = 1;
+            uint32_t depth = 1;
+            uint32_t layer = 1;
+            uint32_t level = 1;
+            bool is_cube = false;
+            blast::Format format;
         };
 
         ~Texture();
 
-        void SetData(void* data);
+        void UpdateData(void* data, uint32_t layer = 0, uint32_t level = 0);
 
-        void SetData(void* data, uint32_t layer, uint32_t level);
+        uint8_t* GetData() { return data; }
 
-        uint8_t* GetData() { return _data; }
-
-        blast::GfxTexture* GetTexture() { return _texture; }
+        blast::GfxTexture* GetTexture() { return texture; }
 
     private:
         Texture(Builder* builder);
 
     private:
         friend class MaterialInstance;
-        uint32_t _width;
-        uint32_t _height;
-        uint32_t _depth;
-        uint32_t _layer;
-        uint32_t _level;
-        blast::Format _format;
-        bool _is_cube_map = false;
-        uint8_t* _data = nullptr;
-        uint32_t _data_size = 0;
-        blast::GfxTexture* _texture = nullptr;
+        uint8_t* data = nullptr;
+        uint32_t data_size = 0;
+        blast::GfxTexture* texture = nullptr;
     };
 
 }

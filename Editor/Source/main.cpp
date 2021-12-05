@@ -1,3 +1,211 @@
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#include <Window/BaseWindow.h>
+#include <Application/BaseApplication.h>
+#include <GearEngine.h>
+#include <Renderer/Renderer.h>
+#include <View/View.h>
+#include <Entity/Scene.h>
+#include <Entity/Entity.h>
+#include <Entity/EntityManager.h>
+#include <Entity/Components/CLight.h>
+#include <Entity/Components/CCamera.h>
+#include <Entity/Components/CTransform.h>
+#include <Entity/Components/CMesh.h>
+#include <Resource/GpuBuffer.h>
+#include <Resource/Texture.h>
+#include <Resource/Material.h>
+#include <Resource/BuiltinResources.h>
+#include <MaterialCompiler/MaterialCompiler.h>
+
+#include <map>
+
+struct Vertex {
+    float pos[3];
+    float uv[2];
+};
+
+float vertices[] = {
+        -0.5f,  -0.5f, 0.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, 0.5f, 0.0f, 0.0f, 1.0f
+};
+
+unsigned int indices[] = {
+        0, 1, 2, 2, 3, 0
+};
+
+class Window;
+static std::map<GLFWwindow*, Window*> glfw_window_table;
+
+class Window : public gear::BaseWindow {
+public:
+    Window(uint32_t w, uint32_t h) {
+        glfw_window = glfwCreateWindow(w, h, "GearEditor", nullptr, nullptr);
+        width = w;
+        height = h;
+        window_ptr = glfwGetWin32Window(glfw_window);
+        glfwSetFramebufferSizeCallback(glfw_window, this->WindowSizeCallback);
+        glfw_window_table[glfw_window] = this;
+    }
+
+    ~Window() {
+        glfwDestroyWindow(glfw_window);
+    }
+
+    bool ShouldClose() {
+        return glfwWindowShouldClose(glfw_window);
+    };
+
+    static void WindowSizeCallback(GLFWwindow* window, int w, int h) {
+        glfw_window_table[window]->InternalWindowSizeCallback(w, h);
+    }
+
+private:
+    void InternalWindowSizeCallback(int w, int h) {
+        width = w;
+        height = h;
+    }
+
+private:
+    friend class Application;
+    GLFWwindow* glfw_window = nullptr;
+};
+
+class Application : public gear::BaseApplication {
+public:
+    Application() {
+
+    }
+
+    ~Application() {
+
+    }
+
+    void Init() override {
+        glfwInit();
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+        gear::gEngine.GetBuiltinResources()->Initialize("./BuiltinResources/");
+
+        main_window = new Window(800, 600);
+        scene_view = new gear::View();
+        scene = new gear::Scene();
+        {
+            gear::VertexBuffer::Builder vb_builder;
+            vb_builder.SetVertexCount(4);
+            vb_builder.SetVertexLayoutType(gear::VLT_P_T0);
+            quad_vb = vb_builder.Build();
+            quad_vb->UpdateData(vertices, sizeof(Vertex) * 4);
+
+            gear::IndexBuffer::Builder ib_builder;
+            ib_builder.SetIndexCount(6);
+            ib_builder.SetIndexType(blast::INDEX_TYPE_UINT32);
+            quad_ib = ib_builder.Build();
+            quad_ib->UpdateData(indices, sizeof(unsigned int) * 6);
+
+            int tex_width, tex_height, tex_channels;
+            std::string image_path = "./BuiltinResources/Textures/test.png";
+            unsigned char* pixels = stbi_load(image_path.c_str(), &tex_width, &tex_height, &tex_channels, STBI_rgb_alpha);
+
+            gear::Texture::Builder tex_builder;
+            tex_builder.SetWidth(tex_width);
+            tex_builder.SetHeight(tex_height);
+            tex_builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
+            quad_texture = tex_builder.Build();
+            quad_texture->UpdateData(pixels);
+            stbi_image_free(pixels);
+
+            quad_ma = gear::gEngine.GetMaterialCompiler()->Compile("./BuiltinResources/Materials/blit.mat", true);
+            quad_mi = quad_ma->CreateInstance();
+            quad_mi->SetTexture("src_texture", quad_texture);
+            blast::GfxSamplerDesc sampler_desc;
+            quad_mi->SetSampler("blit_sampler", sampler_desc);
+
+            quad = gear::gEngine.GetEntityManager()->CreateEntity();
+            quad->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
+            gear::CMesh* cmesh = quad->AddComponent<gear::CMesh>();
+            gear::SubMesh sub_mesh;
+            sub_mesh.ib = quad_ib;
+            sub_mesh.vb = quad_vb;
+            sub_mesh.mi = quad_mi;
+            sub_mesh.count = 6;
+            cmesh->AddSubMesh(sub_mesh);
+            scene->AddEntity(quad);
+
+            camera = gear::gEngine.GetEntityManager()->CreateEntity();
+            camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
+            //camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(6.0f, 6.0f, 12.0f));
+            //camera->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(-0.358f, 0.46f, 0.0f));
+            //camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.5, 45.0);
+            camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::ORTHO, -1.0, 1.0, 1.0, -1.0, 0.0, 1.0);
+
+            scene->AddEntity(camera);
+        }
+    }
+
+    void Exit() override {
+        gear::gEngine.GetEntityManager()->DestroyEntity(quad);
+        gear::gEngine.GetEntityManager()->DestroyEntity(camera);
+        SAFE_DELETE(quad_texture);
+        SAFE_DELETE(quad_vb);
+        SAFE_DELETE(quad_ib);
+        SAFE_DELETE(quad_mi);
+        SAFE_DELETE(quad_ma);
+        SAFE_DELETE(main_window);
+        SAFE_DELETE(scene_view);
+        SAFE_DELETE(scene);
+
+        glfwTerminate();
+    };
+
+    bool ShouldClose() override {
+        if (main_window) {
+            return main_window->ShouldClose();
+        }
+        return true;
+    };
+
+protected:
+    void Tick(float dt) override {
+        glfwPollEvents();
+
+        // 将场景绘制到窗口上
+        scene_view->SetWindow(main_window);
+        scene_view->SetSize(main_window->GetWidth(), main_window->GetHeight());
+        scene_view->SetViewport(0, 0, main_window->GetWidth(), main_window->GetHeight());
+        gear::gEngine.GetRenderer()->RenderScene(scene, scene_view);
+    };
+
+private:
+    Window* main_window = nullptr;
+    gear::Scene* scene = nullptr;
+    gear::View* scene_view = nullptr;
+    gear::Entity* camera = nullptr;
+    gear::Entity* quad = nullptr;
+    gear::VertexBuffer* quad_vb = nullptr;
+    gear::IndexBuffer* quad_ib = nullptr;
+    gear::Material* quad_ma = nullptr;
+    gear::MaterialInstance* quad_mi = nullptr;
+    gear::Texture* quad_texture = nullptr;
+};
+
+int main() {
+    Application app;
+    app.Init();
+    while (!app.ShouldClose()) {
+        app.Run(1.0f);
+    }
+    app.Exit();
+    return 0;
+}
+
+/*
 #include "UI.h"
 #include "GltfImporter.h"
 #include "TextureImporter.h"
@@ -144,3 +352,4 @@ int main()
     gear::gEngine.DestroyRenderPipeline(editor_pipeline);
     return 0;
 }
+*/

@@ -2,17 +2,18 @@
 #include "Core/GearDefine.h"
 #include "Math/Math.h"
 #include "Math/Geometry.h"
-#include <Blast/Gfx/GfxPipeline.h>
-#include <Blast/Gfx/GfxBuffer.h>
-#include <Blast/Gfx/GfxTexture.h>
-#include <Blast/Gfx/GfxSampler.h>
-#include <Blast/Gfx/GfxShader.h>
-#include <Blast/Gfx/GfxCommandBuffer.h>
+
+#include <Blast/Gfx/GfxDefine.h>
+
 #include <map>
 #include <vector>
 
 namespace gear {
-    // Shader应用的范围
+    class VertexBuffer;
+    class IndexBuffer;
+    class UniformBuffer;
+    class MaterialInstance;
+
     enum ShaderDomain {
         SHADER_GLOBAL = 0,
         SHADER_SURFACE = 1
@@ -20,21 +21,40 @@ namespace gear {
 
     // 着色模型
     enum ShadingModel {
+        SHADING_MODEL_GLOBAL,
         SHADING_MODEL_UNLIT,
         SHADING_MODEL_LIT,
     };
 
-    // 混合模式
-    enum BlendingMode {
-        BLENDING_MODE_OPAQUE,
-        BLENDING_MODE_TRANSPARENT,
-        BLENDING_MODE_MASKED,
+    // P表示位置,T0表示纹理坐标
+    enum VertexLayoutType {
+        VLT_P = 0,
+        VLT_P_T0,
+        VLT_DEBUG,
+        VLT_UI,
+        VLT_STATIC_MESH,
+        VLT_SKIN_MESH,
+        VLT_COUNT
     };
 
-    struct RenderState {
-        ShadingModel shading_model;
-        BlendingMode blending_mode;
-        blast::CullMode cull_mode = blast::CULL_MODE_NONE;
+    enum RasterizerStateType {
+        RST_FRONT,
+        RST_BACK,
+        RST_DOUBLESIDED,
+        RST_COUNT
+    };
+
+    enum DepthStencilStateType {
+        DSST_DEFAULT,
+        DSST_SHADOW,
+        DSST_UI,
+        DSST_COUNT
+    };
+
+    enum BlendStateType {
+        BST_OPAQUE,
+        BST_TRANSPARENT,
+        BST_COUNT
     };
 
     struct ViewUniforms {
@@ -52,25 +72,6 @@ namespace gear {
         glm::mat4 normal_matrix;
     };
 
-    struct FramebufferAttachment {
-        blast::GfxTexture* texture = nullptr;
-        uint32_t level = 0;
-        uint32_t num_levels = 1;
-        uint32_t layer = 0;
-        uint32_t num_layers = 1;
-    };
-
-    struct FramebufferInfo {
-        bool is_screen_fb = false;
-        uint32_t width;
-        uint32_t height;
-        float viewport[4];
-        blast::GfxClearValue clear_value;
-        blast::SampleCount sample_count;
-        FramebufferAttachment colors[TARGET_COUNT];
-        FramebufferAttachment depth_stencil;
-    };
-
     struct SamplerInfo {
         uint32_t slot;
         uint32_t level = 0;
@@ -81,24 +82,56 @@ namespace gear {
         blast::GfxSamplerDesc sampler_desc;
     };
 
-    struct UniformDescriptor {
-        uint32_t slot;
-        blast::GfxBuffer* uniform_buffer;
-        uint32_t uniform_buffer_offset;
-        uint32_t uniform_buffer_size;
+    struct LightInfo {
+        bool has_direction_light = false;
+        glm::vec3 sun_direction;
     };
 
-    struct SamplerDescriptor {
-        uint32_t slot;
-        blast::GfxTextureView* textures_view;
-        blast::GfxSampler* sampler;
+    struct CameraInfo {
+        float zn;
+        float zf;
+        glm::vec3 position;
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
     };
 
-    struct DescriptorKey {
-        uint32_t num_uniform_buffers = 0;
-        uint32_t num_samplers = 0;
-        UniformDescriptor uniform_descriptors[UBUFFER_BINDING_COUNT];
-        SamplerDescriptor sampler_descriptors[MAX_TEXTURE_COUNT];
+    struct ShadowMapInfo {
+        glm::mat4 light_view_matrix;
+        glm::mat4 light_projection_matrix;
+        glm::vec3 camera_position;
+        glm::vec3 camera_direction;
+        // 阴影贴图原始分辨率
+        uint32_t texture_dimension = 0;
+        // 实际使用的阴影贴图分辨率，牺牲最外围像素做边界
+        uint32_t shadow_dimension = 0;
+    };
+
+    enum RenderableType {
+        RENDERABLE_COMMON = 0,
+        RENDERABLE_UI = 1
+    };
+
+    struct RenderPrimitive {
+        bool cast_shadow = false;
+        bool receive_shadow = true;
+        uint32_t count = 0;
+        uint32_t offset = 0;
+        BBox bbox;
+        MaterialInstance* mi = nullptr;
+        VertexBuffer* vb = nullptr;;
+        IndexBuffer* ib = nullptr;;
+        UniformBuffer* material_ub = nullptr;;
+        blast::PrimitiveTopology topo = blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_LIST;
+    };
+
+    struct Renderable {
+        uint32_t renderable_ub_size;
+        uint32_t renderable_ub_offset;
+        blast::GfxBuffer* renderable_ub = nullptr;
+        blast::GfxBuffer* bone_ub = nullptr;
+        uint32_t num_primitives = 0;
+        RenderPrimitive primitives[MAX_RENDER_PRIMITIVE_COUNT];
     };
 
     struct DrawCall {

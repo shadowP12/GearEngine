@@ -1,6 +1,8 @@
 #pragma once
 #include <Blast/Gfx/GfxDefine.h>
 
+#include <string>
+
 namespace gear {
     class Material;
     class VertexBuffer;
@@ -11,34 +13,31 @@ namespace gear {
 
         ~BuiltinResources();
 
-        void Prepare();
+        void Initialize(const std::string&);
 
-        Material* GetDebugMaterial() { return _debug_ma; }
+        Material* GetBlitMaterial() { return blit_ma; }
 
-        Material* GetSkyBoxMaterial() { return _skybox_ma; }
+        Material* GetDebugMaterial() { return debug_ma; }
 
-        Material* GetEquirectangularToCubeMaterial() { return _equirectangular_to_cube_ma; }
+        Material* GetSkyBoxMaterial() { return skybox_ma; }
 
-        VertexBuffer* GetQuadBuffer() { return _quad_buffer; }
+        Material* GetEquirectangularToCubeMaterial() { return equirectangular_to_cube_ma; }
 
-        VertexBuffer* GetCubeBuffer() { return _cube_buffer; }
+        VertexBuffer* GetQuadBuffer() { return quad_buffer; }
+
+        VertexBuffer* GetCubeBuffer() { return cube_buffer; }
 
     private:
-        void CreateDebugMaterial();
-
-        void CreateSkyBoxMaterial();
-
-        void CreateEquirectangularToCubeMaterial();
-
         void CreateQuadBuffer();
 
         void CreateCubeBuffer();
 
     private:
-        Material* _debug_ma;
-        Material* _skybox_ma;
-        Material* _equirectangular_to_cube_ma;
-        VertexBuffer* _quad_buffer;
-        VertexBuffer* _cube_buffer;
+        Material* blit_ma = nullptr;
+        Material* debug_ma = nullptr;
+        Material* skybox_ma = nullptr;
+        Material* equirectangular_to_cube_ma = nullptr;
+        VertexBuffer* quad_buffer = nullptr;
+        VertexBuffer* cube_buffer = nullptr;
     };
 }

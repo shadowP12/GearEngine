@@ -2,7 +2,7 @@
 #include "CTransform.h"
 #include "GearEngine.h"
 #include "Entity/Entity.h"
-#include "Resource//RenderTarget.h"
+
 namespace gear {
     CCamera::CCamera(Entity* entity)
             :Component(entity) {
@@ -24,14 +24,6 @@ namespace gear {
         } else {
             _proj_matrix = glm::ortho(left, right, top, bottom, near, far);
         }
-    }
-
-    void CCamera::SetRenderTarget(RenderTarget* target) {
-        _render_target = target;
-    }
-
-    RenderTarget* CCamera::GetRenderTarget() {
-        return _render_target;
     }
 
     glm::mat4 CCamera::GetViewMatrix() {

@@ -141,7 +141,29 @@ namespace gear {
         return out;
     }
 
-    std::stringstream& CodeGenerator::GenerateSamplers(std::stringstream& out, const std::unordered_map<std::string, blast::TextureDimension>& samplers) const {
+    std::stringstream& CodeGenerator::GenerateTextures(std::stringstream& out, const std::unordered_map<std::string, blast::TextureDimension>& textures) const {
+        static const std::unordered_map<blast::TextureDimension, std::string> dim_to_str {
+                { blast::TEXTURE_DIM_1D, "texture1D" },
+                { blast::TEXTURE_DIM_2D, "texture2D" },
+                { blast::TEXTURE_DIM_3D, "texture3D" },
+                { blast::TEXTURE_DIM_CUBE, "textureCube" }
+        };
+
+        if (textures.size() == 0) {
+            return out;
+        }
+
+        // 纹理槽从1000开始
+        uint32_t slot = 1000;
+        for (auto& texture : textures) {
+            out << "layout(set = 0, binding = " << slot << ") ";
+            out << "uniform " << dim_to_str.at(texture.second) << " " << texture.first << ";\n";
+            slot++;
+        }
+        return out;
+    }
+
+    std::stringstream& CodeGenerator::GenerateSamplers(std::stringstream& out, const std::vector<std::string>& samplers) const {
         static const std::unordered_map<blast::TextureDimension, std::string> dim_to_str {
                 { blast::TEXTURE_DIM_1D, "sampler1D" },
                 { blast::TEXTURE_DIM_2D, "sampler2D" },
@@ -153,11 +175,11 @@ namespace gear {
             return out;
         }
 
-        // 纹理槽从4开始
-        uint32_t slot = 4;
+        // 采样器槽从3000开始
+        uint32_t slot = 3000;
         for (auto& sampler : samplers) {
-            out << "layout(set = 1, binding = " << slot << ") ";
-            out << "uniform " << dim_to_str.at(sampler.second) << " " << sampler.first << ";\n";
+            out << "layout(set = 0, binding = " << slot << ") ";
+            out << "uniform " << "sampler" << " " << sampler << ";\n";
             slot++;
         }
         return out;

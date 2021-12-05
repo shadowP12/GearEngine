@@ -1,8 +1,11 @@
 #pragma once
 #include "Component.h"
-#include "RenderPipeline/RenderPipeline.h"
 #include "Math/Math.h"
+#include "Math/Geometry.h"
+#include "Renderer/RenderData.h"
+
 #include <Blast/Gfx/GfxDefine.h>
+
 #include <vector>
 
 namespace gear {
@@ -47,7 +50,6 @@ namespace gear {
         void SetRenderableType(RenderableType type) { _renderable_type = type; }
 
     private:
-        friend class RenderPipeline;
         friend class Scene;
         RenderableType _renderable_type = RENDERABLE_COMMON;
         std::vector<SubMesh> _sub_meshs;

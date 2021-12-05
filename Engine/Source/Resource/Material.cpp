@@ -2,9 +2,43 @@
 #include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
 #include "GearEngine.h"
-#include "Renderer/Renderer.h"
+
+#include <Blast/Gfx/GfxDefine.h>
+#include <Blast/Gfx/GfxDevice.h>
+
 namespace gear {
-    uint32_t Material::_global_material_id = 0;
+    uint32_t Material::global_material_id = 0;
+
+    // 过滤掉不需要的顶点变体
+    constexpr MaterialVariant::Key MaterialVariant::FilterVariantVertex(Key variant) noexcept {
+        return variant & VERTEX_MASK;
+    }
+
+    // 过滤掉不需要的片段变体
+    constexpr MaterialVariant::Key MaterialVariant::FilterVariantFragment(Key variant) noexcept {
+        return variant & FRAGMENT_MASK;
+    }
+
+    // 通过着色模型过滤掉不需要的变体
+    constexpr MaterialVariant::Key MaterialVariant::FilterVariantShadingMode(Key variant, ShadingModel shading_model) noexcept {
+        if (shading_model == SHADING_MODEL_UNLIT) {
+            Set(variant, false, DYNAMIC_LIGHTING);
+            Set(variant, false, DIRECTIONAL_LIGHTING);
+        }
+        return variant;
+    }
+
+    // 通过顶点布局模型过滤掉不需要的片段变体
+    constexpr MaterialVariant::Key MaterialVariant::FilterVariantVertexLayout(Key variant, VertexLayoutType vertex_layout_type) noexcept {
+        if (vertex_layout_type == VLT_P || vertex_layout_type == VLT_P_T0 || vertex_layout_type == VLT_DEBUG || vertex_layout_type == VLT_UI) {
+            Set(variant, false, DYNAMIC_LIGHTING);
+            Set(variant, false, DIRECTIONAL_LIGHTING);
+            Set(variant, false, SKINNING_OR_MORPHING);
+        } else if (vertex_layout_type == VLT_STATIC_MESH) {
+            Set(variant, false, SKINNING_OR_MORPHING);
+        }
+        return variant;
+    }
 
     static uint32_t GetUniformTypeBaseAlignment(blast::UniformType type) {
         switch (type) {
@@ -52,28 +86,44 @@ namespace gear {
         }
     }
 
+    bool Material::ShaderEq::operator()(const ShaderKey& key1, const ShaderKey& key2) const {
+        if (key1.variant != key2.variant) return false;
+        if (key1.vertex_layout_type != key2.vertex_layout_type) return false;
+        return true;
+    }
+
     void Material::Builder::SetShadingModel(ShadingModel shading_model) {
-        _render_state.shading_model = shading_model;
+        this->shading_model = shading_model;
     }
 
-    void Material::Builder::SetBlendingMode(BlendingMode blending_model) {
-        _render_state.blending_mode = blending_model;
+    void Material::Builder::SetBlendState(BlendStateType blend_state) {
+        this->blend_state = blend_state;
     }
 
-    void Material::Builder::AddVertShader(MaterialVariant::Key key, blast::GfxShader* shader) {
-        _vert_shader_cache[key] = shader;
+    void Material::Builder::AddVertShader(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, blast::GfxShader* shader) {
+        ShaderKey shader_key;
+        shader_key.variant = key;
+        shader_key.vertex_layout_type = vertex_layout_type;
+        vert_shader_cache[shader_key] = shader;
     }
 
-    void Material::Builder::AddFragShader(MaterialVariant::Key key, blast::GfxShader* shader) {
-        _frag_shader_cache[key] = shader;
-    }
-
-    void Material::Builder::AddSampler(const std::string& name, const blast::TextureDimension& dim) {
-        _samplers[name] = dim;
+    void Material::Builder::AddFragShader(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, blast::GfxShader* shader) {
+        ShaderKey shader_key;
+        shader_key.variant = key;
+        shader_key.vertex_layout_type = vertex_layout_type;
+        frag_shader_cache[shader_key] = shader;
     }
 
     void Material::Builder::AddUniform(const std::string& name, const blast::UniformType& type) {
-        _uniforms[name] = type;
+        uniforms[name] = type;
+    }
+
+    void Material::Builder::AddTexture(const std::string& name, const blast::TextureDimension& dim) {
+        textures[name] = dim;
+    }
+
+    void Material::Builder::AddSampler(const std::string& name) {
+        samplers.push_back(name);
     }
 
     Material * Material::Builder::Build() {
@@ -81,49 +131,65 @@ namespace gear {
     }
 
     Material::Material(Builder* builder) {
-        _render_state = builder->_render_state;
-        _samplers = builder->_samplers;
-        _uniforms = builder->_uniforms;
-        _vert_shader_cache = builder->_vert_shader_cache;
-        _frag_shader_cache = builder->_frag_shader_cache;
-        _material_id = _global_material_id;
-        _global_material_id++;
+        shading_model = builder->shading_model;
+        blend_state = builder->blend_state;
+        uniforms = builder->uniforms;
+        textures = builder->textures;
+        samplers = builder->samplers;
+        vert_shader_cache = builder->vert_shader_cache;
+        frag_shader_cache = builder->frag_shader_cache;
+        material_id = global_material_id;
+        global_material_id++;
     }
 
     Material::~Material() {
-        Renderer* renderer = gEngine.GetRenderer();
-        for (auto& vs : _vert_shader_cache) {
-            renderer->Destroy(vs.second);
+        blast::GfxDevice* device = gEngine.GetDevice();
+        for (auto& vs : vert_shader_cache) {
+            device->DestroyShader(vs.second);
         }
 
-        for (auto& fs : _frag_shader_cache) {
-            renderer->Destroy(fs.second);
+        for (auto& fs : frag_shader_cache) {
+            device->DestroyShader(fs.second);
         }
     }
 
-    blast::GfxShader* Material::GetVertShader(MaterialVariant::Key variant) {
-        uint8_t key = MaterialVariant::FilterVariantVertex(variant);
-        return _vert_shader_cache[key];
+    blast::GfxShader* Material::GetVertShader(MaterialVariant::Key variant, VertexLayoutType vertex_layout_type) {
+        MaterialVariant::Key key = MaterialVariant::FilterVariantVertex(variant);
+        key = MaterialVariant::FilterVariantShadingMode(key, shading_model);
+        key = MaterialVariant::FilterVariantVertexLayout(key, vertex_layout_type);
+
+        ShaderKey shader_key;
+        shader_key.variant = key;
+        shader_key.vertex_layout_type = vertex_layout_type;
+
+        return vert_shader_cache[shader_key];
     }
 
-    blast::GfxShader* Material::GetFragShader(MaterialVariant::Key variant) {
+    blast::GfxShader* Material::GetFragShader(MaterialVariant::Key variant, VertexLayoutType vertex_layout_type) {
         uint8_t key = MaterialVariant::FilterVariantFragment(variant);
-        return _frag_shader_cache[key];
+        key = MaterialVariant::FilterVariantShadingMode(key, shading_model);
+        key = MaterialVariant::FilterVariantVertexLayout(key, vertex_layout_type);
+
+        ShaderKey shader_key;
+        shader_key.variant = key;
+        shader_key.vertex_layout_type = vertex_layout_type;
+
+        return frag_shader_cache[shader_key];
     }
 
     MaterialInstance* Material::CreateInstance() {
         MaterialInstance* mi = new MaterialInstance(this);
-        mi->_material_instance_id = _current_material_instance_id;
-        _current_material_instance_id++;
+        mi->material_instance_id = current_material_instance_id;
+        current_material_instance_id++;
         return mi;
     }
 
     MaterialInstance::MaterialInstance(Material* material) {
-        _material = material;
+        this->material = material;
 
         // uniform
         uint32_t offset = 0;
-        for (auto& uniform : material->_uniforms) {
+        for (auto& uniform : material->uniforms) {
             std::tuple<blast::UniformType, uint32_t> variable = {};
             std::get<0>(variable) = uniform.second;
 
@@ -136,96 +202,113 @@ namespace gear {
             std::get<1>(variable) = offset * sizeof(uint32_t);
 
             offset += stride;
-            _uniforms[uniform.first] = variable;
+            uniforms[uniform.first] = variable;
         }
-        _storage_size = offset * sizeof(uint32_t);
-        _storage_dirty = true;
-        if (_storage_size > 0) {
-            _material_ub = new UniformBuffer(_storage_size);
+        storage_size = offset * sizeof(uint32_t);
+        storage_dirty = true;
+        if (storage_size > 0) {
+            material_ub = new UniformBuffer(storage_size);
         } else {
-            _material_ub = nullptr;
+            material_ub = nullptr;
         }
 
         // texture
-        _samplers = material->_samplers;
-        TextureSlot slot = 0;
-        for (auto& sampler : _samplers) {
-            _slot_map[sampler.first] = slot;
+        textures = material->textures;
+        TextureSlot texture_slot = 0;
+        for (auto& texture : textures) {
+            texture_slot_map[texture.first] = texture_slot;
+            texture_group[texture_slot] = nullptr;
+            texture_slot++;
+        }
+
+        // sampler
+        samplers = material->samplers;
+        SamplerSlot sampler_slot = 0;
+        for (auto& sampler : samplers) {
+            sampler_slot_map[sampler] = sampler_slot;
             blast::GfxSamplerDesc sampler_desc;
-            _sampler_group[slot] = std::pair<Texture*, blast::GfxSamplerDesc>(nullptr, sampler_desc);
-            slot++;
+            sampler_group[sampler_slot] = sampler_desc;
+            sampler_slot++;
         }
     }
 
     MaterialInstance::~MaterialInstance() {
-        SAFE_DELETE(_material_ub);
+        SAFE_DELETE(material_ub);
     }
 
     UniformBuffer* MaterialInstance::GetUniformBuffer() {
-        if (!_material_ub) {
+        if (!material_ub) {
             return nullptr;
         }
 
-        if (_storage_dirty) {
-            _storage_dirty = false;
-            _material_ub->Update(_storage, 0, _storage_size);
-        }
-        return _material_ub;
+        return material_ub;
     }
 
     void MaterialInstance::SetBool(const std::string& name, const bool& value) {
-        auto iter = _uniforms.find(name);
-        if (iter != _uniforms.end()) {
-            _storage_dirty = true;
-            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(bool));
+        auto iter = uniforms.find(name);
+        if (iter != uniforms.end()) {
+            storage_dirty = true;
+            memcpy(storage + std::get<1>(iter->second), &value, sizeof(bool));
         }
     }
 
     void MaterialInstance::SetFloat(const std::string& name, const float& value) {
-        auto iter = _uniforms.find(name);
-        if (iter != _uniforms.end()) {
-            _storage_dirty = true;
-            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(float));
+        auto iter = uniforms.find(name);
+        if (iter != uniforms.end()) {
+            storage_dirty = true;
+            memcpy(storage + std::get<1>(iter->second), &value, sizeof(float));
         }
     }
 
     void MaterialInstance::SetFloat2(const std::string& name, const glm::vec2& value) {
-        auto iter = _uniforms.find(name);
-        if (iter != _uniforms.end()) {
-            _storage_dirty = true;
-            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(glm::vec2));
+        auto iter = uniforms.find(name);
+        if (iter != uniforms.end()) {
+            storage_dirty = true;
+            memcpy(storage + std::get<1>(iter->second), &value, sizeof(glm::vec2));
         }
     }
 
     void MaterialInstance::SetFloat3(const std::string& name, const glm::vec3& value) {
-        auto iter = _uniforms.find(name);
-        if (iter != _uniforms.end()) {
-            _storage_dirty = true;
-            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(glm::vec3));
+        auto iter = uniforms.find(name);
+        if (iter != uniforms.end()) {
+            storage_dirty = true;
+            memcpy(storage + std::get<1>(iter->second), &value, sizeof(glm::vec3));
         }
     }
 
     void MaterialInstance::SetFloat4(const std::string& name, const glm::vec4& value) {
-        auto iter = _uniforms.find(name);
-        if (iter != _uniforms.end()) {
-            _storage_dirty = true;
+        auto iter = uniforms.find(name);
+        if (iter != uniforms.end()) {
+            storage_dirty = true;
             uint32_t offset = std::get<1>(iter->second);
-            memcpy(_storage + offset, &value, sizeof(glm::vec4));
+            memcpy(storage + offset, &value, sizeof(glm::vec4));
         }
     }
 
     void MaterialInstance::SetMat4(const std::string& name, const glm::mat4& value) {
-        auto iter = _uniforms.find(name);
-        if (iter != _uniforms.end()) {
-            _storage_dirty = true;
-            memcpy(_storage + std::get<1>(iter->second), &value, sizeof(glm::mat4));
+        auto iter = uniforms.find(name);
+        if (iter != uniforms.end()) {
+            storage_dirty = true;
+            memcpy(storage + std::get<1>(iter->second), &value, sizeof(glm::mat4));
         }
     }
 
-    void MaterialInstance::SetTexture(const std::string& name, Texture* texture, const blast::GfxSamplerDesc& sampler_desc) {
-        auto iter = _slot_map.find(name);
-        if (iter != _slot_map.end()) {
-            _sampler_group[iter->second] = std::pair<Texture*, blast::GfxSamplerDesc>(texture, sampler_desc);
+    void MaterialInstance::SetTexture(const std::string& name, Texture* texture) {
+        auto iter = texture_slot_map.find(name);
+        if (iter != texture_slot_map.end()) {
+            texture_group[iter->second] = texture;
         }
     }
+
+    void MaterialInstance::SetSampler(const std::string& name, const blast::GfxSamplerDesc& sampler_desc) {
+        auto iter = sampler_slot_map.find(name);
+        if (iter != sampler_slot_map.end()) {
+            sampler_group[iter->second] = sampler_desc;
+        }
+    }
+
+    void MaterialInstance::SetScissor(float x, float y, float w, float h) {
+
+    }
+
 }

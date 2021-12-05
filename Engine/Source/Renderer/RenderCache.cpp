@@ -1,8 +1,257 @@
 #include "RenderCache.h"
 #include "Renderer.h"
-#include <Blast/Gfx/GfxContext.h>
+#include "GearEngine.h"
+
+#include <Blast/Gfx/GfxDevice.h>
 
 namespace gear {
+
+    VertexLayoutCache::VertexLayoutCache() {
+        {
+            blast::GfxInputLayout* layout = new blast::GfxInputLayout();
+            uint32_t offset = 0;
+            blast::GfxInputLayout::Element element;
+            element.semantic = blast::SEMANTIC_POSITION;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 0;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_TEXCOORD0;
+            element.format = blast::FORMAT_R32G32_FLOAT;
+            element.location = 5;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+
+            input_layouts[VLT_P_T0] = layout;
+        }
+
+        {
+            blast::GfxInputLayout* layout = new blast::GfxInputLayout();
+            uint32_t offset = 0;
+            blast::GfxInputLayout::Element element;
+            element.semantic = blast::SEMANTIC_POSITION;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 0;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            input_layouts[VLT_P] = layout;
+        }
+
+        {
+            blast::GfxInputLayout* layout = new blast::GfxInputLayout();
+            uint32_t offset = 0;
+            blast::GfxInputLayout::Element element;
+            element.semantic = blast::SEMANTIC_POSITION;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 0;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            offset += element.size;
+            layout->elements.push_back(element);
+
+            element.semantic = blast::SEMANTIC_COLOR;
+            element.format = blast::FORMAT_R8G8B8A8_UNORM;
+            element.location = 4;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+
+            input_layouts[VLT_DEBUG] = layout;
+        }
+
+        {
+            blast::GfxInputLayout* layout = new blast::GfxInputLayout();
+            uint32_t offset = 0;
+            blast::GfxInputLayout::Element element;
+            element.semantic = blast::SEMANTIC_POSITION;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 0;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_TEXCOORD0;
+            element.format = blast::FORMAT_R32G32_FLOAT;
+            element.location = 5;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_COLOR;
+            element.format = blast::FORMAT_R8G8B8A8_UNORM;
+            element.location = 4;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+
+            input_layouts[VLT_UI] = layout;
+        }
+
+        {
+            blast::GfxInputLayout* layout = new blast::GfxInputLayout();
+            uint32_t offset = 0;
+            blast::GfxInputLayout::Element element;
+            element.semantic = blast::SEMANTIC_POSITION;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 0;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_TEXCOORD0;
+            element.format = blast::FORMAT_R32G32_FLOAT;
+            element.location = 5;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_NORMAL;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 1;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_TANGENT;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 2;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_BITANGENT;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 3;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+
+            input_layouts[VLT_STATIC_MESH] = layout;
+        }
+    }
+
+    VertexLayoutCache::~VertexLayoutCache() {
+        for (auto iter = input_layouts.begin(); iter != input_layouts.end(); ++iter) {
+            SAFE_DELETE(iter->second);
+        }
+        input_layouts.clear();
+    }
+
+    blast::GfxInputLayout * VertexLayoutCache::GetVertexLayout(VertexLayoutType type) {
+        return input_layouts[type];
+    }
+
+    RasterizerStateCache::RasterizerStateCache() {
+        {
+            blast::GfxRasterizerState* rs = new blast::GfxRasterizerState();
+            rs->cull_mode = blast::CULL_BACK;
+            rasterizer_states[RST_FRONT] = rs;
+        }
+        {
+            blast::GfxRasterizerState* rs = new blast::GfxRasterizerState();
+            rs->cull_mode = blast::CULL_FRONT;
+            rasterizer_states[RST_BACK] = rs;
+        }
+        {
+            blast::GfxRasterizerState* rs = new blast::GfxRasterizerState();
+            rs->cull_mode = blast::CULL_NONE;
+            rasterizer_states[RST_DOUBLESIDED] = rs;
+        }
+    }
+
+    RasterizerStateCache::~RasterizerStateCache() {
+        for (auto iter = rasterizer_states.begin(); iter != rasterizer_states.end(); ++iter) {
+            SAFE_DELETE(iter->second);
+        }
+        rasterizer_states.clear();
+    }
+
+    blast::GfxRasterizerState * RasterizerStateCache::GetRasterizerState(RasterizerStateType type) {
+        return rasterizer_states[type];
+    }
+
+    DepthStencilStateCache::DepthStencilStateCache() {
+        {
+            blast::GfxDepthStencilState* dds = new blast::GfxDepthStencilState();
+            dds->depth_test = true;
+            dds->depth_write = true;
+            dds->stencil_test = true;
+            depth_stencil_states[DSST_DEFAULT] = dds;
+        }
+        {
+            blast::GfxDepthStencilState* dds = new blast::GfxDepthStencilState();
+            dds->depth_test = true;
+            dds->depth_write = true;
+            dds->stencil_test = false;
+            depth_stencil_states[DSST_SHADOW] = dds;
+        }
+
+        {
+            blast::GfxDepthStencilState* dds = new blast::GfxDepthStencilState();
+            dds->depth_test = false;
+            dds->depth_write = true;
+            dds->stencil_test = false;
+            depth_stencil_states[DSST_UI] = dds;
+        }
+    }
+
+    DepthStencilStateCache::~DepthStencilStateCache() {
+        for (auto iter = depth_stencil_states.begin(); iter != depth_stencil_states.end(); ++iter) {
+            SAFE_DELETE(iter->second);
+        }
+        depth_stencil_states.clear();
+    }
+
+    blast::GfxDepthStencilState * DepthStencilStateCache::GetDepthStencilState(DepthStencilStateType type) {
+        return depth_stencil_states[type];
+    }
+
+    BlendStateCache::BlendStateCache() {
+        {
+            blast::GfxBlendState* bs = new blast::GfxBlendState();
+            bs->rt[0].src_factor = blast::BLEND_ONE;
+            bs->rt[0].dst_factor = blast::BLEND_ZERO;
+            bs->rt[0].src_factor_alpha = blast::BLEND_ONE;
+            bs->rt[0].dst_factor_alpha = blast::BLEND_ZERO;
+            bs->rt[0].render_target_write_mask = blast::COLOR_COMPONENT_ALL;
+            blend_states[BST_OPAQUE] = bs;
+        }
+        {
+            // 预乘
+            blast::GfxBlendState* bs = new blast::GfxBlendState();
+            bs->rt[0].src_factor = blast::BLEND_ONE;
+            bs->rt[0].dst_factor = blast::BLEND_ONE_MINUS_SRC_ALPHA;
+            bs->rt[0].src_factor_alpha = blast::BLEND_ONE;
+            bs->rt[0].dst_factor_alpha = blast::BLEND_ONE_MINUS_SRC_ALPHA;
+            bs->rt[0].render_target_write_mask = blast::COLOR_COMPONENT_ALL;
+            blend_states[BST_TRANSPARENT] = bs;
+        }
+    }
+
+    BlendStateCache::~BlendStateCache() {
+        for (auto iter = blend_states.begin(); iter != blend_states.end(); ++iter) {
+            SAFE_DELETE(iter->second);
+        }
+        blend_states.clear();
+    }
+
+    blast::GfxBlendState * BlendStateCache::GetDepthStencilState(BlendStateType type) {
+        return blend_states[type];
+    }
+
     bool SamplerCache::SamplerCacheEq::operator()(const blast::GfxSamplerDesc& desc1, const blast::GfxSamplerDesc& desc2) const {
         if (desc1.address_u != desc2.address_u) return false;
         if (desc1.address_v != desc2.address_v) return false;
@@ -13,228 +262,96 @@ namespace gear {
         return true;
     }
 
-    SamplerCache::SamplerCache(Renderer* renderer) {
-        _renderer = renderer;
+    SamplerCache::SamplerCache() {
     }
 
     SamplerCache::~SamplerCache() {
-        for (auto iter = _samplers.begin(); iter != _samplers.end(); ++iter) {
-            _renderer->GetContext()->DestroySampler(iter->second);
+        for (auto iter = samplers.begin(); iter != samplers.end(); ++iter) {
+            gEngine.GetDevice()->DestroySampler(iter->second);
         }
-        _samplers.clear();
+        samplers.clear();
     }
 
     blast::GfxSampler* SamplerCache::GetSampler(const blast::GfxSamplerDesc& desc) {
-        auto iter = _samplers.find(desc);
-        if (iter != _samplers.end()) {
+        auto iter = samplers.find(desc);
+        if (iter != samplers.end()) {
             return iter->second;
         }
 
-        blast::GfxSampler* sampler = _renderer->GetContext()->CreateSampler(desc);
-        _samplers[desc] = sampler;
+        blast::GfxSampler* sampler = gEngine.GetDevice()->CreateSampler(desc);
+        samplers[desc] = sampler;
         return sampler;
     }
 
-    bool TextureViewCache::TextureViewCacheEq::operator()(const blast::GfxTextureViewDesc& desc1, const blast::GfxTextureViewDesc& desc2) const {
-        if (desc1.level != desc2.level) return false;
-        if (desc1.layer != desc2.layer) return false;
-        if (desc1.texture != desc2.texture) return false;
+    bool RenderPassCache::RenderPassEq::operator()(const blast::GfxRenderPassDesc& desc1, const blast::GfxRenderPassDesc& desc2) const {
+        if (desc1.attachments.size() != desc2.attachments.size()) return false;
+        for (uint32_t i = 0; i < desc1.attachments.size(); ++i) {
+            if (desc1.attachments[i].type != desc2.attachments[i].type) return false;
+            if (desc1.attachments[i].texture != desc2.attachments[i].texture) return false;
+            if (desc1.attachments[i].subresource != desc2.attachments[i].subresource) return false;
+            if (desc1.attachments[i].loadop != desc2.attachments[i].loadop) return false;
+            if (desc1.attachments[i].storeop != desc2.attachments[i].storeop) return false;
+        }
         return true;
     }
 
-    TextureViewCache::TextureViewCache(Renderer* renderer) {
-        _renderer = renderer;
+    RenderPassCache::RenderPassCache() {
     }
 
-    TextureViewCache::~TextureViewCache() {
-        for (auto iter = _texture_views.begin(); iter != _texture_views.end(); ++iter) {
-            _renderer->GetContext()->DestroyTextureView(iter->second);
+    RenderPassCache::~RenderPassCache() {
+        for (auto iter = renderpasses.begin(); iter != renderpasses.end(); ++iter) {
+            gEngine.GetDevice()->DestroyRenderPass(iter->second);
         }
-        _texture_views.clear();
+        renderpasses.clear();
     }
 
-    blast::GfxTextureView* TextureViewCache::GetTextureView(const blast::GfxTextureViewDesc& desc) {
-        auto iter = _texture_views.find(desc);
-        if (iter != _texture_views.end()) {
+    blast::GfxRenderPass* RenderPassCache::GetRenderPass(const blast::GfxRenderPassDesc& desc) {
+        auto iter = renderpasses.find(desc);
+        if (iter != renderpasses.end()) {
             return iter->second;
         }
 
-        blast::GfxTextureView* texture_view = _renderer->GetContext()->CreateTextureView(desc);
-        _texture_views[desc] = texture_view;
-        return texture_view;
+        blast::GfxRenderPass* renderpass = gEngine.GetDevice()->CreateRenderPass(desc);
+        renderpasses[desc] = renderpass;
+        return renderpass;
     }
 
-    bool FramebufferCache::FramebufferEq::operator()(const blast::GfxFramebufferDesc& desc1, const blast::GfxFramebufferDesc& desc2) const {
-        if (desc1.width != desc2.width) return false;
-        if (desc1.height != desc2.height) return false;
+    bool PipelineCache::PipelineEq::operator()(const blast::GfxPipelineDesc& desc1, const blast::GfxPipelineDesc& desc2) const {
+        if (desc1.vs != desc2.vs) return false;
+        if (desc1.fs != desc2.fs) return false;
+        if (desc1.hs != desc2.hs) return false;
+        if (desc1.ds != desc2.ds) return false;
+        if (desc1.gs != desc2.gs) return false;
+        if (desc1.bs != desc2.bs) return false;
+        if (desc1.rs != desc2.rs) return false;
+        if (desc1.dss != desc2.dss) return false;
+        if (desc1.il != desc2.il) return false;
+        if (desc1.rp != desc2.rp) return false;
+        if (desc1.sc != desc2.sc) return false;
+        if (desc1.patch_control_points != desc2.patch_control_points) return false;
         if (desc1.sample_count != desc2.sample_count) return false;
-        if (desc1.has_depth_stencil != desc2.has_depth_stencil) return false;
-        if (desc1.num_colors != desc2.num_colors) return false;
-        if (desc1.depth_stencil != desc2.depth_stencil) return false;
-        for (int i = 0; i < MAX_RENDER_TARGET_ATTACHMENTS; i++) {
-            if (desc1.colors[i] != desc2.colors[i]) return false;
-        }
+        if (desc1.primitive_topo != desc2.primitive_topo) return false;
         return true;
     }
 
-    FramebufferCache::FramebufferCache(Renderer* renderer) {
-        _renderer = renderer;
+    PipelineCache::PipelineCache() {
     }
 
-    FramebufferCache::~FramebufferCache() {
-        for (auto iter = _framebuffers.begin(); iter != _framebuffers.end(); ++iter) {
-            _renderer->GetContext()->DestroyFramebuffer(iter->second);
+    PipelineCache::~PipelineCache() {
+        for (auto iter = pipelines.begin(); iter != pipelines.end(); ++iter) {
+            gEngine.GetDevice()->DestroyPipeline(iter->second);
         }
-        _framebuffers.clear();
+        pipelines.clear();
     }
 
-    blast::GfxFramebuffer* FramebufferCache::GetFramebuffer(const blast::GfxFramebufferDesc& desc) {
-        auto iter = _framebuffers.find(desc);
-        if (iter != _framebuffers.end()) {
+    blast::GfxPipeline* PipelineCache::GetPipeline(const blast::GfxPipelineDesc& desc) {
+        auto iter = pipelines.find(desc);
+        if (iter != pipelines.end()) {
             return iter->second;
         }
 
-        blast::GfxFramebuffer* framebuffer = _renderer->GetContext()->CreateFramebuffer(desc);
-        _framebuffers[desc] = framebuffer;
-        return framebuffer;
-    }
-
-    bool GraphicsPipelineCache::PipelineEq::operator()(const blast::GfxGraphicsPipelineDesc& desc1, const blast::GfxGraphicsPipelineDesc& desc2) const {
-        if (desc1.framebuffer != desc2.framebuffer) return false;
-
-        if (desc1.vertex_shader != desc2.vertex_shader) return false;
-        if (desc1.hull_shader != desc2.hull_shader) return false;
-        if (desc1.domain_shader != desc2.domain_shader) return false;
-        if (desc1.geometry_shader != desc2.geometry_shader) return false;
-        if (desc1.pixel_shader != desc2.pixel_shader) return false;
-        if (desc1.root_signature != desc2.root_signature) return false;
-
-        // Vertex Layout
-        if (desc1.vertex_layout.num_attributes != desc2.vertex_layout.num_attributes) return false;
-        for (int i = 0; i < MAX_VERTEX_ATTRIBS; i++) {
-            if (desc1.vertex_layout.attributes[i].format != desc2.vertex_layout.attributes[i].format) return false;
-            if (desc1.vertex_layout.attributes[i].semantic != desc2.vertex_layout.attributes[i].semantic) return false;
-            if (desc1.vertex_layout.attributes[i].rate != desc2.vertex_layout.attributes[i].rate) return false;
-            if (desc1.vertex_layout.attributes[i].location != desc2.vertex_layout.attributes[i].location) return false;
-            if (desc1.vertex_layout.attributes[i].binding != desc2.vertex_layout.attributes[i].binding) return false;
-            if (desc1.vertex_layout.attributes[i].offset != desc2.vertex_layout.attributes[i].offset) return false;
-        }
-
-        // Blend State
-        if (desc1.blend_state.independent_blend != desc2.blend_state.independent_blend) return false;
-        if (desc1.blend_state.target_mask != desc2.blend_state.target_mask) return false;
-        for (int i = 0; i < MAX_RENDER_TARGET_ATTACHMENTS; i++) {
-            if (desc1.blend_state.blend_alpha_ops[i] != desc2.blend_state.blend_alpha_ops[i]) return false;
-            if (desc1.blend_state.blend_ops[i] != desc2.blend_state.blend_ops[i]) return false;
-            if (desc1.blend_state.src_alpha_factors[i] != desc2.blend_state.src_alpha_factors[i]) return false;
-            if (desc1.blend_state.dst_alpha_factors[i] != desc2.blend_state.dst_alpha_factors[i]) return false;
-            if (desc1.blend_state.src_factors[i] != desc2.blend_state.src_factors[i]) return false;
-            if (desc1.blend_state.dst_factors[i] != desc2.blend_state.dst_factors[i]) return false;
-            if (desc1.blend_state.color_write_masks[i] != desc2.blend_state.color_write_masks[i]) return false;
-        }
-
-        // Depth State
-        if (desc1.depth_state.depth_test != desc2.depth_state.depth_test) return false;
-        if (desc1.depth_state.depth_write != desc2.depth_state.depth_write) return false;
-        if (desc1.depth_state.depth_func != desc2.depth_state.depth_func) return false;
-        if (desc1.depth_state.stencil_test != desc2.depth_state.stencil_test) return false;
-        if (desc1.depth_state.stencil_read_mask != desc2.depth_state.stencil_read_mask) return false;
-        if (desc1.depth_state.stencil_write_mask != desc2.depth_state.stencil_write_mask) return false;
-        if (desc1.depth_state.stencil_front_func != desc2.depth_state.stencil_front_func) return false;
-        if (desc1.depth_state.stencil_front_fail != desc2.depth_state.stencil_front_fail) return false;
-        if (desc1.depth_state.depth_front_fail != desc2.depth_state.depth_front_fail) return false;
-        if (desc1.depth_state.stencil_front_pass != desc2.depth_state.stencil_front_pass) return false;
-        if (desc1.depth_state.stencil_back_func != desc2.depth_state.stencil_back_func) return false;
-        if (desc1.depth_state.stencil_back_fail != desc2.depth_state.stencil_back_fail) return false;
-        if (desc1.depth_state.depth_back_fail != desc2.depth_state.depth_back_fail) return false;
-        if (desc1.depth_state.stencil_back_pass != desc2.depth_state.stencil_back_pass) return false;
-
-        // Rasterizer State
-        if (desc1.rasterizer_state.depth_bias != desc2.rasterizer_state.depth_bias) return false;
-        if (desc1.rasterizer_state.slope_scaled_depth_bias != desc2.rasterizer_state.slope_scaled_depth_bias) return false;
-        if (desc1.rasterizer_state.depth_clamp_enable != desc2.rasterizer_state.depth_clamp_enable) return false;
-        if (desc1.rasterizer_state.primitive_topo != desc2.rasterizer_state.primitive_topo) return false;
-        if (desc1.rasterizer_state.fill_mode != desc2.rasterizer_state.fill_mode) return false;
-        if (desc1.rasterizer_state.front_face != desc2.rasterizer_state.front_face) return false;
-        if (desc1.rasterizer_state.cull_mode != desc2.rasterizer_state.cull_mode) return false;
-
-        return true;
-    }
-
-    GraphicsPipelineCache::GraphicsPipelineCache(Renderer* renderer) {
-        _renderer = renderer;
-    }
-
-    GraphicsPipelineCache::~GraphicsPipelineCache() {
-        for (auto iter = _pipelines.begin(); iter != _pipelines.end(); ++iter) {
-            _renderer->GetContext()->DestroyGraphicsPipeline(iter->second);
-        }
-        _pipelines.clear();
-    }
-
-    blast::GfxGraphicsPipeline* GraphicsPipelineCache::GetGraphicsPipeline(const blast::GfxGraphicsPipelineDesc& desc) {
-        auto iter = _pipelines.find(desc);
-        if (iter != _pipelines.end()) {
-            return iter->second;
-        }
-
-        blast::GfxGraphicsPipeline* pipeline = _renderer->GetContext()->CreateGraphicsPipeline(desc);
-        _pipelines[desc] = pipeline;
+        blast::GfxPipeline* pipeline = gEngine.GetDevice()->CreatePipeline(desc);
+        pipelines[desc] = pipeline;
         return pipeline;
-    }
-
-    bool DescriptorCache::DescriptorEq::operator()(const DescriptorKey& key1, const DescriptorKey& key2) const {
-        if (key1.num_uniform_buffers != key2.num_uniform_buffers) return false;
-        if (key1.num_samplers != key2.num_samplers) return false;
-
-        for (int i = 0; i < key1.num_uniform_buffers; ++i) {
-            if (key1.uniform_descriptors[i].slot != key2.uniform_descriptors[i].slot) return false;
-            if (key1.uniform_descriptors[i].uniform_buffer != key2.uniform_descriptors[i].uniform_buffer) return false;
-            if (key1.uniform_descriptors[i].uniform_buffer_size != key2.uniform_descriptors[i].uniform_buffer_size) return false;
-            if (key1.uniform_descriptors[i].uniform_buffer_offset != key2.uniform_descriptors[i].uniform_buffer_offset) return false;
-        }
-
-        for (int i = 0; i < key1.num_samplers; ++i) {
-            if (key1.sampler_descriptors[i].slot != key2.sampler_descriptors[i].slot) return false;
-            if (key1.sampler_descriptors[i].textures_view != key2.sampler_descriptors[i].textures_view) return false;
-            if (key1.sampler_descriptors[i].sampler != key2.sampler_descriptors[i].sampler) return false;
-        }
-        return true;
-    }
-
-    DescriptorCache::DescriptorCache(Renderer* renderer) {
-        _renderer = renderer;
-    }
-
-    DescriptorCache::~DescriptorCache() {
-        for (auto iter = _descriptors.begin(); iter != _descriptors.end(); ++iter) {
-            _renderer->GetRootSignature()->DeleteSet(iter->second.handles[0]);
-            _renderer->GetRootSignature()->DeleteSet(iter->second.handles[1]);
-        }
-        _descriptors.clear();
-    }
-
-    DescriptorBundle DescriptorCache::GetDescriptor(const DescriptorKey& key) {
-        auto iter = _descriptors.find(key);
-        if (iter != _descriptors.end()) {
-            return iter->second;
-        }
-
-        DescriptorBundle bundle;
-        bundle.handles[0] = _renderer->GetRootSignature()->AllocateSet(0);
-        bundle.handles[1] = _renderer->GetRootSignature()->AllocateSet(1);
-
-        for (int i = 0; i < key.num_uniform_buffers; ++i) {
-            const UniformDescriptor& uniform_descriptor = key.uniform_descriptors[i];
-            bundle.handles[0]->SetUniformBuffer(uniform_descriptor.slot, uniform_descriptor.uniform_buffer, uniform_descriptor.uniform_buffer_size, uniform_descriptor.uniform_buffer_offset);
-        }
-
-        for (int i = 0; i < key.num_samplers; ++i) {
-            const SamplerDescriptor& sampler_descriptor = key.sampler_descriptors[i];
-            bundle.handles[1]->SetCombinedSampler(sampler_descriptor.slot, sampler_descriptor.textures_view, sampler_descriptor.sampler);
-        }
-
-        _descriptors[key] = bundle;
-        return bundle;
     }
 }

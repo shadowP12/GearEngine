@@ -9,6 +9,6 @@ vec2 SampleSphericalMap(vec3 v) {
 void ProcessMaterialFragmentParams(inout MaterialFragmentParams params) {
     
     vec2 uv = SampleSphericalMap(normalize(vertex_world_position));
-    params.base_color.rgb = texture(equirectangular_map, uv).rgb;
+    params.base_color.rgb = texture(sampler2D(equirectangular_map, equirectangular_sampler), uv).rgb;
     params.base_color.a = 1.0;
 }

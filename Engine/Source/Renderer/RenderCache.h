@@ -2,18 +2,68 @@
 #include "Core/GearDefine.h"
 #include "Utility/Hash.h"
 #include "RenderData.h"
+
 #include <Blast/Gfx/GfxDefine.h>
-#include <Blast/Gfx/GfxSampler.h>
-#include <Blast/Gfx/GfxTexture.h>
-#include <Blast/Gfx/GfxFramebuffer.h>
-#include <Blast/Gfx/GfxPipeline.h>
+
 #include <unordered_map>
 
 namespace gear {
     class Renderer;
+
+    // TODO:定期清理缓存
+    // TODO:支持多线程
+
+    class VertexLayoutCache {
+    public:
+        VertexLayoutCache();
+
+        ~VertexLayoutCache();
+
+        blast::GfxInputLayout* GetVertexLayout(VertexLayoutType type);
+
+    private:
+        std::unordered_map<VertexLayoutType, blast::GfxInputLayout*> input_layouts;
+    };
+
+    class RasterizerStateCache {
+    public:
+        RasterizerStateCache();
+
+        ~RasterizerStateCache();
+
+        blast::GfxRasterizerState* GetRasterizerState(RasterizerStateType type);
+
+    private:
+        std::unordered_map<RasterizerStateType, blast::GfxRasterizerState*> rasterizer_states;
+    };
+
+    class DepthStencilStateCache {
+    public:
+        DepthStencilStateCache();
+
+        ~DepthStencilStateCache();
+
+        blast::GfxDepthStencilState* GetDepthStencilState(DepthStencilStateType type);
+
+    private:
+        std::unordered_map<DepthStencilStateType, blast::GfxDepthStencilState*> depth_stencil_states;
+    };
+
+    class BlendStateCache {
+    public:
+        BlendStateCache();
+
+        ~BlendStateCache();
+
+        blast::GfxBlendState* GetDepthStencilState(BlendStateType type);
+
+    private:
+        std::unordered_map<BlendStateType, blast::GfxBlendState*> blend_states;
+    };
+
     class SamplerCache {
     public:
-        SamplerCache(Renderer* renderer);
+        SamplerCache();
 
         ~SamplerCache();
 
@@ -24,79 +74,38 @@ namespace gear {
             bool operator()(const blast::GfxSamplerDesc& desc1, const blast::GfxSamplerDesc& desc2) const;
         };
 
-        Renderer* _renderer = nullptr;
-        std::unordered_map<blast::GfxSamplerDesc, blast::GfxSampler*, MurmurHash<blast::GfxSamplerDesc>, SamplerCacheEq> _samplers;
+        std::unordered_map<blast::GfxSamplerDesc, blast::GfxSampler*, MurmurHash<blast::GfxSamplerDesc>, SamplerCacheEq> samplers;
     };
 
-    class TextureViewCache {
+    class RenderPassCache {
     public:
-        TextureViewCache(Renderer* renderer);
+        RenderPassCache();
 
-        ~TextureViewCache();
+        ~RenderPassCache();
 
-        blast::GfxTextureView* GetTextureView(const blast::GfxTextureViewDesc& desc);
-        
-    private:
-        struct TextureViewCacheEq {
-            bool operator()(const blast::GfxTextureViewDesc& desc1, const blast::GfxTextureViewDesc& desc2) const;
-        };
-
-        Renderer* _renderer = nullptr;
-        std::unordered_map<blast::GfxTextureViewDesc, blast::GfxTextureView*, MurmurHash<blast::GfxTextureViewDesc>, TextureViewCacheEq> _texture_views;
-    };
-
-    class FramebufferCache {
-    public:
-        FramebufferCache(Renderer* renderer);
-
-        ~FramebufferCache();
-
-        blast::GfxFramebuffer* GetFramebuffer(const blast::GfxFramebufferDesc& desc);
+        blast::GfxRenderPass* GetRenderPass(const blast::GfxRenderPassDesc& desc);
 
     private:
-        struct FramebufferEq {
-            bool operator()(const blast::GfxFramebufferDesc& desc1, const blast::GfxFramebufferDesc& desc2) const;
+        struct RenderPassEq {
+            bool operator()(const blast::GfxRenderPassDesc& desc1, const blast::GfxRenderPassDesc& desc2) const;
         };
 
-        Renderer* _renderer = nullptr;
-        std::unordered_map<blast::GfxFramebufferDesc, blast::GfxFramebuffer*, MurmurHash<blast::GfxFramebufferDesc>, FramebufferEq> _framebuffers;
+        std::unordered_map<blast::GfxRenderPassDesc, blast::GfxRenderPass*, MurmurHash<blast::GfxRenderPassDesc>, RenderPassEq> renderpasses;
     };
 
-    class GraphicsPipelineCache {
+    class PipelineCache {
     public:
-        GraphicsPipelineCache(Renderer* renderer);
+        PipelineCache();
 
-        ~GraphicsPipelineCache();
+        ~PipelineCache();
 
-        blast::GfxGraphicsPipeline* GetGraphicsPipeline(const blast::GfxGraphicsPipelineDesc& desc);
+        blast::GfxPipeline* GetPipeline(const blast::GfxPipelineDesc& desc);
 
     private:
         struct PipelineEq {
-            bool operator()(const blast::GfxGraphicsPipelineDesc& desc1, const blast::GfxGraphicsPipelineDesc& desc2) const;
+            bool operator()(const blast::GfxPipelineDesc& desc1, const blast::GfxPipelineDesc& desc2) const;
         };
 
-        Renderer* _renderer = nullptr;
-        std::unordered_map<blast::GfxGraphicsPipelineDesc, blast::GfxGraphicsPipeline*, MurmurHash<blast::GfxGraphicsPipelineDesc>, PipelineEq> _pipelines;
-    };
-
-    struct DescriptorBundle {
-        blast::GfxDescriptorSet* handles[2];
-    };
-
-    class DescriptorCache {
-    public:
-        DescriptorCache(Renderer* renderer);
-
-        ~DescriptorCache();
-
-        DescriptorBundle GetDescriptor(const DescriptorKey& key);
-
-    private:
-        struct DescriptorEq {
-            bool operator()(const DescriptorKey& key1, const DescriptorKey& key2) const;
-        };
-
-        Renderer* _renderer = nullptr;
-        std::unordered_map<DescriptorKey, DescriptorBundle, MurmurHash<DescriptorKey>, DescriptorEq> _descriptors;
+        std::unordered_map<blast::GfxPipelineDesc, blast::GfxPipeline*, MurmurHash<blast::GfxPipelineDesc>, PipelineEq> pipelines;
     };
 }

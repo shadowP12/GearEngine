@@ -10,7 +10,7 @@ namespace gear {
 
         ~MaterialCompiler();
 
-        Material* Compile(const std::string& code);
+        Material* Compile(const std::string& str, bool is_file);
 
     private:
         static void ProcessShadingModel(Material::Builder&, const std::string&);
@@ -19,6 +19,6 @@ namespace gear {
 
     private:
         using Callback = void(*)(Material::Builder*, const std::string&);
-        std::unordered_map<std::string, Callback> mParameters;
+        std::unordered_map<std::string, Callback> parameters;
     };
 }

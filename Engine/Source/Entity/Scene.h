@@ -1,5 +1,9 @@
 #pragma once
 #include "Utility/Event.h"
+#include "Renderer/RenderData.h"
+
+#include <Blast/Gfx/GfxDefine.h>
+
 #include <vector>
 
 namespace gear {
@@ -15,11 +19,24 @@ namespace gear {
         void RemoveEntity(Entity*);
 
     private:
-        void OnCMeshDirty(Entity*);
+        bool Prepare(blast::GfxCommandBuffer* cmd);
 
     private:
-        friend class RenderPipeline;
-        std::vector<Entity*> _entities;
-        uint32_t _num_renderables = 0;
+        friend class Renderer;
+        std::vector<Entity*> entities;
+        uint32_t num_mesh_entitys = 0;
+
+        uint32_t num_ui_renderables = 0;
+        std::vector<uint32_t> ui_renderables;
+        uint32_t num_mesh_renderables = 0;
+        std::vector<uint32_t> mesh_renderables;
+        std::vector<Renderable> renderables;
+        std::vector<RenderableUniforms> renderables_storage;
+
+        CameraInfo display_camera_info;
+        CameraInfo main_camera_info;
+        LightInfo light_info;
+
+        blast::GfxBuffer* renderables_ub = nullptr;
     };
 }

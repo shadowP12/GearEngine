@@ -20,7 +20,9 @@ namespace gear {
 
         std::stringstream& GenerateUniforms(std::stringstream& out, const std::unordered_map<std::string, blast::UniformType>& uniforms) const;
 
-        std::stringstream& GenerateSamplers(std::stringstream& out, const std::unordered_map<std::string, blast::TextureDimension>& samplers) const;
+        std::stringstream& GenerateTextures(std::stringstream& out, const std::unordered_map<std::string, blast::TextureDimension>& textures) const;
+
+        std::stringstream& GenerateSamplers(std::stringstream& out, const std::vector<std::string>& samplers) const;
 
         std::stringstream& GenerateCommonData(std::stringstream& out) const;
 

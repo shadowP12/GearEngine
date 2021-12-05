@@ -4,16 +4,16 @@
         "blending_mode": "transparent"
     },
     "vertex_layout": [
-        "ui"
+        "p_t0"
     ],
     "textures": [
         {
-            "name": "albedo_texture",
+            "name": "src_texture",
             "type": "texture_2d"
         }
     ],
     "samplers": [
-        "albedo_sampler"
+        "blit_sampler"
     ],
-    "fragment_file": "ui.fs"
+    "fragment_file": "blit.fs"
 }

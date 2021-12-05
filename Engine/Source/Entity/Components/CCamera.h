@@ -1,6 +1,5 @@
 #pragma once
 #include "Component.h"
-#include "Resource/RenderTarget.h"
 #include "Math/Math.h"
 
 namespace gear {
@@ -24,10 +23,6 @@ namespace gear {
         ComponentType GetType() override { return ComponentType::Camera; }
 
         void SetProjection(ProjectionType type, double left, double right, double bottom, double top, double near, double far);
-
-        void SetRenderTarget(RenderTarget* target);
-
-        RenderTarget* GetRenderTarget();
 
         glm::mat4 GetViewMatrix();
 
@@ -53,6 +48,5 @@ namespace gear {
         glm::mat4 _proj_matrix;
         bool _is_main = true;
         bool _is_display = true;
-        RenderTarget* _render_target = nullptr;
     };
 }

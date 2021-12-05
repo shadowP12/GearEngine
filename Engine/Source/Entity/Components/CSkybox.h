@@ -20,7 +20,6 @@ namespace gear {
         Texture* GetCubeMap() { return _cube_map; }
 
     private:
-        friend class RenderPipeline;
         Texture* _cube_map;
     };
 }

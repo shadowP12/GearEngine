@@ -1,48 +1,41 @@
 #pragma once
+#include "Core/GearDefine.h"
+
+namespace blast {
+    class GfxDevice;
+    class ShaderCompiler;
+}
 
 namespace gear {
-    class Scene;
     class Renderer;
-    class RenderPipeline;
-    class EntityManager;
-    class InputSystem;
     class MaterialCompiler;
     class BuiltinResources;
-    class RenderUtility;
-
+    class EntityManager;
     class GearEngine {
     public:
         GearEngine();
 
         ~GearEngine();
 
-        InputSystem* GetInputSystem();
+        blast::GfxDevice* GetDevice() { return device;}
 
-        EntityManager* GetEntityManager();
+        blast::ShaderCompiler* GetShaderCompiler() { return shader_compiler; }
 
-        Renderer* GetRenderer();
+        Renderer* GetRenderer() { return renderer; }
 
-        MaterialCompiler* GetMaterialCompiler();
+        MaterialCompiler* GetMaterialCompiler() { return material_compiler;}
 
-        BuiltinResources* GetBuiltinResources();
+        BuiltinResources* GetBuiltinResources() { return builtin_resources; }
 
-        RenderUtility* GetRenderUtility();
-
-        RenderPipeline* CreateRenderPipeline();
-
-        void DestroyRenderPipeline(RenderPipeline*);
-
-        Scene* CreateScene();
-
-        void DestroyScene(Scene*);
+        EntityManager* GetEntityManager() { return entity_manager; }
 
     private:
-        Renderer* _renderer = nullptr;
-        EntityManager* _entity_manager = nullptr;
-        InputSystem* _input_system = nullptr;
-        MaterialCompiler* _material_compiler = nullptr;
-        BuiltinResources* _builtin_resources = nullptr;
-        RenderUtility* _render_utility = nullptr;
+        blast::GfxDevice* device = nullptr;
+        blast::ShaderCompiler* shader_compiler = nullptr;
+        Renderer* renderer = nullptr;
+        MaterialCompiler* material_compiler = nullptr;
+        BuiltinResources* builtin_resources = nullptr;
+        EntityManager* entity_manager = nullptr;
     };
 
     extern GearEngine gEngine;

@@ -1,0 +1,51 @@
+#pragma once
+#include "Core/GearDefine.h"
+#include "Renderer/RenderData.h"
+#include "Math/Math.h"
+
+#include <Blast/Gfx/GfxDefine.h>
+
+#include <vector>
+
+namespace gear {
+    class Scene;
+    class BaseWindow;
+    class MaterialInstance;
+
+    class View {
+    public:
+        View();
+
+        ~View();
+
+        void SetSize(float w, float h);
+
+        void SetViewport(float x, float y, float w, float h);
+
+        void SetSampleCount(blast::SampleCount sm);
+
+        void SetWindow(BaseWindow* window) { this->window = window; }
+
+    private:
+        bool Prepare(blast::GfxCommandBuffer* cmd);
+
+        bool ResizeBuffers();
+
+    private:
+        friend class Renderer;
+        BaseWindow* window = nullptr;
+        glm::vec2 size;
+        glm::vec2 old_size;
+        glm::vec4 viewport;
+        blast::SampleCount sample_count = blast::SAMPLE_COUNT_1;
+        blast::SampleCount old_sample_count = blast::SAMPLE_COUNT_1;
+        blast::GfxSwapChain* swapchain = nullptr;
+        // MainRT支持多采样
+        blast::GfxTexture* main_rt = nullptr;
+        blast::GfxTexture* main_resolve_rt = nullptr;
+        // DepthRT支持多采样
+        blast::GfxTexture* depth_rt = nullptr;
+        blast::GfxTexture* depth_resolve_rt = nullptr;
+        blast::GfxRenderPass* renderpass = nullptr;
+    };
+}
