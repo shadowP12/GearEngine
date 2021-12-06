@@ -1,4 +1,4 @@
-﻿add_executable (GearEditor Source/main.cpp)
+﻿add_executable (GearEditor Source/main.cpp Source/CameraController.cpp)
 
 target_link_libraries(GearEditor PRIVATE GearEngine)
 

@@ -21,8 +21,11 @@
 #include <Resource/Material.h>
 #include <Resource/BuiltinResources.h>
 #include <MaterialCompiler/MaterialCompiler.h>
+#include <Input/InputSystem.h>
 
 #include <map>
+
+#include "CameraController.h"
 
 struct Vertex {
     float pos[3];
@@ -30,10 +33,10 @@ struct Vertex {
 };
 
 float vertices[] = {
-        -0.5f,  -0.5f, 0.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
-        -0.5f, 0.5f, 0.0f, 0.0f, 1.0f
+        -0.5f,  0.5f, 0.0f, 0.0f, 0.0f,
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
 };
 
 unsigned int indices[] = {
@@ -51,6 +54,9 @@ public:
         height = h;
         window_ptr = glfwGetWin32Window(glfw_window);
         glfwSetFramebufferSizeCallback(glfw_window, this->WindowSizeCallback);
+        glfwSetCursorPosCallback(glfw_window, CursorPositionCallback);
+        glfwSetMouseButtonCallback(glfw_window, MouseButtonCallback);
+        glfwSetScrollCallback(glfw_window, MouseScrollCallback);
         glfw_window_table[glfw_window] = this;
     }
 
@@ -66,10 +72,34 @@ public:
         glfw_window_table[window]->InternalWindowSizeCallback(w, h);
     }
 
+    static void CursorPositionCallback(GLFWwindow* window, double pos_x, double pos_y) {
+        glfw_window_table[window]->InternalCursorPositionCallback(pos_x, pos_y);
+    }
+
+    static void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+        glfw_window_table[window]->InternalMouseButtonCallback(button, action, mods);
+    }
+
+    static void MouseScrollCallback(GLFWwindow* window, double offset_x, double offset_y) {
+        glfw_window_table[window]->InternalMouseScrollCallback(offset_x, offset_y);
+    }
+
 private:
     void InternalWindowSizeCallback(int w, int h) {
         width = w;
         height = h;
+    }
+
+    void InternalCursorPositionCallback(double pos_x, double pos_y) {
+        gear::gEngine.GetInputSystem()->OnMousePosition(pos_x, pos_y);
+    }
+
+    void InternalMouseButtonCallback(int button, int action, int mods) {
+        gear::gEngine.GetInputSystem()->OnMouseButton(button, action);
+    }
+
+    void InternalMouseScrollCallback(double offset_x, double offset_y) {
+        gear::gEngine.GetInputSystem()->OnMouseScroll(offset_y);
     }
 
 private:
@@ -140,12 +170,14 @@ public:
 
             camera = gear::gEngine.GetEntityManager()->CreateEntity();
             camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-            //camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(6.0f, 6.0f, 12.0f));
+            camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 0.0f, 5.0f));
             //camera->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(-0.358f, 0.46f, 0.0f));
-            //camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.5, 45.0);
-            camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::ORTHO, -1.0, 1.0, 1.0, -1.0, 0.0, 1.0);
-
+            camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 100.0);
+            //camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::ORTHO, -1.0, 1.0, 1.0, -1.0, 0.0, 1.0);
             scene->AddEntity(camera);
+
+            camera_controller = new CameraController();
+            camera_controller->SetCamera(camera);
         }
     }
 
@@ -160,6 +192,7 @@ public:
         SAFE_DELETE(main_window);
         SAFE_DELETE(scene_view);
         SAFE_DELETE(scene);
+        SAFE_DELETE(camera_controller);
 
         glfwTerminate();
     };
@@ -193,6 +226,7 @@ private:
     gear::Material* quad_ma = nullptr;
     gear::MaterialInstance* quad_mi = nullptr;
     gear::Texture* quad_texture = nullptr;
+    CameraController* camera_controller = nullptr;
 };
 
 int main() {

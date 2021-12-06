@@ -11,6 +11,7 @@ namespace gear {
     class MaterialCompiler;
     class BuiltinResources;
     class EntityManager;
+    class InputSystem;
     class GearEngine {
     public:
         GearEngine();
@@ -29,6 +30,8 @@ namespace gear {
 
         EntityManager* GetEntityManager() { return entity_manager; }
 
+        InputSystem* GetInputSystem() { return input_system; }
+
     private:
         blast::GfxDevice* device = nullptr;
         blast::ShaderCompiler* shader_compiler = nullptr;
@@ -36,6 +39,7 @@ namespace gear {
         MaterialCompiler* material_compiler = nullptr;
         BuiltinResources* builtin_resources = nullptr;
         EntityManager* entity_manager = nullptr;
+        InputSystem* input_system = nullptr;
     };
 
     extern GearEngine gEngine;

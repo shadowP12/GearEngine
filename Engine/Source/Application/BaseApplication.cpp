@@ -2,6 +2,7 @@
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
 #include "Window/BaseWindow.h"
+#include "Input/InputSystem.h"
 
 #include <Blast/Gfx/GfxDevice.h>
 
@@ -16,5 +17,7 @@ namespace gear {
         Tick(dt);
         gEngine.GetDevice()->SubmitAllCommandBuffer();
         gEngine.GetRenderer()->RefreshCommandBuffer();
+
+        gear::gEngine.GetInputSystem()->Reset();
     }
 }

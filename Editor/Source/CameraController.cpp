@@ -2,10 +2,6 @@
 #include <GearEngine.h>
 #include <Utility/FileSystem.h>
 #include <Utility/Log.h>
-#include <RenderPipeline/RenderPipeline.h>
-#include <Resource/Material.h>
-#include <Resource/GpuBuffer.h>
-#include <Resource/Texture.h>
 #include <Entity/Scene.h>
 #include <Entity/Entity.h>
 #include <Entity/EntityManager.h>
@@ -14,7 +10,6 @@
 #include <Entity/Components/CMesh.h>
 #include <MaterialCompiler/MaterialCompiler.h>
 #include <Input/InputSystem.h>
-
 
 CameraController::CameraController() {
     _on_mouse_position_handle = gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Bind(CALLBACK_2(CameraController::OnMousePosition, this));

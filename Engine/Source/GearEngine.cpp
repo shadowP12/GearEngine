@@ -3,6 +3,7 @@
 #include "Renderer/Renderer.h"
 #include "MaterialCompiler/MaterialCompiler.h"
 #include "Resource/BuiltinResources.h"
+#include "Input/InputSystem.h"
 
 #include <Blast/Gfx/GfxDevice.h>
 #include <Blast/Gfx/Vulkan/VulkanDevice.h>
@@ -17,9 +18,11 @@ namespace gear {
         material_compiler = new MaterialCompiler();
         builtin_resources = new BuiltinResources();
         entity_manager = new EntityManager();
+        input_system = new InputSystem();
     }
 
     GearEngine::~GearEngine() {
+        SAFE_DELETE(input_system);
         SAFE_DELETE(shader_compiler);
         SAFE_DELETE(renderer);
         SAFE_DELETE(material_compiler);
