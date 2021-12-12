@@ -9,6 +9,7 @@ namespace blast {
 
 namespace gear {
     class View;
+
     class BaseWindow {
     public:
         BaseWindow();
@@ -24,6 +25,7 @@ namespace gear {
 
     protected:
         friend class View;
+        friend class Renderer;
         friend class BaseApplication;
         void* window_ptr = nullptr;
         uint32_t width = 0;

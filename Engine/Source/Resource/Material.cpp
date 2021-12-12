@@ -308,7 +308,10 @@ namespace gear {
     }
 
     void MaterialInstance::SetScissor(float x, float y, float w, float h) {
-
+        scissor.x = x;
+        scissor.y = y;
+        scissor.z = w;
+        scissor.w = h;
     }
 
 }

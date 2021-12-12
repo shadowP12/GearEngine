@@ -2,7 +2,6 @@
 #include "GearEngine.h"
 #include "EntityManager.h"
 #include "Entity/Entity.h"
-#include "GearEngine.h"
 #include "Components/CCamera.h"
 #include "Components/CLight.h"
 #include "Components/CMesh.h"

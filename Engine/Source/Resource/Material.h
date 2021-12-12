@@ -214,6 +214,8 @@ namespace gear {
 
         void SetScissor(float x, float y, float w, float h);
 
+        glm::vec4 GetScissor() { return scissor; }
+
     private:
         friend Material;
         Material* material = nullptr;
@@ -235,5 +237,7 @@ namespace gear {
         std::vector<std::string> samplers;
         std::unordered_map<std::string, SamplerSlot> sampler_slot_map;
         std::unordered_map<SamplerSlot, blast::GfxSamplerDesc> sampler_group;
+
+        glm::vec4 scissor = glm::vec4(0.0f, 0.0f, GEAR_INF, GEAR_INF);
     };
 }

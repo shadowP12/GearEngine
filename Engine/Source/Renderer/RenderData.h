@@ -112,6 +112,14 @@ namespace gear {
         RENDERABLE_UI = 1
     };
 
+    struct UIDrawElement {
+        uint32_t count = 0;
+        uint32_t offset = 0;
+        MaterialInstance* mi = nullptr;
+        VertexBuffer* vb = nullptr;
+        IndexBuffer* ib = nullptr;
+    };
+
     struct RenderPrimitive {
         bool cast_shadow = false;
         bool receive_shadow = true;
@@ -121,7 +129,7 @@ namespace gear {
         MaterialInstance* mi = nullptr;
         VertexBuffer* vb = nullptr;;
         IndexBuffer* ib = nullptr;;
-        UniformBuffer* material_ub = nullptr;;
+        UniformBuffer* material_ub = nullptr;
         blast::PrimitiveTopology topo = blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_LIST;
     };
 
@@ -172,4 +180,6 @@ namespace gear {
 
         uint32_t primitive_id = 0;
     };
+
+    uint32_t GetVertexLayoutStride(VertexLayoutType vertex_layout);
 }

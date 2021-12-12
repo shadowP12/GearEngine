@@ -12,6 +12,8 @@
 namespace gear {
     class View;
     class Scene;
+    class Canvas;
+    class BaseWindow;
     class VertexLayoutCache;
     class RasterizerStateCache;
     class DepthStencilStateCache;
@@ -37,10 +39,10 @@ namespace gear {
 
         void RenderScene(Scene* scene, View* view);
 
+        void RenderWindow(BaseWindow* window, uint32_t view_count, View** views, uint32_t canvas_count, Canvas** canvases);
+
     private:
         void BasePass(Scene* scene, View* view);
-
-        void Compose(Scene* scene, View* view);
 
     private:
         VertexLayoutCache* vertex_layout_cache = nullptr;
@@ -52,12 +54,14 @@ namespace gear {
         PipelineCache* pipeline_cache = nullptr;
         blast::GfxCommandBuffer* current_cmd = nullptr;
         /**
-         * 两个个view uniform buffer
+         * 三个view uniform buffer
          * 第一个用于场景/ui渲染
          * 第二个用于其他情况
+         * 第三个用于窗口渲染
          */
         blast::GfxBuffer* main_view_ub = nullptr;
         blast::GfxBuffer* common_view_ub = nullptr;
+        blast::GfxBuffer* window_view_ub = nullptr;
         blast::GfxBuffer* renderable_ub = nullptr;
 
         ViewUniforms view_storage;

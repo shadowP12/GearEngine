@@ -2,8 +2,9 @@
 #include "GearEngine.h"
 #include "RenderCache.h"
 #include "View/View.h"
+#include "Window/BaseWindow.h"
 #include "Entity/Scene.h"
-#include "Utility/FileSystem.h"
+#include "UI/Canvas.h"
 #include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
 #include "Resource/Material.h"
@@ -24,16 +25,13 @@ namespace gear {
         pipeline_cache = new PipelineCache();
 
         // 初始化渲染器资源
-        blast::GfxBufferDesc buffer_desc;
+        blast::GfxBufferDesc buffer_desc = {};
         buffer_desc.size = sizeof(ViewUniforms);
         buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
         buffer_desc.res_usage = blast::RESOURCE_USAGE_UNIFORM_BUFFER;
         main_view_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
-
-        buffer_desc.size = sizeof(ViewUniforms);
-        buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
-        buffer_desc.res_usage = blast::RESOURCE_USAGE_UNIFORM_BUFFER;
         common_view_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
+        window_view_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
 
         buffer_desc.size = sizeof(RenderableUniforms);
         buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
@@ -50,6 +48,7 @@ namespace gear {
         blast::GfxDevice* device = gEngine.GetDevice();
         device->DestroyBuffer(main_view_ub);
         device->DestroyBuffer(common_view_ub);
+        device->DestroyBuffer(window_view_ub);
         device->DestroyBuffer(renderable_ub);
 
         SAFE_DELETE(vertex_layout_cache);
@@ -82,8 +81,6 @@ namespace gear {
         device->UpdateBuffer(current_cmd, main_view_ub, &view_storage, sizeof(ViewUniforms));
 
         BasePass(scene, view);
-
-        Compose(scene, view);
     }
 
     void Renderer::BasePass(Scene* scene, View* view) {
@@ -200,60 +197,129 @@ namespace gear {
         }
     }
 
-    void Renderer::Compose(Scene* scene, View* view) {
-        if (!view->swapchain) {
+    void Renderer::RenderWindow(BaseWindow* window, uint32_t view_count, View** views, uint32_t canvas_count, Canvas** canvases) {
+        if (view_count == 0 && canvas_count == 0) {
             return;
         }
 
-        view_storage.view_matrix = glm::mat4(1.0f);
-        view_storage.proj_matrix = glm::mat4(1.0f);
+        blast::GfxSwapChain* swapchain = window->GetSwapChain();
+        if (!swapchain) {
+            return;
+        }
+
+        std::vector<View*> valid_views;
+        for (uint32_t i = 0; i < view_count; ++i) {
+            if (views[i]->Prepare(current_cmd)) {
+                valid_views.push_back(views[i]);
+            }
+        }
+
+        std::vector<Canvas*> valid_canvases;
+        for (uint32_t i = 0; i < canvas_count; ++i) {
+            if (canvases[i]->Prepare(current_cmd)) {
+                valid_canvases.push_back(canvases[i]);
+            }
+        }
 
         blast::GfxDevice* device = gEngine.GetDevice();
-        device->UpdateBuffer(current_cmd, common_view_ub, &view_storage, sizeof(ViewUniforms));
-        device->UpdateBuffer(current_cmd, renderable_ub, &identity_renderable_storage, sizeof(RenderableUniforms));
-
-        device->RenderPassBegin(current_cmd, view->swapchain);
 
         blast::Viewport viewport;
         viewport.x = 0;
         viewport.y = 0;
-        viewport.w = view->main_rt->desc.width;
-        viewport.h = view->main_rt->desc.height;
+        viewport.w = window->GetWidth();
+        viewport.h = window->GetHeight();
         device->BindViewports(current_cmd, 1, &viewport);
 
         blast::Rect rect;
         rect.left = 0;
         rect.top = 0;
-        rect.right = view->main_rt->desc.width;
-        rect.bottom = view->main_rt->desc.height;
-        device->BindScissorRects(current_cmd, 1, &rect);
+        rect.right = window->GetWidth();
+        rect.bottom = window->GetHeight();
 
-        device->BindConstantBuffer(current_cmd, common_view_ub, 1);
-        device->BindConstantBuffer(current_cmd, renderable_ub, 2);
+        view_storage.view_matrix = glm::mat4(1.0f);
+        view_storage.proj_matrix = glm::mat4(1.0f);
+        device->UpdateBuffer(current_cmd, common_view_ub, &view_storage, sizeof(ViewUniforms));
+        device->UpdateBuffer(current_cmd, renderable_ub, &identity_renderable_storage, sizeof(RenderableUniforms));
 
-        device->BindResource(current_cmd, view->main_rt, 0);
+        view_storage.view_matrix = glm::mat4(1.0f);
+        view_storage.proj_matrix = glm::ortho(0.0f, (float)window->GetWidth(), 0.0f, (float)window->GetHeight(), 0.0f, 10.0f);
+        device->UpdateBuffer(current_cmd, window_view_ub, &view_storage, sizeof(ViewUniforms));
 
-        blast::GfxSamplerDesc default_sampler = {};
-        device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);
+        device->RenderPassBegin(current_cmd, swapchain);
 
-        VertexBuffer* quad_buffer = gEngine.GetBuiltinResources()->GetQuadBuffer();
+        for (uint32_t i = 0; i < valid_views.size(); ++i) {
+            device->BindConstantBuffer(current_cmd, common_view_ub, 1);
+            device->BindConstantBuffer(current_cmd, renderable_ub, 2);
 
-        blast::GfxPipelineDesc pipeline_state = {};
-        pipeline_state.sc = view->swapchain;
-        pipeline_state.vs = gEngine.GetBuiltinResources()->GetBlitMaterial()->GetVertShader(0, quad_buffer->GetVertexLayoutType());
-        pipeline_state.fs = gEngine.GetBuiltinResources()->GetBlitMaterial()->GetFragShader(0, quad_buffer->GetVertexLayoutType());
-        pipeline_state.il = vertex_layout_cache->GetVertexLayout(quad_buffer->GetVertexLayoutType());
-        pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-        pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
-        pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+            device->BindResource(current_cmd, valid_views[i]->main_rt, 0);
 
-        device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+            blast::GfxSamplerDesc default_sampler = {};
+            device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);
 
-        uint64_t vertex_offsets[] = {0};
-        blast::GfxBuffer* vertex_buffers[] = {quad_buffer->GetHandle()};
-        device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+            VertexBuffer* quad_buffer = gEngine.GetBuiltinResources()->GetQuadBuffer();
 
-        device->Draw(current_cmd, 6, 0);
+            blast::GfxPipelineDesc pipeline_state = {};
+            pipeline_state.sc = swapchain;;
+            pipeline_state.vs = gEngine.GetBuiltinResources()->GetBlitMaterial()->GetVertShader(0, quad_buffer->GetVertexLayoutType());
+            pipeline_state.fs = gEngine.GetBuiltinResources()->GetBlitMaterial()->GetFragShader(0, quad_buffer->GetVertexLayoutType());
+            pipeline_state.il = vertex_layout_cache->GetVertexLayout(quad_buffer->GetVertexLayoutType());
+            pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+            pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+            pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+
+            device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+
+            uint64_t vertex_offsets[] = {0};
+            blast::GfxBuffer* vertex_buffers[] = {quad_buffer->GetHandle()};
+            device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+
+            device->Draw(current_cmd, 6, 0);
+        }
+
+        for (uint32_t i = 0; i < valid_canvases.size(); ++i) {
+
+            blast::GfxPipelineDesc pipeline_state = {};
+            pipeline_state.sc = swapchain;
+            for (uint32_t j = 0; j < valid_canvases[i]->draw_elements.size(); ++j) {
+                const UIDrawElement& element = valid_canvases[i]->draw_elements[j];
+
+                device->BindConstantBuffer(current_cmd, window_view_ub, 1);
+                device->BindConstantBuffer(current_cmd, renderable_ub, 2);
+
+                // 材质参数
+                for (auto& sampler_item : element.mi->GetGfxSamplerGroup()) {
+                    device->BindSampler(current_cmd, sampler_cache->GetSampler(sampler_item.second), sampler_item.first);
+                }
+
+                for (auto& texture_item : element.mi->GetGfxTextureGroup()) {
+                    device->BindResource(current_cmd, texture_item.second->GetTexture(), texture_item.first);
+                }
+
+                glm::vec4 scissor = element.mi->GetScissor();
+                rect.left = scissor.x;
+                rect.top = scissor.y;
+                rect.right = scissor.z;
+                rect.bottom = scissor.w;
+                device->BindScissorRects(current_cmd, 1, &rect);
+
+                pipeline_state.vs = element.mi->GetMaterial()->GetVertShader(0, element.vb->GetVertexLayoutType());
+                pipeline_state.fs = element.mi->GetMaterial()->GetFragShader(0, element.vb->GetVertexLayoutType());
+                pipeline_state.il = vertex_layout_cache->GetVertexLayout(element.vb->GetVertexLayoutType());
+                pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+                pipeline_state.bs = blend_state_cache->GetDepthStencilState(element.mi->GetMaterial()->GetBlendState());
+                pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+
+                device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+
+                uint64_t vertex_offsets[] = {0};
+                blast::GfxBuffer* vertex_buffers[] = {element.vb->GetHandle()};
+                device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+
+                device->BindIndexBuffer(current_cmd, element.ib->GetHandle(), element.ib->GetIndexType(), 0);
+
+                device->DrawIndexed(current_cmd, element.count, element.offset, 0);
+            }
+        }
 
         device->RenderPassEnd(current_cmd);
     }

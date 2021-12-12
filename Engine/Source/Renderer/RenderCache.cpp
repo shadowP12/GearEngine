@@ -71,7 +71,7 @@ namespace gear {
             uint32_t offset = 0;
             blast::GfxInputLayout::Element element;
             element.semantic = blast::SEMANTIC_POSITION;
-            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.format = blast::FORMAT_R32G32_FLOAT;
             element.location = 0;
             element.offset = offset;
             element.size = blast::GetFormatStride(element.format);
@@ -222,6 +222,7 @@ namespace gear {
     BlendStateCache::BlendStateCache() {
         {
             blast::GfxBlendState* bs = new blast::GfxBlendState();
+            bs->rt[0].blend_enable = false;
             bs->rt[0].src_factor = blast::BLEND_ONE;
             bs->rt[0].dst_factor = blast::BLEND_ZERO;
             bs->rt[0].src_factor_alpha = blast::BLEND_ONE;
@@ -232,6 +233,7 @@ namespace gear {
         {
             // 预乘
             blast::GfxBlendState* bs = new blast::GfxBlendState();
+            bs->rt[0].blend_enable = true;
             bs->rt[0].src_factor = blast::BLEND_ONE;
             bs->rt[0].dst_factor = blast::BLEND_ONE_MINUS_SRC_ALPHA;
             bs->rt[0].src_factor_alpha = blast::BLEND_ONE;

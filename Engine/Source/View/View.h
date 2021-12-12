@@ -24,8 +24,6 @@ namespace gear {
 
         void SetSampleCount(blast::SampleCount sm);
 
-        void SetWindow(BaseWindow* window) { this->window = window; }
-
     private:
         bool Prepare(blast::GfxCommandBuffer* cmd);
 
@@ -39,7 +37,6 @@ namespace gear {
         glm::vec4 viewport;
         blast::SampleCount sample_count = blast::SAMPLE_COUNT_1;
         blast::SampleCount old_sample_count = blast::SAMPLE_COUNT_1;
-        blast::GfxSwapChain* swapchain = nullptr;
         // MainRT支持多采样
         blast::GfxTexture* main_rt = nullptr;
         blast::GfxTexture* main_resolve_rt = nullptr;

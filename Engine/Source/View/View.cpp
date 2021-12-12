@@ -116,11 +116,6 @@ namespace gear {
             return false;
         }
 
-        swapchain = nullptr;
-        if (window) {
-            swapchain = window->GetSwapChain();
-        }
-
         return true;
     }
 

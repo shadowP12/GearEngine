@@ -3,6 +3,7 @@
 #include <GLFW/glfw3native.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <imgui.h>
 
 #include <Window/BaseWindow.h>
 #include <Application/BaseApplication.h>
@@ -22,6 +23,7 @@
 #include <Resource/BuiltinResources.h>
 #include <MaterialCompiler/MaterialCompiler.h>
 #include <Input/InputSystem.h>
+#include <UI/Canvas.h>
 
 #include <map>
 
@@ -118,10 +120,44 @@ public:
     }
 
     void Init() override {
+        gear::gEngine.GetBuiltinResources()->Initialize("./BuiltinResources/");
+
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        gear::gEngine.GetBuiltinResources()->Initialize("./BuiltinResources/");
+        // 初始化ImGui
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
+        io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
+        io.BackendPlatformName = "glfw";
+        io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
+        io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
+        io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
+        io.KeyMap[ImGuiKey_UpArrow] = GLFW_KEY_UP;
+        io.KeyMap[ImGuiKey_DownArrow] = GLFW_KEY_DOWN;
+        io.KeyMap[ImGuiKey_PageUp] = GLFW_KEY_PAGE_UP;
+        io.KeyMap[ImGuiKey_PageDown] = GLFW_KEY_PAGE_DOWN;
+        io.KeyMap[ImGuiKey_Home] = GLFW_KEY_HOME;
+        io.KeyMap[ImGuiKey_End] = GLFW_KEY_END;
+        io.KeyMap[ImGuiKey_Insert] = GLFW_KEY_INSERT;
+        io.KeyMap[ImGuiKey_Delete] = GLFW_KEY_DELETE;
+        io.KeyMap[ImGuiKey_Backspace] = GLFW_KEY_BACKSPACE;
+        io.KeyMap[ImGuiKey_Space] = GLFW_KEY_SPACE;
+        io.KeyMap[ImGuiKey_Enter] = GLFW_KEY_ENTER;
+        io.KeyMap[ImGuiKey_Escape] = GLFW_KEY_ESCAPE;
+        io.KeyMap[ImGuiKey_KeyPadEnter] = GLFW_KEY_KP_ENTER;
+        io.KeyMap[ImGuiKey_A] = GLFW_KEY_A;
+        io.KeyMap[ImGuiKey_C] = GLFW_KEY_C;
+        io.KeyMap[ImGuiKey_V] = GLFW_KEY_V;
+        io.KeyMap[ImGuiKey_X] = GLFW_KEY_X;
+        io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
+        io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
+        io.Fonts->AddFontFromFileTTF("./BuiltinResources/Fonts/Roboto-Medium.ttf", 16.0f);
+
+        mouse_position_cb_handle = gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Bind(ImGuiMousePositionCB, 100);
+        mouse_button_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseButtonEvent().Bind(ImGuiMouseButtonCB, 100);
+        mouse_scroll_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseScrollEvent().Bind(ImGuiMouseScrollCB, 100);
 
         main_window = new Window(800, 600);
         scene_view = new gear::View();
@@ -151,11 +187,21 @@ public:
             quad_texture->UpdateData(pixels);
             stbi_image_free(pixels);
 
+            io.Fonts->GetTexDataAsRGBA32(&pixels, &tex_width, &tex_height);
+            tex_builder.SetWidth(tex_width);
+            tex_builder.SetHeight(tex_height);
+            tex_builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
+            font_texture = tex_builder.Build();
+            font_texture->UpdateData(pixels);
+
+
             quad_ma = gear::gEngine.GetMaterialCompiler()->Compile("./BuiltinResources/Materials/blit.mat", true);
             quad_mi = quad_ma->CreateInstance();
             quad_mi->SetTexture("src_texture", quad_texture);
             blast::GfxSamplerDesc sampler_desc;
             quad_mi->SetSampler("blit_sampler", sampler_desc);
+
+            imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile("./BuiltinResources/Materials/ui.mat", true);
 
             quad = gear::gEngine.GetEntityManager()->CreateEntity();
             quad->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
@@ -176,6 +222,8 @@ public:
             //camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::ORTHO, -1.0, 1.0, 1.0, -1.0, 0.0, 1.0);
             scene->AddEntity(camera);
 
+            canvas = new gear::Canvas();
+
             camera_controller = new CameraController();
             camera_controller->SetCamera(camera);
         }
@@ -185,15 +233,23 @@ public:
         gear::gEngine.GetEntityManager()->DestroyEntity(quad);
         gear::gEngine.GetEntityManager()->DestroyEntity(camera);
         SAFE_DELETE(quad_texture);
+        SAFE_DELETE(font_texture);
         SAFE_DELETE(quad_vb);
         SAFE_DELETE(quad_ib);
         SAFE_DELETE(quad_mi);
         SAFE_DELETE(quad_ma);
+        for (int i = 0; i < imgui_mis.size(); ++i) {
+            SAFE_DELETE(imgui_mis[i]);
+        }
+        imgui_mis.clear();
+        SAFE_DELETE(imgui_ma);
         SAFE_DELETE(main_window);
         SAFE_DELETE(scene_view);
+        SAFE_DELETE(canvas);
         SAFE_DELETE(scene);
         SAFE_DELETE(camera_controller);
 
+        ImGui::DestroyContext();
         glfwTerminate();
     };
 
@@ -208,16 +264,110 @@ protected:
     void Tick(float dt) override {
         glfwPollEvents();
 
-        // 将场景绘制到窗口上
-        scene_view->SetWindow(main_window);
+        // 构建ImGui
+        ImGuiIO& io = ImGui::GetIO();
+        io.DeltaTime = dt;
+        io.DisplaySize = ImVec2((float)main_window->GetWidth(), (float)main_window->GetHeight());
+        io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+        io.MousePos.x = gear::gEngine.GetInputSystem()->GetMousePosition().x;
+        io.MousePos.y = gear::gEngine.GetInputSystem()->GetMousePosition().y;
+        io.MouseWheel = gear::gEngine.GetInputSystem()->GetMouseScrollWheel();
+        for (int i = 0; i < 3; i++) {
+            io.MouseDown[i] = gear::gEngine.GetInputSystem()->GetMouseButtonDown(i) || gear::gEngine.GetInputSystem()->GetMouseButtonHeld(i);
+        }
+
+        ImGui::NewFrame();
+        bool show_demo_window = true;
+        ImGui::ShowDemoWindow(&show_demo_window);
+        ImGui::Render();
+
+        canvas->Begin();
+        ImDrawData* commands = ImGui::GetDrawData();
+        uint32_t num_prims = 0;
+        for (int cmdListIndex = 0; cmdListIndex < commands->CmdListsCount; cmdListIndex++) {
+            const ImDrawList* cmds = commands->CmdLists[cmdListIndex];
+            num_prims += cmds->CmdBuffer.size();
+        }
+
+        uint32_t previous_size = imgui_mis.size();
+        if (num_prims > imgui_mis.size()) {
+            imgui_mis.resize(num_prims);
+            for (size_t i = previous_size; i < imgui_mis.size(); i++) {
+                imgui_mis[i] = imgui_ma->CreateInstance();
+                imgui_mis[i]->SetTexture("albedo_texture", font_texture);
+                blast::GfxSamplerDesc sampler_desc;
+                imgui_mis[i]->SetSampler("albedo_sampler", sampler_desc);
+            }
+        }
+
+        uint32_t prim_index = 0;
+        for (uint32_t cmd_list_index = 0; cmd_list_index < commands->CmdListsCount; cmd_list_index++) {
+            const ImDrawList* cmds = commands->CmdLists[cmd_list_index];
+            uint32_t index_offset = 0;
+
+            gear::Canvas::Batch canvas_batch;
+            canvas_batch.vertex_data = (uint8_t*)(cmds->VtxBuffer.Data);
+            canvas_batch.vertex_count = cmds->VtxBuffer.Size;
+            canvas_batch.vertex_layout = gear::VLT_UI;
+            canvas_batch.index_data = (uint8_t*)(cmds->IdxBuffer.Data);
+            canvas_batch.index_count = cmds->IdxBuffer.Size;
+            canvas_batch.index_type = blast::INDEX_TYPE_UINT16;
+
+            for (const auto& pcmd : cmds->CmdBuffer) {
+                if (pcmd.UserCallback) {
+                    pcmd.UserCallback(cmds, &pcmd);
+                } else {
+                    gear::Canvas::Element canvas_element;
+                    gear::MaterialInstance* imgui_mi = imgui_mis[prim_index];
+                    imgui_mi->SetScissor( pcmd.ClipRect.x, pcmd.ClipRect.y, pcmd.ClipRect.z, pcmd.ClipRect.w);
+                    canvas_element.mi = imgui_mi;
+                    canvas_element.count = pcmd.ElemCount;
+                    canvas_element.offset = index_offset;
+                    canvas_batch.elements.push_back(canvas_element);
+                    prim_index++;
+                }
+                index_offset += pcmd.ElemCount;
+            }
+            canvas->AddBatch(canvas_batch);
+        }
+        canvas->End();
+
+        // 绘制场景
         scene_view->SetSize(main_window->GetWidth(), main_window->GetHeight());
         scene_view->SetViewport(0, 0, main_window->GetWidth(), main_window->GetHeight());
         gear::gEngine.GetRenderer()->RenderScene(scene, scene_view);
+
+        // 绘制到window上
+        gear::View* views[] = { scene_view };
+        gear::Canvas* canvases[] = { canvas };
+        gear::gEngine.GetRenderer()->RenderWindow(main_window, 1, views, 1, canvases);
     };
+
+    static void ImGuiMousePositionCB(float x, float y) {
+        // 当鼠标处于imgui控件内，则截断输入对应的输入事件
+        if (ImGui::IsWindowHovered(1 << 2)) {
+            gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Block();
+        }
+    }
+
+    static void ImGuiMouseButtonCB(int button, int action) {
+        // 当鼠标处于imgui控件内，则截断输入对应的输入事件
+        if (ImGui::IsWindowHovered(1 << 2)) {
+            gear::gEngine.GetInputSystem()->GetOnMouseButtonEvent().Block();
+        }
+    }
+
+    static void ImGuiMouseScrollCB(float offset) {
+        // 当鼠标处于imgui控件内，则截断输入对应的输入事件
+        if (ImGui::IsWindowHovered(1 << 2)) {
+            gear::gEngine.GetInputSystem()->GetOnMouseScrollEvent().Block();
+        }
+    }
 
 private:
     Window* main_window = nullptr;
     gear::Scene* scene = nullptr;
+    gear::Canvas* canvas = nullptr;
     gear::View* scene_view = nullptr;
     gear::Entity* camera = nullptr;
     gear::Entity* quad = nullptr;
@@ -225,15 +375,25 @@ private:
     gear::IndexBuffer* quad_ib = nullptr;
     gear::Material* quad_ma = nullptr;
     gear::MaterialInstance* quad_mi = nullptr;
+    gear::Material* imgui_ma = nullptr;
+    std::vector<gear::MaterialInstance*> imgui_mis;
     gear::Texture* quad_texture = nullptr;
+    gear::Texture* font_texture = nullptr;
     CameraController* camera_controller = nullptr;
+    EventHandle mouse_position_cb_handle;
+    EventHandle mouse_button_cb_handle;
+    EventHandle mouse_scroll_cb_handle;
 };
 
 int main() {
+    double time = 0.0;
     Application app;
     app.Init();
     while (!app.ShouldClose()) {
-        app.Run(1.0f);
+        double current_time = glfwGetTime();
+        float dt = time > 0.0 ? (float)(current_time - time) : (float)(1.0f / 60.0f);
+        time = current_time;
+        app.Run(dt);
     }
     app.Exit();
     return 0;
