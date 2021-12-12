@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+
 #include <Renderer/RenderData.h>
 
 namespace gear {
@@ -23,7 +24,7 @@ struct GltfAsset {
 };
 
 struct alignas(4) GltfMaterialConfig {
-    gear::BlendingMode blending_mode;
+    gear::BlendStateType blending_mode;
     bool has_base_color_tex = false;
     bool has_normal_tex = false;
     bool has_metallic_roughness_tex = false;

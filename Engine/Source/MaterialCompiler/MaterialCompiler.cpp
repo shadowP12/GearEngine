@@ -147,10 +147,6 @@ namespace gear {
         }
 
         // 生成所有可用的变体
-        if (support_vertex_layouts.size() == 0) {
-            int m = 2;
-        }
-
         for (auto vertex_layout : support_vertex_layouts) {
             blast::ShaderSemantic attributes;
             if (vertex_layout == VLT_P) {

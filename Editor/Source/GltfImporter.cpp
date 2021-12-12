@@ -1,5 +1,6 @@
 #include "GltfImporter.h"
 #include "TextureImporter.h"
+
 #include <Utility/Log.h>
 #include <Utility/Hash.h>
 #include <Resource/GpuBuffer.h>
@@ -42,9 +43,11 @@ static char* g_gltf_material_code =
         "       \"blending_mode\": \"${BLENDING_MODE}\"\n"
         "   },\n"
         "   \"require\": [\n"
-        "       \"uv0\"\n"
+        "       \"static_mesh,\"\n"
+        "       \"skin_mesh\"\n"
         "   ],\n"
         "   ${UNIFORMS}\n"
+        "   ${TEXTURES}\n"
         "   ${SAMPLERS}\n"
         "   \"fragment_code\": \"${FRAG_SHADER}\"\n"
         "}\n";
@@ -61,10 +64,8 @@ gear::Material* GenMaterial(GltfMaterialConfig& config) {
     std::string code = g_gltf_material_code;
 
     // 设置混合模式
-    if (config.blending_mode == gear::BlendingMode::BLENDING_MODE_OPAQUE) {
+    if (config.blending_mode == gear::BlendStateType::BST_OPAQUE) {
         Replace(code, "${BLENDING_MODE}", "opaque");
-    } else if (config.blending_mode == gear::BlendingMode::BLENDING_MODE_MASKED) {
-        Replace(code, "${BLENDING_MODE}", "masked");
     } else {
         Replace(code, "${BLENDING_MODE}", "transparent");
     }
@@ -84,41 +85,52 @@ gear::Material* GenMaterial(GltfMaterialConfig& config) {
 
     Replace(code, "${UNIFORMS}", uniforms_code);
 
-    // 设置samplers变量
+    // 设置textures/samplers变量
+    std::string textures_code = "";
     std::string samplers_code = "";
     if (config.has_base_color_tex || config.has_normal_tex || config.has_metallic_roughness_tex) {
+        textures_code += "textures [\n";
         samplers_code += "samplers [\n";
     }
     if (config.has_base_color_tex) {
-        samplers_code += "{\n";
-        samplers_code += "\"name\": \"base_color_texture\",\n";
-        samplers_code += "\"type\": \"sampler_2d\"\n";
-        samplers_code += "},\n";
+        textures_code += "{\n";
+        textures_code += "\"name\": \"base_color_texture\",\n";
+        textures_code += "\"type\": \"texture_2d\"\n";
+        textures_code += "},\n";
+
+        samplers_code += "base_color_sampler,\n";
     }
 
     if (config.has_normal_tex) {
-        samplers_code += "{\n";
-        samplers_code += "\"name\": \"normal_texture\",\n";
-        samplers_code += "\"type\": \"sampler_2d\"\n";
-        samplers_code += "},\n";
+        textures_code += "{\n";
+        textures_code += "\"name\": \"normal_texture\",\n";
+        textures_code += "\"type\": \"texture_2d\"\n";
+        textures_code += "},\n";
+
+        samplers_code += "normal_sampler,\n";
     }
 
     if (config.has_metallic_roughness_tex) {
-        samplers_code += "{\n";
-        samplers_code += "\"name\": \"metallic_roughness_texture\",\n";
-        samplers_code += "\"type\": \"sampler_2d\"\n";
-        samplers_code += "},\n";
+        textures_code += "{\n";
+        textures_code += "\"name\": \"metallic_roughness_texture\",\n";
+        textures_code += "\"type\": \"texture_2d\"\n";
+        textures_code += "},\n";
+
+        samplers_code += "metallic_roughness_sampler,\n";
     }
     if (config.has_base_color_tex || config.has_normal_tex || config.has_metallic_roughness_tex) {
+        textures_code += "],";
         samplers_code += "],";
     }
+    Replace(code, "${TEXTURES}", textures_code);
     Replace(code, "${SAMPLERS}", samplers_code);
 
     // 设置shader代码
     std::string frag_shader_code = "";
     frag_shader_code += "void ProcessMaterialFragmentParams(inout MaterialFragmentParams params) {\\n";
     if (config.has_base_color_tex) {
-        frag_shader_code += "params.base_color = texture(base_color_texture, vertex_uv01.xy);\\n";
+        frag_shader_code += "params.base_color = texture(sampler2D(base_color_texture, base_color_sampler), vertex_uv01.xy);\\n";
+        frag_shader_code += "params.base_color.rgb *= params.base_color.a;\\n";
     } else {
         frag_shader_code += "params.base_color = material_uniforms.base_color;\\n";
         frag_shader_code += "params.base_color.rgb *= params.base_color.a;\\n";
@@ -134,7 +146,7 @@ gear::Material* GenMaterial(GltfMaterialConfig& config) {
     frag_shader_code += "}\\n";
     Replace(code, "${FRAG_SHADER}", frag_shader_code);
 
-    gear::Material* material = gear::gEngine.GetMaterialCompiler()->Compile(code);
+    gear::Material* material = gear::gEngine.GetMaterialCompiler()->Compile(code, false);
     return material;
 }
 
@@ -181,11 +193,9 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
         cgltf_material* cmaterial = &data->materials[i];
         GltfMaterialConfig config;
         if (cmaterial->alpha_mode == cgltf_alpha_mode_opaque) {
-            config.blending_mode = gear::BlendingMode::BLENDING_MODE_OPAQUE;
-        } else if(cmaterial->alpha_mode == cgltf_alpha_mode_mask) {
-            config.blending_mode = gear::BlendingMode::BLENDING_MODE_MASKED;
+            config.blending_mode = gear::BlendStateType::BST_OPAQUE;
         } else {
-            config.blending_mode = gear::BlendingMode::BLENDING_MODE_TRANSPARENT;
+            config.blending_mode = gear::BlendStateType::BST_TRANSPARENT;
         }
 
         if(cmaterial->pbr_metallic_roughness.base_color_texture.texture) {
@@ -227,7 +237,8 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             cgltf_image* cimage = cmaterial->pbr_metallic_roughness.base_color_texture.texture->image;
             cgltf_sampler* csampler = cmaterial->pbr_metallic_roughness.base_color_texture.texture->sampler;
             blast::GfxSamplerDesc sampler_desc;
-            material_instance->SetTexture("base_color_texture", image_helper[cimage], sampler_desc);
+            material_instance->SetTexture("base_color_texture", image_helper[cimage]);
+            material_instance->SetSampler("base_color_sampler", sampler_desc);
         }
 
         if(cmaterial->normal_texture.texture) {
@@ -235,7 +246,8 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             cgltf_image* cimage = cmaterial->normal_texture.texture->image;
             cgltf_sampler* csampler = cmaterial->normal_texture.texture->sampler;
             blast::GfxSamplerDesc sampler_desc;
-            material_instance->SetTexture("normal_texture", image_helper[cimage], sampler_desc);
+            material_instance->SetTexture("normal_texture", image_helper[cimage]);
+            material_instance->SetSampler("normal_sampler", sampler_desc);
         }
 
         if(cmaterial->pbr_metallic_roughness.metallic_roughness_texture.texture) {
@@ -243,7 +255,8 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             cgltf_image* cimage = cmaterial->pbr_metallic_roughness.metallic_roughness_texture.texture->image;
             cgltf_sampler* csampler = cmaterial->pbr_metallic_roughness.metallic_roughness_texture.texture->sampler;
             blast::GfxSamplerDesc sampler_desc;
-            material_instance->SetTexture("metallic_roughness_texture", image_helper[cimage], sampler_desc);
+            material_instance->SetTexture("metallic_roughness_texture", image_helper[cimage]);
+            material_instance->SetSampler("metallic_roughness_sampler", sampler_desc);
         }
     }
 
@@ -313,32 +326,14 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             cgltf_primitive* cprimitive = &cmesh->primitives[i];
             cgltf_material* cmaterial = cprimitive->material;
 
-            gear::VertexBuffer::Builder vb_builder;
-            uint32_t vertexCount = GetGltfAttribute(cprimitive, cgltf_attribute_type_position)->data->count;
-            vb_builder.SetVertexCount(vertexCount);
-            vb_builder.SetAttribute(blast::SEMANTIC_POSITION, blast::FORMAT_R32G32B32_FLOAT);
-
-            if(HasGltfAttribute(cprimitive, cgltf_attribute_type_texcoord)) {
-                vb_builder.SetAttribute(blast::SEMANTIC_TEXCOORD0, blast::FORMAT_R32G32_FLOAT);
-            }
-
-            if(HasGltfAttribute(cprimitive, cgltf_attribute_type_normal)) {
-                vb_builder.SetAttribute(blast::SEMANTIC_NORMAL, blast::FORMAT_R32G32B32_FLOAT);
-                vb_builder.SetAttribute(blast::SEMANTIC_TANGENT, blast::FORMAT_R32G32B32_FLOAT);
-                vb_builder.SetAttribute(blast::SEMANTIC_BITANGENT, blast::FORMAT_R32G32B32_FLOAT);
-            }
-
-            if(HasGltfAttribute(cprimitive, cgltf_attribute_type_color)) {
-                vb_builder.SetAttribute(blast::SEMANTIC_COLOR, blast::FORMAT_R32G32B32_FLOAT);
-            }
-
+            gear::VertexLayoutType vertex_layout = gear::VLT_STATIC_MESH;
             if(HasGltfAttribute(cprimitive, cgltf_attribute_type_joints)) {
                 // TODO: joints and weights
+                //vertex_layout = gear::VLT_SKIN_MESH;
             }
-
-            gear::VertexBuffer* vertex_buffer = vb_builder.Build();
-            uint8_t* vertexData = new uint8_t[vertex_buffer->GetSize()];
-            uint32_t vertexStride = 0;
+            uint32_t vertex_count = GetGltfAttribute(cprimitive, cgltf_attribute_type_position)->data->count;
+            uint32_t vertex_stride = gear::GetVertexLayoutStride(vertex_layout);
+            uint32_t vertex_buffer_size = vertex_count * vertex_stride;
 
             uint32_t positionOffset = -1;
             uint32_t colorOffset = -1;
@@ -367,42 +362,45 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             uint32_t jointDataSize = 0;
             uint32_t weightDataSize = 0;
 
-            blast::GfxVertexLayout vertex_layout = vertex_buffer->GetVertexLayout();
-            for (int j = 0; j < vertex_layout.num_attributes; ++j) {
-                if (vertex_layout.attributes[j].semantic == blast::SEMANTIC_POSITION) {
-                    positionOffset = vertex_layout.attributes[j].offset;
-                    positionAttributeSize = vertex_layout.attributes[j].size;
-                    positionDataSize = vertex_layout.attributes[j].size * vertexCount;
-                } else if (vertex_layout.attributes[j].semantic == blast::SEMANTIC_COLOR) {
-                    colorOffset = vertex_layout.attributes[j].offset;
-                    colorAttributeSize = vertex_layout.attributes[j].size;
-                    colorDataSize = vertex_layout.attributes[j].size * vertexCount;
-                } else if (vertex_layout.attributes[j].semantic == blast::SEMANTIC_TEXCOORD0) {
-                    uvOffset = vertex_layout.attributes[j].offset;
-                    uvAttributeSize = vertex_layout.attributes[j].size;
-                    uvDataSize = vertex_layout.attributes[j].size * vertexCount;
-                } else if (vertex_layout.attributes[j].semantic == blast::SEMANTIC_NORMAL) {
-                    normalOffset = vertex_layout.attributes[j].offset;
-                    normalAttributeSize = vertex_layout.attributes[j].size;
-                    normalDataSize = vertex_layout.attributes[j].size * vertexCount;
-                } else if (vertex_layout.attributes[j].semantic == blast::SEMANTIC_TANGENT) {
-                    tangentOffset = vertex_layout.attributes[j].offset;
-                    tangentAttributeSize = vertex_layout.attributes[j].size;
-                    tangentDataSize = vertex_layout.attributes[j].size * vertexCount;
-                } else if (vertex_layout.attributes[j].semantic == blast::SEMANTIC_BITANGENT) {
-                    bitangentOffset = vertex_layout.attributes[j].offset;
-                    bitangentAttributeSize = vertex_layout.attributes[j].size;
-                    bitangentDataSize = vertex_layout.attributes[j].size * vertexCount;
-                } else if (vertex_layout.attributes[j].semantic == blast::SEMANTIC_JOINTS) {
-                    jointOffset = vertex_layout.attributes[j].offset;
-                    jointAttributeSize = vertex_layout.attributes[j].size;
-                    jointDataSize = vertex_layout.attributes[j].size * vertexCount;
-                } else if (vertex_layout.attributes[j].semantic == blast::SEMANTIC_WEIGHTS) {
-                    weightOffset = vertex_layout.attributes[j].offset;
-                    weightAttributeSize = vertex_layout.attributes[j].size;
-                    weightDataSize = vertex_layout.attributes[j].size * vertexCount;
-                }
-                vertexStride += vertex_layout.attributes[j].size;
+            bool uv_data_empty = false;
+            bool normal_data_empty = false;
+
+            uint32_t vertex_buffer_offset = 0;
+            {
+                positionOffset = vertex_buffer_offset;
+                positionAttributeSize = sizeof(glm::vec3);
+                positionDataSize = positionAttributeSize * vertex_count;
+                vertex_buffer_offset += positionAttributeSize;
+            }
+            {
+                uvOffset = vertex_buffer_offset;
+                uvAttributeSize = sizeof(glm::vec2);
+                uvDataSize = uvAttributeSize * vertex_count;
+                vertex_buffer_offset += uvAttributeSize;
+            }
+            {
+                normalOffset = vertex_buffer_offset;
+                normalAttributeSize = sizeof(glm::vec3);
+                normalDataSize = normalAttributeSize * vertex_count;
+                vertex_buffer_offset += normalAttributeSize;
+            }
+            {
+                tangentOffset = vertex_buffer_offset;
+                tangentAttributeSize = sizeof(glm::vec3);
+                tangentDataSize = tangentAttributeSize * vertex_count;
+                vertex_buffer_offset += tangentAttributeSize;
+            }
+            {
+                bitangentOffset = vertex_buffer_offset;
+                bitangentAttributeSize = sizeof(glm::vec3);
+                bitangentDataSize = bitangentAttributeSize * vertex_count;
+                vertex_buffer_offset += bitangentAttributeSize;
+            }
+            {
+                //TODO:joint
+            }
+            {
+                //TODO:Weight
             }
 
             // 获取顶点数据
@@ -421,7 +419,6 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
                 cgltf_accessor* posAccessor = positionAttribute->data;
                 cgltf_buffer_view* posView = posAccessor->buffer_view;
                 positionData = (uint8_t*)(posView->buffer->data) + posAccessor->offset + posView->offset;
-                vertexCount = posAccessor->count;
 
                 const float* minp = &posAccessor->min[0];
                 const float* maxp = &posAccessor->max[0];
@@ -429,41 +426,30 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
                 bbox.Grow(glm::vec3(maxp[0], maxp[1], maxp[2]));
             }
 
-            if (colorOffset != -1) {
-                cgltf_attribute* colorAttribute = GetGltfAttribute(cprimitive, cgltf_attribute_type_color);
-                cgltf_accessor* colorAccessor = colorAttribute->data;
-                cgltf_buffer_view* colorView = colorAccessor->buffer_view;
-                colorData = (uint8_t*)(colorView->buffer->data) + colorAccessor->offset + colorView->offset;
-            }
-
-            if (uvOffset != -1) {
+            if (GetGltfAttribute(cprimitive, cgltf_attribute_type_texcoord)) {
                 cgltf_attribute* texcoordAttribute = GetGltfAttribute(cprimitive, cgltf_attribute_type_texcoord);
                 cgltf_accessor* texcoordAccessor = texcoordAttribute->data;
                 cgltf_buffer_view* texcoordView = texcoordAccessor->buffer_view;
                 uvData = (uint8_t *) (texcoordView->buffer->data) + texcoordAccessor->offset + texcoordView->offset;
             }
 
-            if (normalOffset != -1) {
+            if (GetGltfAttribute(cprimitive, cgltf_attribute_type_normal)) {
                 cgltf_attribute* normalAttribute = GetGltfAttribute(cprimitive, cgltf_attribute_type_normal);
                 cgltf_accessor* normalAccessor = normalAttribute->data;
                 cgltf_buffer_view* normalView = normalAccessor->buffer_view;
                 normalData = (uint8_t*)(normalView->buffer->data) + normalAccessor->offset + normalView->offset;
-            }
 
-            if (tangentOffset != -1) {
                 cgltf_attribute* tangentAttribute = GetGltfAttribute(cprimitive, cgltf_attribute_type_tangent);
                 cgltf_accessor *tangentAccessor = tangentAttribute->data;
                 cgltf_buffer_view *tangentView = tangentAccessor->buffer_view;
                 tangentData = (uint8_t*)(tangentView->buffer->data) + tangentAccessor->offset + tangentView->offset;
-            }
 
-            if (bitangentOffset != -1) {
                 // 计算副切线
-                bitangentData = new uint8_t[vertexCount * sizeof(glm::vec3)];
+                bitangentData = new uint8_t[vertex_count * sizeof(glm::vec3)];
                 float* normals = (float*)normalData;
                 float* tangents = (float*)tangentData;
                 float* bitangents = (float*)bitangentData;
-                for (int j = 0; j < vertexCount; ++j) {
+                for (int j = 0; j < vertex_count; ++j) {
                     glm::vec3 noraml = glm::vec3(normals[j * 3], normals[j * 3 + 1], normals[j * 3 + 2]);
                     glm::vec3 tangent = glm::vec3(tangents[j * 3], tangents[j * 3 + 1], tangents[j * 3 + 2]);
                     glm::vec3 bitangent = glm::cross(noraml, tangent);
@@ -473,54 +459,89 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
                 }
             }
 
-            if (jointOffset != -1) {
+            if (GetGltfAttribute(cprimitive, cgltf_attribute_type_joints)) {
                 cgltf_attribute* jointsAttribute = GetGltfAttribute(cprimitive, cgltf_attribute_type_joints);
                 cgltf_accessor* jointsAccessor = jointsAttribute->data;
                 cgltf_buffer_view* jointsView = jointsAccessor->buffer_view;
                 jointData = (uint8_t*)(jointsView->buffer->data) + jointsAccessor->offset + jointsView->offset;
-            }
 
-            if (weightOffset != -1) {
-                cgltf_attribute* weightsAttributes = nullptr;
+                cgltf_attribute* weightsAttributes = GetGltfAttribute(cprimitive, cgltf_attribute_type_weights);
                 cgltf_accessor* weightsAccessor = weightsAttributes->data;
                 cgltf_buffer_view* weightsView = weightsAccessor->buffer_view;
                 weightData = (uint8_t*)(weightsView->buffer->data) + weightsAccessor->offset + weightsView->offset;
             }
 
+            // 填充空缺数据
+            if (!uvData || normalData) {
+                float* uvs = nullptr;
+                if (!uvData) {
+                    uv_data_empty = true;
+                    uvData = new uint8_t[vertex_count * sizeof(glm::vec2)];
+                    uvs = (float*)normalData;
+                }
+
+                float* normals = nullptr;
+                float* tangents = nullptr;
+                float* bitangents = nullptr;
+                if (!normalData) {
+                    normal_data_empty = true;
+                    normalData = new uint8_t[vertex_count * sizeof(glm::vec3)];
+                    tangentData = new uint8_t[vertex_count * sizeof(glm::vec3)];
+                    bitangentData = new uint8_t[vertex_count * sizeof(glm::vec3)];
+                    normals = (float*)normalData;
+                    tangents = (float*)tangentData;
+                    bitangents = (float*)bitangentData;
+                }
+
+                for (int j = 0; j < vertex_count; ++j) {
+                    if (!uvData) {
+                        uvs[j * 2] = 0.0f;
+                        uvs[j * 2 + 1] = 0.0f;
+                    }
+
+                    if (!normalData) {
+                        normals[j * 3] = 1.0f;
+                        normals[j * 3 + 1] = 0.0f;
+                        normals[j * 3 + 2] = 0.0f;
+
+                        tangents[j * 3] = 0.0f;
+                        tangents[j * 3 + 1] = 1.0f;
+                        tangents[j * 3 + 2] = 0.0f;
+
+                        bitangents[j * 3] = 0.0f;
+                        bitangents[j * 3 + 1] = 0.0f;
+                        bitangents[j * 3 + 2] = 1.0f;
+                    }
+                }
+            }
+
             // 组装数据
-            if (positionOffset != -1) {
-                CombindVertexData(vertexData, positionData, vertexCount, positionAttributeSize, positionOffset, vertexStride, positionDataSize);
+            uint8_t* vertexData = new uint8_t[vertex_buffer_size];
+            if (vertex_layout == gear::VLT_STATIC_MESH) {
+                CombindVertexData(vertexData, positionData, vertex_count, positionAttributeSize, positionOffset, vertex_stride, positionDataSize);
+                CombindVertexData(vertexData, uvData, vertex_count, uvAttributeSize, uvOffset, vertex_stride, uvDataSize);
+                CombindVertexData(vertexData, normalData, vertex_count, normalAttributeSize, normalOffset, vertex_stride, normalDataSize);
+                CombindVertexData(vertexData, tangentData, vertex_count, tangentAttributeSize, tangentOffset, vertex_stride, tangentDataSize);
+                CombindVertexData(vertexData, bitangentData, vertex_count, bitangentAttributeSize, bitangentOffset, vertex_stride, bitangentDataSize);
+            } else {
+                CombindVertexData(vertexData, jointData, vertex_count, jointAttributeSize, jointOffset, vertex_stride, jointDataSize);
+                CombindVertexData(vertexData, weightData, vertex_count, weightAttributeSize, weightOffset, vertex_stride, weightDataSize);
             }
 
-            if (colorOffset != -1) {
-                CombindVertexData(vertexData, colorData, vertexCount, colorAttributeSize, colorOffset, vertexStride, colorDataSize);
-            }
+            gear::VertexBuffer::Builder vertex_buffer_builder = {};
+            vertex_buffer_builder.SetVertexCount(vertex_count);
+            vertex_buffer_builder.SetVertexLayoutType(vertex_layout);
+            gear::VertexBuffer* vertex_buffer = vertex_buffer_builder.Build();
+            vertex_buffer->UpdateData(vertexData, vertex_buffer_size);
 
-            if (uvOffset != -1) {
-                CombindVertexData(vertexData, uvData, vertexCount, uvAttributeSize, uvOffset, vertexStride, uvDataSize);
+            // 释放临时内存
+            if (uv_data_empty) {
+                SAFE_DELETE(uvData);
             }
-
-            if (normalOffset != -1) {
-                CombindVertexData(vertexData, normalData, vertexCount, normalAttributeSize, normalOffset, vertexStride, normalDataSize);
+            if (normal_data_empty) {
+                SAFE_DELETE(normalData);
+                SAFE_DELETE(tangentData);
             }
-
-            if (tangentOffset != -1) {
-                CombindVertexData(vertexData, tangentData, vertexCount, tangentAttributeSize, tangentOffset, vertexStride, tangentDataSize);
-            }
-
-            if (bitangentOffset != -1) {
-                CombindVertexData(vertexData, bitangentData, vertexCount, bitangentAttributeSize, bitangentOffset, vertexStride, bitangentDataSize);
-            }
-
-            if (jointOffset != -1) {
-                CombindVertexData(vertexData, jointData, vertexCount, jointAttributeSize, jointOffset, vertexStride, jointDataSize);
-            }
-
-            if (weightOffset != -1) {
-                CombindVertexData(vertexData, weightData, vertexCount, weightAttributeSize, weightOffset, vertexStride, weightDataSize);
-            }
-
-            vertex_buffer->Update(vertexData, 0, vertex_buffer->GetSize());
             SAFE_DELETE(bitangentData);
             SAFE_DELETE(vertexData);
 
@@ -541,7 +562,7 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             }
             gear::IndexBuffer* indexBuffer = indexBufferBuild.Build();
             uint8_t* indexData = (uint8_t*)cIndexBuffer->data + cIndexAccessor->offset + cIndexBufferView->offset;
-            indexBuffer->Update(indexData, 0, indexBuffer->GetSize());
+            indexBuffer->UpdateData(indexData, indexBuffer->GetSize());
 
             vertex_buffers.push_back(vertex_buffer);
             index_buffers.push_back(indexBuffer);

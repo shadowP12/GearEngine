@@ -1,5 +1,7 @@
 #include "TextureImporter.h"
+
 #include <Resource/Texture.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STBIR_FLAG_ALPHA_PREMULTIPLIED
 #include <stb_image.h>
@@ -27,7 +29,7 @@
     builder.SetHeight(height);
     builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
     gear::Texture* texture = builder.Build();
-    texture->SetData(pixels);
+    texture->UpdateData(pixels);
     stbi_image_free(pixels);
     return texture;
 }

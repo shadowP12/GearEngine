@@ -194,7 +194,6 @@ public:
             font_texture = tex_builder.Build();
             font_texture->UpdateData(pixels);
 
-
             quad_ma = gear::gEngine.GetMaterialCompiler()->Compile("./BuiltinResources/Materials/blit.mat", true);
             quad_mi = quad_ma->CreateInstance();
             quad_mi->SetTexture("src_texture", quad_texture);
