@@ -1,8 +1,6 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 #include <imgui.h>
 
 #include <Window/BaseWindow.h>
@@ -28,6 +26,8 @@
 #include <map>
 
 #include "CameraController.h"
+#include "TextureImporter.h"
+#include "GltfImporter.h"
 
 struct Vertex {
     float pos[3];
@@ -175,19 +175,12 @@ public:
             quad_ib = ib_builder.Build();
             quad_ib->UpdateData(indices, sizeof(unsigned int) * 6);
 
-            int tex_width, tex_height, tex_channels;
-            std::string image_path = "./BuiltinResources/Textures/test.png";
-            unsigned char* pixels = stbi_load(image_path.c_str(), &tex_width, &tex_height, &tex_channels, STBI_rgb_alpha);
+            quad_texture = ImportTexture2D("./BuiltinResources/Textures/test.png");
 
-            gear::Texture::Builder tex_builder;
-            tex_builder.SetWidth(tex_width);
-            tex_builder.SetHeight(tex_height);
-            tex_builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
-            quad_texture = tex_builder.Build();
-            quad_texture->UpdateData(pixels);
-            stbi_image_free(pixels);
-
+            int tex_width, tex_height;
+            unsigned char* pixels = nullptr;
             io.Fonts->GetTexDataAsRGBA32(&pixels, &tex_width, &tex_height);
+            gear::Texture::Builder tex_builder;
             tex_builder.SetWidth(tex_width);
             tex_builder.SetHeight(tex_height);
             tex_builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
@@ -225,10 +218,20 @@ public:
 
             camera_controller = new CameraController();
             camera_controller->SetCamera(camera);
+
+            gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/test.gltf");
+            for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
+                if (gltf_asset->entities[i]->HasComponent<gear::CMesh>()) {
+                    gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetCastShadow(true);
+                    gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetReceiveShadow(true);
+                }
+                scene->AddEntity(gltf_asset->entities[i]);
+            }
         }
     }
 
     void Exit() override {
+        DestroyGltfAsset(gltf_asset);
         gear::gEngine.GetEntityManager()->DestroyEntity(quad);
         gear::gEngine.GetEntityManager()->DestroyEntity(camera);
         SAFE_DELETE(quad_texture);
@@ -379,6 +382,7 @@ private:
     gear::Texture* quad_texture = nullptr;
     gear::Texture* font_texture = nullptr;
     CameraController* camera_controller = nullptr;
+    GltfAsset* gltf_asset = nullptr;
     EventHandle mouse_position_cb_handle;
     EventHandle mouse_button_cb_handle;
     EventHandle mouse_scroll_cb_handle;

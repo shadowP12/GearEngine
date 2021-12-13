@@ -151,12 +151,12 @@ namespace gear {
             Renderable& renderable = scene->renderables[randerable_id];
             RenderPrimitive& primitive = renderable.primitives[primitive_id];
 
-            device->BindConstantBuffer(current_cmd, main_view_ub, 1, 0);
-            device->BindConstantBuffer(current_cmd, renderable.renderable_ub, 2, renderable.renderable_ub_offset);
+            device->BindConstantBuffer(current_cmd, main_view_ub, 1, main_view_ub->desc.size, 0);
+            device->BindConstantBuffer(current_cmd, renderable.renderable_ub, 2, renderable.renderable_ub_size, renderable.renderable_ub_offset);
 
             // 材质参数
             if (primitive.material_ub != nullptr) {
-                device->BindConstantBuffer(current_cmd, primitive.material_ub->GetHandle(), 0);
+                device->BindConstantBuffer(current_cmd, primitive.material_ub->GetHandle(), 0, primitive.material_ub->GetSize(), 0);
             }
 
             for (auto& sampler_item : primitive.mi->GetGfxSamplerGroup()) {
@@ -248,8 +248,8 @@ namespace gear {
         device->RenderPassBegin(current_cmd, swapchain);
 
         for (uint32_t i = 0; i < valid_views.size(); ++i) {
-            device->BindConstantBuffer(current_cmd, common_view_ub, 1);
-            device->BindConstantBuffer(current_cmd, renderable_ub, 2);
+            device->BindConstantBuffer(current_cmd, common_view_ub, 1, common_view_ub->desc.size, 0);
+            device->BindConstantBuffer(current_cmd, renderable_ub, 2, renderable_ub->desc.size, 0);
 
             device->BindResource(current_cmd, valid_views[i]->main_rt, 0);
 
@@ -283,8 +283,8 @@ namespace gear {
             for (uint32_t j = 0; j < valid_canvases[i]->draw_elements.size(); ++j) {
                 const UIDrawElement& element = valid_canvases[i]->draw_elements[j];
 
-                device->BindConstantBuffer(current_cmd, window_view_ub, 1);
-                device->BindConstantBuffer(current_cmd, renderable_ub, 2);
+                device->BindConstantBuffer(current_cmd, window_view_ub, 1, window_view_ub->desc.size, 0);
+                device->BindConstantBuffer(current_cmd, renderable_ub, 2, renderable_ub->desc.size, 0);
 
                 // 材质参数
                 for (auto& sampler_item : element.mi->GetGfxSamplerGroup()) {
