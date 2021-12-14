@@ -147,6 +147,8 @@ namespace gear {
 
         blast::GfxShader* GetFragShader(MaterialVariant::Key variant, VertexLayoutType vertex_layout_type);
 
+        ShadingModel GetShadingModel() { return shading_model; }
+
         BlendStateType GetBlendState() { return blend_state; }
 
         MaterialInstance* CreateInstance();

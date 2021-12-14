@@ -78,6 +78,9 @@ namespace gear {
         view_storage.view_matrix = scene->display_camera_info.view;
         view_storage.proj_matrix = scene->display_camera_info.projection;
         view_storage.main_view_matrix = scene->main_camera_info.view;
+        if (scene->light_info.has_direction_light) {
+            view_storage.sun_direction = glm::vec4(scene->light_info.sun_direction, 1.0f);
+        }
         device->UpdateBuffer(current_cmd, main_view_ub, &view_storage, sizeof(ViewUniforms));
 
         BasePass(scene, view);
@@ -94,7 +97,7 @@ namespace gear {
                 uint32_t material_id = rp->mi->GetMaterial()->GetMaterialID();
                 uint32_t material_instance_id = rp->mi->GetMaterialInstanceID();
                 uint32_t material_variant = 0;
-                if (scene->light_info.has_direction_light) {
+                if (scene->light_info.has_direction_light && rp->mi->GetMaterial()->GetShadingModel() == SHADING_MODEL_LIT) {
                     material_variant |= MaterialVariant::DIRECTIONAL_LIGHTING;
                 }
 
@@ -172,7 +175,7 @@ namespace gear {
             pipeline_state.il = vertex_layout_cache->GetVertexLayout(primitive.vb->GetVertexLayoutType());
             pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
             pipeline_state.bs = blend_state_cache->GetDepthStencilState(primitive.mi->GetMaterial()->GetBlendState());
-            pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+            pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_DEFAULT);
 
             device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 

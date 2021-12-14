@@ -214,6 +214,13 @@ public:
             //camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::ORTHO, -1.0, 1.0, 1.0, -1.0, 0.0, 1.0);
             scene->AddEntity(camera);
 
+            sun = gear::gEngine.GetEntityManager()->CreateEntity();
+            sun->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
+            sun->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
+            sun->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(glm::radians(120.0f), 0.0f, 0.0f));
+            sun->AddComponent<gear::CLight>();
+            scene->AddEntity(sun);
+
             canvas = new gear::Canvas();
 
             camera_controller = new CameraController();
@@ -232,6 +239,7 @@ public:
 
     void Exit() override {
         DestroyGltfAsset(gltf_asset);
+        gear::gEngine.GetEntityManager()->DestroyEntity(sun);
         gear::gEngine.GetEntityManager()->DestroyEntity(quad);
         gear::gEngine.GetEntityManager()->DestroyEntity(camera);
         SAFE_DELETE(quad_texture);
@@ -373,6 +381,7 @@ private:
     gear::View* scene_view = nullptr;
     gear::Entity* camera = nullptr;
     gear::Entity* quad = nullptr;
+    gear::Entity* sun = nullptr;
     gear::VertexBuffer* quad_vb = nullptr;
     gear::IndexBuffer* quad_ib = nullptr;
     gear::Material* quad_ma = nullptr;
