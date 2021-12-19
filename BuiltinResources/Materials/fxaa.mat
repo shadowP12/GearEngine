@@ -1,0 +1,19 @@
+{
+    "state": {
+        "shading_model": "unlit",
+        "blending_mode": "transparent"
+    },
+    "vertex_layout": [
+        "p_t0"
+    ],
+    "textures": [
+        {
+            "name": "fxaa_texture",
+            "type": "texture_2d"
+        }
+    ],
+    "samplers": [
+        "fxaa_sampler"
+    ],
+    "fragment_file": "fxaa.fs"
+}

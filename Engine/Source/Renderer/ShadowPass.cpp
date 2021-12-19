@@ -165,10 +165,10 @@ namespace gear {
             device->RenderPassBegin(current_cmd, cascade_shadow_passes[i]);
 
             blast::Viewport viewport;
-            viewport.x = 1;
-            viewport.y = 1;
-            viewport.w = cascade_shadow_map->desc.width - 1;
-            viewport.h = cascade_shadow_map->desc.height - 1;
+            viewport.x = 0;
+            viewport.y = 0;
+            viewport.w = cascade_shadow_map->desc.width;
+            viewport.h = cascade_shadow_map->desc.height;
             device->BindViewports(current_cmd, 1, &viewport);
 
             blast::Rect rect;

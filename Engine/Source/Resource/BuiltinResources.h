@@ -21,6 +21,8 @@ namespace gear {
 
         Material* GetSkyBoxMaterial() { return skybox_ma; }
 
+        Material* GetFXAAMaterial() { return fxaa_ma; }
+
         VertexBuffer* GetQuadBuffer() { return quad_buffer; }
 
         VertexBuffer* GetCubeBuffer() { return cube_buffer; }
@@ -36,6 +38,7 @@ namespace gear {
         Material* blit_ma = nullptr;
         Material* debug_ma = nullptr;
         Material* skybox_ma = nullptr;
+        Material* fxaa_ma = nullptr;
         VertexBuffer* quad_buffer = nullptr;
         VertexBuffer* cube_buffer = nullptr;
         blast::GfxShader* pano_to_cube_shader = nullptr;

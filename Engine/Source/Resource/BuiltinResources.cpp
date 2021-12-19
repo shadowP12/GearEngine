@@ -15,6 +15,7 @@ namespace gear {
         SAFE_DELETE(blit_ma);
         SAFE_DELETE(debug_ma);
         SAFE_DELETE(skybox_ma);
+        SAFE_DELETE(fxaa_ma);
         SAFE_DELETE(quad_buffer);
         SAFE_DELETE(cube_buffer);
         gEngine.GetDevice()->DestroyShader(pano_to_cube_shader);
@@ -24,6 +25,7 @@ namespace gear {
         blit_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/blit.mat", true);
         debug_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/debug.mat", true);
         skybox_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/skybox.mat", true);
+        fxaa_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/fxaa.mat", true);
         CreateQuadBuffer();
         CreateCubeBuffer();
 

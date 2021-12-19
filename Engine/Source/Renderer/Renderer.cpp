@@ -121,6 +121,8 @@ namespace gear {
         ShadowPass(scene, view);
 
         BasePass(scene, view);
+
+        PostProcessPass(scene, view);
     }
 
     void Renderer::BasePass(Scene* scene, View* view) {
@@ -338,7 +340,11 @@ namespace gear {
             device->BindConstantBuffer(current_cmd, common_view_ub, 1, common_view_ub->desc.size, 0);
             device->BindConstantBuffer(current_cmd, renderable_ub, 2, renderable_ub->desc.size, 0);
 
-            device->BindResource(current_cmd, valid_views[i]->main_rt, 0);
+            if (valid_views[i]->last_postprocess_idx == 0) {
+                device->BindResource(current_cmd, valid_views[i]->postprocess_rt0, 0);
+            } else {
+                device->BindResource(current_cmd, valid_views[i]->postprocess_rt1, 0);
+            }
 
             blast::GfxSamplerDesc default_sampler = {};
             device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);

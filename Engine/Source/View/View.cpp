@@ -13,20 +13,33 @@ namespace gear {
     }
 
     View::~View() {
+        blast::GfxDevice* device = gEngine.GetDevice();
         if (renderpass) {
-            gEngine.GetDevice()->DestroyRenderPass(renderpass);
+            device->DestroyRenderPass(renderpass);
         }
         if (main_rt) {
-            gEngine.GetDevice()->DestroyTexture(main_rt);
+            device->DestroyTexture(main_rt);
         }
         if (main_resolve_rt) {
-            gEngine.GetDevice()->DestroyTexture(main_resolve_rt);
+            device->DestroyTexture(main_resolve_rt);
         }
         if (depth_rt) {
-            gEngine.GetDevice()->DestroyTexture(depth_rt);
+            device->DestroyTexture(depth_rt);
         }
         if (depth_resolve_rt) {
-            gEngine.GetDevice()->DestroyTexture(depth_resolve_rt);
+            device->DestroyTexture(depth_resolve_rt);
+        }
+        if (postprocess_rt0) {
+            device->DestroyTexture(postprocess_rt0);
+        }
+        if (postprocess_rt1) {
+            device->DestroyTexture(postprocess_rt1);
+        }
+        if (fxaa_renderpass0) {
+            device->DestroyRenderPass(fxaa_renderpass0);
+        }
+        if (fxaa_renderpass1) {
+            device->DestroyRenderPass(fxaa_renderpass1);
         }
     }
 
@@ -93,20 +106,55 @@ namespace gear {
                 main_resolve_rt = device->CreateTexture(texture_desc);
             }
 
-            blast::GfxRenderPassDesc renderpass_desc = {};
-            renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(main_rt, -1, blast::LOAD_CLEAR));
-            renderpass_desc.attachments.push_back(
-                    blast::RenderPassAttachment::DepthStencil(
-                            depth_rt,
-                            -1,
-                            blast::LOAD_CLEAR,
-                            blast::STORE_STORE
-                    )
-            );
-            if (sample_count > 1) {
-                renderpass_desc.attachments.push_back(blast::RenderPassAttachment::Resolve(main_resolve_rt));
+            {
+                blast::GfxRenderPassDesc renderpass_desc = {};
+                renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(main_rt, -1, blast::LOAD_CLEAR));
+                renderpass_desc.attachments.push_back(
+                        blast::RenderPassAttachment::DepthStencil(
+                                depth_rt,
+                                -1,
+                                blast::LOAD_CLEAR,
+                                blast::STORE_STORE
+                        )
+                );
+                if (sample_count > 1) {
+                    renderpass_desc.attachments.push_back(blast::RenderPassAttachment::Resolve(main_resolve_rt));
+                }
+                renderpass = device->CreateRenderPass(renderpass_desc);
             }
-            renderpass = device->CreateRenderPass(renderpass_desc);
+
+            {
+                if (postprocess_rt0) {
+                    device->DestroyTexture(postprocess_rt0);
+                }
+                if (postprocess_rt1) {
+                    device->DestroyTexture(postprocess_rt1);
+                }
+                texture_desc.sample_count = blast::SAMPLE_COUNT_1;
+                texture_desc.format = blast::FORMAT_R8G8B8A8_UNORM;
+                texture_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
+                texture_desc.res_usage = blast::RESOURCE_USAGE_SHADER_RESOURCE | blast::RESOURCE_USAGE_RENDER_TARGET;
+                postprocess_rt0 = device->CreateTexture(texture_desc);
+                postprocess_rt1 = device->CreateTexture(texture_desc);
+            }
+
+            {
+                if (fxaa_renderpass0) {
+                    device->DestroyRenderPass(fxaa_renderpass0);
+                }
+                blast::GfxRenderPassDesc renderpass_desc = {};
+                renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt0, -1, blast::LOAD_CLEAR));
+                fxaa_renderpass0 = device->CreateRenderPass(renderpass_desc);
+            }
+            {
+                if (fxaa_renderpass1) {
+                    device->DestroyRenderPass(fxaa_renderpass1);
+                }
+                blast::GfxRenderPassDesc renderpass_desc = {};
+                renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt1, -1, blast::LOAD_CLEAR));
+                fxaa_renderpass1 = device->CreateRenderPass(renderpass_desc);
+            }
+
         }
 
         return true;

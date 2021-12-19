@@ -51,6 +51,8 @@ namespace gear {
 
         void UpdateShadowMapInfo(Scene* scene, View* view, ShadowMapInfo& shadow_map_info);
 
+        void PostProcessPass(Scene* scene, View* view);
+
     private:
         VertexLayoutCache* vertex_layout_cache = nullptr;
         RasterizerStateCache* rasterizer_state_cache = nullptr;

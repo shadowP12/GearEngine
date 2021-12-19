@@ -44,5 +44,12 @@ namespace gear {
         blast::GfxTexture* depth_rt = nullptr;
         blast::GfxTexture* depth_resolve_rt = nullptr;
         blast::GfxRenderPass* renderpass = nullptr;
+
+        // 后处理(采用ping-pong的方法进行后处理)
+        uint32_t last_postprocess_idx = 0;
+        blast::GfxTexture* postprocess_rt0 = nullptr;
+        blast::GfxTexture* postprocess_rt1 = nullptr;
+        blast::GfxRenderPass* fxaa_renderpass0 = nullptr;
+        blast::GfxRenderPass* fxaa_renderpass1 = nullptr;
     };
 }
