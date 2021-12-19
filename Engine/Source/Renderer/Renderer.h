@@ -14,6 +14,7 @@ namespace gear {
     class Scene;
     class Canvas;
     class BaseWindow;
+    class Texture;
     class VertexLayoutCache;
     class RasterizerStateCache;
     class DepthStencilStateCache;
@@ -41,8 +42,14 @@ namespace gear {
 
         void RenderWindow(BaseWindow* window, uint32_t view_count, View** views, uint32_t canvas_count, Canvas** canvases);
 
+        Texture* EquirectangularMapToCubemap(Texture* equirectangular_map, uint32_t face_size);
+
     private:
         void BasePass(Scene* scene, View* view);
+
+        void ShadowPass(Scene* scene, View* view);
+
+        void UpdateShadowMapInfo(Scene* scene, View* view, ShadowMapInfo& shadow_map_info);
 
     private:
         VertexLayoutCache* vertex_layout_cache = nullptr;
@@ -66,6 +73,11 @@ namespace gear {
 
         ViewUniforms view_storage;
         RenderableUniforms identity_renderable_storage;
+
+        // shadow
+        blast::GfxTexture* cascade_shadow_map = nullptr;
+        blast::GfxRenderPass* cascade_shadow_passes[SHADOW_CASCADE_COUNT];
+        ShadowMapInfo cascade_shadow_map_infos[SHADOW_CASCADE_COUNT];
 
         DrawCall dc_list[10240];
     };

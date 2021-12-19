@@ -1,6 +1,6 @@
 #if defined(HAS_SHADOWING)
 float SampleCascadeShadowMap(const uint cascade, vec2 base, vec2 dudv, float depth, float bias) {
-    return depth - bias > texture(cascade_shadow_map, vec3(base + dudv, cascade)).r ? 0.5 : 0.0;
+    return depth - bias > texture(sampler2DArray(cascade_shadow_map, cascade_shadow_sampler), vec3(base + dudv, cascade)).r ? 0.5 : 0.0;
 }
 
 float SampleCascadeShadowMapWithPCF() {
@@ -12,7 +12,7 @@ float SampleCascadeShadowMapWithPCF() {
     vec3 proj_coords = light_space_position.xyz / light_space_position.w;
     proj_coords.xy = proj_coords.xy * 0.5 + 0.5;
 
-    vec2 size = vec2(textureSize(cascade_shadow_map, 0));
+    vec2 size = vec2(textureSize(sampler2DArray(cascade_shadow_map, cascade_shadow_sampler), 0));
     vec2 texel_size = vec2(1.0) / size;
 
     vec2 offset = vec2(0.5);
@@ -31,7 +31,7 @@ float SampleCascadeShadowMapWithPCF() {
 
     float depth = proj_coords.z;
 
-    float bias = 0.0005;
+    float bias = 0.0001;
 #if defined(HAS_ATTRIBUTE_NORMAL)
     bias = max(0.003 * (1.0 - dot(normalize(vertex_normal), normalize(frame_uniforms.sun_direction.xyz))), 0.0005);
 #endif

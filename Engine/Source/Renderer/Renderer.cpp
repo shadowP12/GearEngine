@@ -42,6 +42,35 @@ namespace gear {
         view_storage.proj_matrix = glm::mat4(1.0f);
         identity_renderable_storage.model_matrix = glm::mat4(1.0);
         identity_renderable_storage.normal_matrix = glm::mat4(1.0);
+
+        // shadow
+        {
+            blast::GfxTextureDesc texture_desc = {};
+            texture_desc.width = 2048;
+            texture_desc.height = 2048;
+            texture_desc.num_layers = SHADOW_CASCADE_COUNT;
+            texture_desc.format = blast::FORMAT_D24_UNORM_S8_UINT;
+            texture_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
+            texture_desc.res_usage = blast::RESOURCE_USAGE_SHADER_RESOURCE | blast::RESOURCE_USAGE_DEPTH_STENCIL;
+            // 默认深度值为1
+            texture_desc.clear.depthstencil.depth = 1.0f;
+            cascade_shadow_map = gEngine.GetDevice()->CreateTexture(texture_desc);
+
+            for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
+                int32_t sub_resource = gEngine.GetDevice()->CreateSubresource(cascade_shadow_map, blast::DSV, i, 1, 0, 1);
+
+                blast::GfxRenderPassDesc renderpass_desc = {};
+                renderpass_desc.attachments.push_back(
+                        blast::RenderPassAttachment::DepthStencil(
+                                cascade_shadow_map,
+                                sub_resource,
+                                blast::LOAD_CLEAR,
+                                blast::STORE_STORE
+                        )
+                );
+                cascade_shadow_passes[i] = gEngine.GetDevice()->CreateRenderPass(renderpass_desc);
+            }
+        }
     }
 
     Renderer::~Renderer() {
@@ -50,6 +79,12 @@ namespace gear {
         device->DestroyBuffer(common_view_ub);
         device->DestroyBuffer(window_view_ub);
         device->DestroyBuffer(renderable_ub);
+
+        // shadow
+        device->DestroyTexture(cascade_shadow_map);
+        for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
+            device->DestroyRenderPass(cascade_shadow_passes[i]);
+        }
 
         SAFE_DELETE(vertex_layout_cache);
         SAFE_DELETE(rasterizer_state_cache);
@@ -83,6 +118,8 @@ namespace gear {
         }
         device->UpdateBuffer(current_cmd, main_view_ub, &view_storage, sizeof(ViewUniforms));
 
+        ShadowPass(scene, view);
+
         BasePass(scene, view);
     }
 
@@ -102,8 +139,7 @@ namespace gear {
                 }
 
                 if (rp->receive_shadow) {
-                    // TODO: 暂时屏蔽阴影
-                    // material_variant |= MaterialVariant::SHADOW_RECEIVER;
+                    material_variant |= MaterialVariant::SHADOW_RECEIVER;
                 }
 
                 dc_list[dc_idx] = {};
@@ -118,6 +154,12 @@ namespace gear {
         std::sort(&dc_list[dc_head], &dc_list[dc_head] + dc_count);
 
         blast::GfxDevice* device = gEngine.GetDevice();
+
+        // 去除view matrix的位移信息
+        ViewUniforms vb_storage = view_storage;
+        vb_storage.view_matrix = glm::mat4(glm::mat3(vb_storage.view_matrix));
+        device->UpdateBuffer(current_cmd, common_view_ub, &vb_storage, sizeof(ViewUniforms));
+        device->UpdateBuffer(current_cmd, renderable_ub, &identity_renderable_storage, sizeof(RenderableUniforms));
 
         // image layout to rp
         {
@@ -147,6 +189,36 @@ namespace gear {
         rect.bottom = view->main_rt->desc.height;
         device->BindScissorRects(current_cmd, 1, &rect);
 
+        // 绘制天空盒
+        if (scene->skybox_map) {
+            device->BindConstantBuffer(current_cmd, common_view_ub, 1, common_view_ub->desc.size, 0);
+            device->BindConstantBuffer(current_cmd, renderable_ub, 2, renderable_ub->desc.size, 0);
+
+            device->BindResource(current_cmd, scene->skybox_map, 0);
+
+            blast::GfxSamplerDesc default_sampler = {};
+            device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);
+
+            VertexBuffer* cube_buffer = gEngine.GetBuiltinResources()->GetCubeBuffer();
+
+            blast::GfxPipelineDesc pipeline_state = {};
+            pipeline_state.rp = view->renderpass;
+            pipeline_state.vs = gEngine.GetBuiltinResources()->GetSkyBoxMaterial()->GetVertShader(0, cube_buffer->GetVertexLayoutType());
+            pipeline_state.fs = gEngine.GetBuiltinResources()->GetSkyBoxMaterial()->GetFragShader(0, cube_buffer->GetVertexLayoutType());
+            pipeline_state.il = vertex_layout_cache->GetVertexLayout(cube_buffer->GetVertexLayoutType());
+            pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+            pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+            pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+
+            device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+
+            uint64_t vertex_offsets[] = {0};
+            blast::GfxBuffer* vertex_buffers[] = {cube_buffer->GetHandle()};
+            device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+
+            device->Draw(current_cmd, 36, 0);
+        }
+
         for (uint32_t i = dc_head; i < dc_head + dc_count; ++i) {
             uint32_t material_variant = dc_list[i].material_variant;
             uint32_t randerable_id = dc_list[i].renderable_id;
@@ -168,6 +240,18 @@ namespace gear {
 
             for (auto& texture_item : primitive.mi->GetGfxTextureGroup()) {
                 device->BindResource(current_cmd, texture_item.second->GetTexture(), texture_item.first);
+            }
+
+            // 阴影贴图
+            if (material_variant & MaterialVariant::SHADOW_RECEIVER) {
+                blast::GfxSamplerDesc shadow_sampler_desc;
+                shadow_sampler_desc.min_filter = blast::FILTER_NEAREST;
+                shadow_sampler_desc.mag_filter = blast::FILTER_NEAREST;
+                shadow_sampler_desc.address_u = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
+                shadow_sampler_desc.address_v = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
+                shadow_sampler_desc.address_w = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
+                device->BindSampler(current_cmd, sampler_cache->GetSampler(shadow_sampler_desc), 10);
+                device->BindResource(current_cmd, cascade_shadow_map, 10);
             }
 
             pipeline_state.vs = primitive.mi->GetMaterial()->GetVertShader(material_variant, primitive.vb->GetVertexLayoutType());
@@ -280,7 +364,6 @@ namespace gear {
         }
 
         for (uint32_t i = 0; i < valid_canvases.size(); ++i) {
-
             blast::GfxPipelineDesc pipeline_state = {};
             pipeline_state.sc = swapchain;
             for (uint32_t j = 0; j < valid_canvases[i]->draw_elements.size(); ++j) {

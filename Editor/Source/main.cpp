@@ -15,6 +15,7 @@
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
 #include <Entity/Components/CMesh.h>
+#include <Entity/Components/CSkybox.h>
 #include <Resource/GpuBuffer.h>
 #include <Resource/Texture.h>
 #include <Resource/Material.h>
@@ -234,6 +235,12 @@ public:
                 }
                 scene->AddEntity(gltf_asset->entities[i]);
             }
+
+            // 加载天空盒
+            gear::Texture* equirectangular_map = ImportTexture2D("./BuiltinResources/Textures/skybox_0.jpg");
+            skybox_map = gear::gEngine.GetRenderer()->EquirectangularMapToCubemap(equirectangular_map, 512);
+            SAFE_DELETE(equirectangular_map);
+            sun->AddComponent<gear::CSkybox>()->SetCubeMap(skybox_map);
         }
     }
 
@@ -244,6 +251,7 @@ public:
         gear::gEngine.GetEntityManager()->DestroyEntity(camera);
         SAFE_DELETE(quad_texture);
         SAFE_DELETE(font_texture);
+        SAFE_DELETE(skybox_map);
         SAFE_DELETE(quad_vb);
         SAFE_DELETE(quad_ib);
         SAFE_DELETE(quad_mi);
@@ -390,6 +398,7 @@ private:
     std::vector<gear::MaterialInstance*> imgui_mis;
     gear::Texture* quad_texture = nullptr;
     gear::Texture* font_texture = nullptr;
+    gear::Texture* skybox_map = nullptr;
     CameraController* camera_controller = nullptr;
     GltfAsset* gltf_asset = nullptr;
     EventHandle mouse_position_cb_handle;
@@ -410,152 +419,3 @@ int main() {
     app.Exit();
     return 0;
 }
-
-/*
-#include "UI.h"
-#include "GltfImporter.h"
-#include "TextureImporter.h"
-#include "CameraController.h"
-
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
-#include <GearEngine.h>
-#include <Entity/Entity.h>
-#include <Entity/Scene.h>
-#include <Entity/EntityManager.h>
-#include <Entity/Components/CLight.h>
-#include <Entity/Components/CCamera.h>
-#include <Entity/Components/CTransform.h>
-#include <Entity/Components/CMesh.h>
-#include <Entity/Components/CSkybox.h>
-#include <Resource/GpuBuffer.h>
-#include <Resource/Texture.h>
-#include <Resource/BuiltinResources.h>
-#include <Renderer/Renderer.h>
-#include <RenderPipeline/RenderPipeline.h>
-#include <Input/InputSystem.h>
-#include <RenderUtility/RenderUtility.h>
-
-void CursorPositionCB(GLFWwindow * window, double pos_x, double pos_y) {
-    gear::gEngine.GetInputSystem()->OnMousePosition(pos_x, pos_y);
-}
-
-void MouseButtonCB(GLFWwindow * window, int button, int action, int mods) {
-    gear::gEngine.GetInputSystem()->OnMouseButton(button, action);
-}
-
-void MouseScrollCB(GLFWwindow * window, double offset_x, double offset_y) {
-    gear::gEngine.GetInputSystem()->OnMouseScroll(offset_y);
-}
-
-int main()
-{
-    gear::gEngine.GetBuiltinResources()->Prepare();
-
-    gear::Entity* sun = gear::gEngine.GetEntityManager()->CreateEntity();
-    sun->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-    sun->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
-    sun->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(glm::radians(120.0f), 0.0f, 0.0f));
-    sun->AddComponent<gear::CLight>();
-    sun->AddComponent<gear::CSkybox>();
-
-    gear::Entity* main_camera = gear::gEngine.GetEntityManager()->CreateEntity();
-    main_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-    main_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(6.0f, 6.0f, 12.0f));
-    main_camera->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(-0.358f, 0.46f, 0.0f));
-    main_camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.5, 45.0);
-
-    gear::Entity* debug_camera = gear::gEngine.GetEntityManager()->CreateEntity();
-    debug_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-    debug_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 0.0f, 12.0f));
-    debug_camera->AddComponent<gear::CCamera>()->SetMain(false);
-    debug_camera->GetComponent<gear::CCamera>()->SetDisplay(false);
-    debug_camera->GetComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 1000.0);
-
-    gear::Scene* editor_scene = gear::gEngine.CreateScene();
-    gear::RenderPipeline* editor_pipeline = gear::gEngine.CreateRenderPipeline();
-    editor_pipeline->SetScene(editor_scene);
-    editor_pipeline->EnableDebug(true);
-
-    GltfAsset* gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/test.gltf");
-    for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
-        if (gltf_asset->entities[i]->HasComponent<gear::CMesh>()) {
-            gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetCastShadow(true);
-            gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetReceiveShadow(true);
-        }
-        editor_scene->AddEntity(gltf_asset->entities[i]);
-    }
-    editor_scene->AddEntity(sun);
-    editor_scene->AddEntity(main_camera);
-    editor_scene->AddEntity(debug_camera);
-
-    CameraController* camera_controller = new CameraController();
-    camera_controller->SetCamera(main_camera);
-
-    // 加载skybox
-    gear::Texture* equirectangular_map = ImportTexture2D("./BuiltinResources/Textures/skybox_0.jpg");
-    gear::Texture* skybox_map = gear::gEngine.GetRenderUtility()->EquirectangularMapToCubemap(equirectangular_map, 512);
-    SAFE_DELETE(equirectangular_map);
-    sun->GetComponent<gear::CSkybox>()->SetCubeMap(skybox_map);
-
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(800, 600, "GearEditor", nullptr, nullptr);
-    glfwSetCursorPosCallback(window, CursorPositionCB);
-    glfwSetMouseButtonCallback(window, MouseButtonCB);
-    glfwSetScrollCallback(window, MouseScrollCB);
-
-    ImGui::ImGuiInit(window);
-    gear::RenderPipeline* ui_pipeline = nullptr;
-    ImGui::GetRenderPipeline(&ui_pipeline);
-
-    int window_width, window_height;
-    while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
-        glfwGetWindowSize(window, &window_width, &window_height);
-
-        ImGui::BeginUI();
-        // 示例ui
-        // bool show_demo_window = true;
-        // ImGui::ShowDemoWindow(&show_demo_window);
-
-        ImGui::Begin("Change Camera");
-        if (ImGui::Button("Main Camera")) {
-            main_camera->GetComponent<gear::CCamera>()->SetDisplay(true);
-            debug_camera->GetComponent<gear::CCamera>()->SetDisplay(false);
-            camera_controller->SetCamera(main_camera);
-        }
-        if (ImGui::Button("Debug Camera")) {
-            main_camera->GetComponent<gear::CCamera>()->SetDisplay(false);
-            debug_camera->GetComponent<gear::CCamera>()->SetDisplay(true);
-            camera_controller->SetCamera(debug_camera);
-        }
-        ImGui::End();
-        ImGui::EndUI();
-
-        editor_pipeline->Draw();
-        ui_pipeline->Draw();
-
-        gear::gEngine.GetRenderer()->Render(glfwGetWin32Window(window), window_width, window_height);
-
-        gear::gEngine.GetInputSystem()->Reset();
-    }
-
-    ImGui::ImGuiTerminate();
-
-    glfwTerminate();
-
-    SAFE_DELETE(skybox_map);
-
-    SAFE_DELETE(camera_controller);
-
-    DestroyGltfAsset(gltf_asset);
-    gear::gEngine.DestroyScene(editor_scene);
-    gear::gEngine.GetEntityManager()->DestroyEntity(sun);
-    gear::gEngine.GetEntityManager()->DestroyEntity(main_camera);
-    gear::gEngine.GetEntityManager()->DestroyEntity(debug_camera);
-    gear::gEngine.DestroyRenderPipeline(editor_pipeline);
-    return 0;
-}
-*/

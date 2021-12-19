@@ -38,5 +38,7 @@ namespace gear {
         LightInfo light_info;
 
         blast::GfxBuffer* renderables_ub = nullptr;
+
+        blast::GfxTexture* skybox_map = nullptr;
     };
 }

@@ -21,11 +21,11 @@ namespace gear {
 
         Material* GetSkyBoxMaterial() { return skybox_ma; }
 
-        Material* GetEquirectangularToCubeMaterial() { return equirectangular_to_cube_ma; }
-
         VertexBuffer* GetQuadBuffer() { return quad_buffer; }
 
         VertexBuffer* GetCubeBuffer() { return cube_buffer; }
+
+        blast::GfxShader* GetPanoToCubeShader() { return pano_to_cube_shader; }
 
     private:
         void CreateQuadBuffer();
@@ -36,8 +36,8 @@ namespace gear {
         Material* blit_ma = nullptr;
         Material* debug_ma = nullptr;
         Material* skybox_ma = nullptr;
-        Material* equirectangular_to_cube_ma = nullptr;
         VertexBuffer* quad_buffer = nullptr;
         VertexBuffer* cube_buffer = nullptr;
+        blast::GfxShader* pano_to_cube_shader = nullptr;
     };
 }

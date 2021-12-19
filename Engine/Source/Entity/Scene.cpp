@@ -53,6 +53,7 @@ namespace gear {
         num_mesh_renderables = 0;
         num_ui_renderables = 0;
         light_info.has_direction_light = false;
+        skybox_map = nullptr;
 
         if (renderables.size() < num_mesh_entitys) {
             renderables.resize(num_mesh_entitys);
@@ -101,6 +102,10 @@ namespace gear {
                 light_info.has_direction_light = true;
                 light_info.sun_direction = entity->GetComponent<CTransform>()->GetFrontVector();
                 glm::normalize(light_info.sun_direction);
+            }
+
+            if (entity->HasComponent<CSkybox>()) {
+                skybox_map = entity->GetComponent<CSkybox>()->GetCubeMap()->GetTexture();
             }
 
             if (entity->HasComponent<CMesh>()) {

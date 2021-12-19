@@ -39,7 +39,7 @@ namespace gear {
     }
 
     Texture::Texture(Builder* builder) {
-        blast::ResourceUsage usage = blast::RESOURCE_USAGE_SHADER_RESOURCE;
+        blast::ResourceUsage usage = blast::RESOURCE_USAGE_SHADER_RESOURCE | blast::RESOURCE_USAGE_RENDER_TARGET | blast::RESOURCE_USAGE_UNORDERED_ACCESS;
         if (builder->is_cube && builder->layer == 6) {
             usage |= blast::RESOURCE_USAGE_TEXTURE_CUBE;
         }

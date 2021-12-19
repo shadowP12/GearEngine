@@ -3,6 +3,9 @@
 #include "GpuBuffer.h"
 #include "GearEngine.h"
 #include "MaterialCompiler/MaterialCompiler.h"
+#include "MaterialCompiler/ShaderCode.h"
+
+#include <Blast/Gfx/GfxDevice.h>
 
 namespace gear {
     BuiltinResources::BuiltinResources() {
@@ -12,18 +15,29 @@ namespace gear {
         SAFE_DELETE(blit_ma);
         SAFE_DELETE(debug_ma);
         SAFE_DELETE(skybox_ma);
-        SAFE_DELETE(equirectangular_to_cube_ma);
         SAFE_DELETE(quad_buffer);
         SAFE_DELETE(cube_buffer);
+        gEngine.GetDevice()->DestroyShader(pano_to_cube_shader);
     }
 
     void BuiltinResources::Initialize(const std::string& path) {
         blit_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/blit.mat", true);
         debug_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/debug.mat", true);
         skybox_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/skybox.mat", true);
-        equirectangular_to_cube_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/equirectangular_to_cube.mat", true);
         CreateQuadBuffer();
         CreateCubeBuffer();
+
+        {
+            blast::ShaderCompileDesc compile_desc;
+            compile_desc.code = PANO_TO_CUBE_COMP_DATA;
+            compile_desc.stage = blast::SHADER_STAGE_COMP;
+            blast::ShaderCompileResult compile_result = gEngine.GetShaderCompiler()->Compile(compile_desc);
+            blast::GfxShaderDesc shader_desc;
+            shader_desc.stage = blast::SHADER_STAGE_COMP;
+            shader_desc.bytecode = compile_result.bytes.data();
+            shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
+            pano_to_cube_shader = gEngine.GetDevice()->CreateShader(shader_desc);
+        }
     }
 
     void BuiltinResources::CreateQuadBuffer() {

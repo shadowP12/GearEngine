@@ -13,5 +13,6 @@ layout(std140, set = 0, binding = 2) uniform ObjectUniforms {
 } object_uniforms;
 
 #if defined(HAS_SHADOWING)
-layout(set = 1, binding = 0) uniform sampler2DArray cascade_shadow_map;
+layout(set = 0, binding = 1010) uniform texture2DArray cascade_shadow_map;
+layout(set = 0, binding = 3010) uniform sampler cascade_shadow_sampler;
 #endif

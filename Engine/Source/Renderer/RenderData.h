@@ -97,6 +97,8 @@ namespace gear {
     };
 
     struct ShadowMapInfo {
+        // clip space的远近平面
+        glm::vec2 cs_near_far;
         glm::mat4 light_view_matrix;
         glm::mat4 light_projection_matrix;
         glm::vec3 camera_position;

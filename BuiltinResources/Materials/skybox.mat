@@ -4,7 +4,7 @@
         "blending_mode": "opaque"
     },
     "vertex_layout": [
-        "p_t0"
+        "p"
     ],
     "textures": [
         {

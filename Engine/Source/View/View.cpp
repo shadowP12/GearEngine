@@ -94,10 +94,11 @@ namespace gear {
             }
 
             blast::GfxRenderPassDesc renderpass_desc = {};
-            renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(main_rt, blast::LOAD_CLEAR));
+            renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(main_rt, -1, blast::LOAD_CLEAR));
             renderpass_desc.attachments.push_back(
                     blast::RenderPassAttachment::DepthStencil(
                             depth_rt,
+                            -1,
                             blast::LOAD_CLEAR,
                             blast::STORE_STORE
                     )
