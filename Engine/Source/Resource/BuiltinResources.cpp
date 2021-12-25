@@ -19,6 +19,9 @@ namespace gear {
         SAFE_DELETE(quad_buffer);
         SAFE_DELETE(cube_buffer);
         gEngine.GetDevice()->DestroyShader(pano_to_cube_shader);
+        gEngine.GetDevice()->DestroyShader(compute_irradiance_map_shader);
+        gEngine.GetDevice()->DestroyShader(compute_specular_map_shader);
+        gEngine.GetDevice()->DestroyShader(brdf_integration_shader);
     }
 
     void BuiltinResources::Initialize(const std::string& path) {
@@ -39,6 +42,42 @@ namespace gear {
             shader_desc.bytecode = compile_result.bytes.data();
             shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
             pano_to_cube_shader = gEngine.GetDevice()->CreateShader(shader_desc);
+        }
+
+        {
+            blast::ShaderCompileDesc compile_desc;
+            compile_desc.code = COMPUTE_IRRADIANCE_MAP_COMP_DATA;
+            compile_desc.stage = blast::SHADER_STAGE_COMP;
+            blast::ShaderCompileResult compile_result = gEngine.GetShaderCompiler()->Compile(compile_desc);
+            blast::GfxShaderDesc shader_desc;
+            shader_desc.stage = blast::SHADER_STAGE_COMP;
+            shader_desc.bytecode = compile_result.bytes.data();
+            shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
+            compute_irradiance_map_shader = gEngine.GetDevice()->CreateShader(shader_desc);
+        }
+
+        {
+            blast::ShaderCompileDesc compile_desc;
+            compile_desc.code = COMPUTE_SPECULAR_MAP_COMP_DATA;
+            compile_desc.stage = blast::SHADER_STAGE_COMP;
+            blast::ShaderCompileResult compile_result = gEngine.GetShaderCompiler()->Compile(compile_desc);
+            blast::GfxShaderDesc shader_desc;
+            shader_desc.stage = blast::SHADER_STAGE_COMP;
+            shader_desc.bytecode = compile_result.bytes.data();
+            shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
+            compute_specular_map_shader = gEngine.GetDevice()->CreateShader(shader_desc);
+        }
+
+        {
+            blast::ShaderCompileDesc compile_desc;
+            compile_desc.code = BRDF_INTEGRATION_COMP_DATA;
+            compile_desc.stage = blast::SHADER_STAGE_COMP;
+            blast::ShaderCompileResult compile_result = gEngine.GetShaderCompiler()->Compile(compile_desc);
+            blast::GfxShaderDesc shader_desc;
+            shader_desc.stage = blast::SHADER_STAGE_COMP;
+            shader_desc.bytecode = compile_result.bytes.data();
+            shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
+            brdf_integration_shader = gEngine.GetDevice()->CreateShader(shader_desc);
         }
     }
 

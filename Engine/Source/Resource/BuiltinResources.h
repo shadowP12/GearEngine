@@ -29,6 +29,12 @@ namespace gear {
 
         blast::GfxShader* GetPanoToCubeShader() { return pano_to_cube_shader; }
 
+        blast::GfxShader* GetComputeIrradianceMapShader() { return compute_irradiance_map_shader; }
+
+        blast::GfxShader* GetComputeSpecularMapShader() { return compute_specular_map_shader; }
+
+        blast::GfxShader* GetBRDFIntegrationShader() { return brdf_integration_shader; }
+
     private:
         void CreateQuadBuffer();
 
@@ -42,5 +48,8 @@ namespace gear {
         VertexBuffer* quad_buffer = nullptr;
         VertexBuffer* cube_buffer = nullptr;
         blast::GfxShader* pano_to_cube_shader = nullptr;
+        blast::GfxShader* compute_irradiance_map_shader = nullptr;
+        blast::GfxShader* compute_specular_map_shader = nullptr;
+        blast::GfxShader* brdf_integration_shader = nullptr;
     };
 }

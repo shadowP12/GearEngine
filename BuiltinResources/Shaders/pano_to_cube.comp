@@ -4,21 +4,21 @@
 layout(binding = 1000) uniform texture2D src_texture;
 layout(binding = 3000) uniform sampler src_sampler;
 layout(binding = 2000, rgba32f) uniform image2DArray dst_texture;
+
 layout(push_constant) uniform ConstantBlock {
-	uint mip;
+	uint mip_level;
 	uint max_size;
 } constant;
 
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-void main()
-{
+void main() {
     vec3 thread_pos = vec3(gl_GlobalInvocationID);
     float PI = 3.14159274;
 	vec2 inv_atan = vec2(0.1591, 0.31830000);
-	uint mip = constant.mip;
-	float mip_size = float(constant.max_size >> mip);
+	uint mip_level = constant.mip_level;
+	float mip_size = float(constant.max_size >> mip_level);
 
 	if ((thread_pos.x >= mip_size) || (thread_pos.y >= mip_size)) 
 		return;

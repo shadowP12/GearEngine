@@ -1,0 +1,79 @@
+#version 450 core
+
+#define PI 3.14159265359
+#define SampleDelta 0.25
+
+layout(binding = 1000) uniform textureCube src_texture;
+layout(binding = 3000) uniform sampler src_sampler;
+layout(binding = 2000, rgba32f) uniform image2DArray dst_texture;
+
+layout(push_constant) uniform ConstantBlock {
+	uint mip_level;
+	uint max_size;
+} constant;
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+vec4 ComputeIrradiance(vec3 N) {
+    vec4 irradiance = vec4(0.0);
+
+    vec3 up = vec3(0.000000, 1.000000, 0.000000);
+    vec3 right = cross(up, N);
+    up = cross(N, right);
+
+    float num_samples = 0.0;
+
+    for (float phi = 0.0; phi < 2.0 * PI; phi += SampleDelta) {
+        for (float theta = 0.0; theta < 0.5 * PI; theta += SampleDelta) {
+            vec3 tangent_sample = vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+
+            vec3 sample_vec = vec3(tangent_sample.x) * right + vec3(tangent_sample.y) * up + vec3(tangent_sample.z) * N;
+
+            vec4 sampled_value = textureLod(samplerCube(src_texture, src_sampler), sample_vec, 0.0);
+
+            irradiance += vec4(sample_vec.rgb * vec3(cos(theta)) * vec3(sin(theta)), sample_vec.a);
+            num_samples++;
+        }
+    }
+
+    return PI * irradiance * vec4(1.0 / num_samples);
+}
+
+void main() {
+    uint mip_level = constant.mip_level;
+    float mip_size = float(constant.max_size >> mip_level);
+
+    vec3 thread_pos = vec3(gl_GlobalInvocationID);
+    vec2 texcoords = vec2((thread_pos.x + 0.5) / mip_size, (thread_pos.y + 0.5) / mip_size);
+    texcoords = (texcoords * 2.0) - 1.0;
+
+    vec3 sphere_dir;
+    // +x
+	if (thread_pos.z <= 0.0) {
+		sphere_dir = normalize(vec3(1.0, -texcoords.y, -texcoords.x));
+    }
+    // -x
+	else if (thread_pos.z <= 1.0) {
+        sphere_dir = normalize(vec3(-1.0, -texcoords.y, texcoords.x));
+    }
+    // +y
+    else if (thread_pos.z <= 2.0) {
+        sphere_dir = normalize(vec3(texcoords.x, 1.0, texcoords.y));
+    }
+    // -y
+    else if (thread_pos.z <= 3.0) {
+        sphere_dir = normalize(vec3(texcoords.x, -1.0, -texcoords.y));
+    }
+    // +z
+    else if (thread_pos.z <= 4.0) {
+        sphere_dir = normalize(vec3(texcoords.x, -texcoords.y, 1.0));
+    }
+    // -z
+    else if (thread_pos.z <= 5.0) {
+        sphere_dir = normalize(vec3(-texcoords.x, -texcoords.y, -1.0));
+    }
+
+    vec4 irradiance = ComputeIrradiance(sphere_dir);
+
+    imageStore(dst_texture, ivec3(ivec3(thread_pos)), irradiance);
+}

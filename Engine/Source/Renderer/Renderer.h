@@ -44,6 +44,12 @@ namespace gear {
 
         Texture* EquirectangularMapToCubemap(Texture* equirectangular_map, uint32_t face_size);
 
+        Texture* ComputeIrradianceMap(Texture* cube_map);
+
+        Texture* ComputePrefilteredMap(Texture* cube_map);
+
+        Texture* ComputeBRDFLut();
+
     private:
         void BasePass(Scene* scene, View* view);
 
