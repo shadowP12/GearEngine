@@ -100,5 +100,5 @@ vec2 IntegrateBRDF(float NdotV, float roughness) {
 
 void main() {
 	vec2 texcoords = vec2(float(gl_GlobalInvocationID.x + 0.5) / constant.lut_size, 1.0 - float(gl_GlobalInvocationID.y + 0.5) / constant.lut_size);
-	imageStore(dstTexture, ivec2(gl_GlobalInvocationID), vec4(IntegrateBRDF(texcoords.x, texcoords.y), 0.0, 0.0));
+	imageStore(dst_texture, ivec2(gl_GlobalInvocationID), vec4(IntegrateBRDF(texcoords.x, texcoords.y), 0.0, 0.0));
 }

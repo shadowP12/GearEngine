@@ -236,22 +236,33 @@ public:
                 scene->AddEntity(gltf_asset->entities[i]);
             }
 
-            // 加载天空盒
-            gear::Texture* equirectangular_map = ImportTexture2D("./BuiltinResources/Textures/skybox_0.jpg");
+            // 加载天空盒以及IBL资源
+            gear::Texture* equirectangular_map = ImportTexture2DWithFloat("./BuiltinResources/Textures/Ridgecrest_Road_Ref.hdr");
             skybox_map = gear::gEngine.GetRenderer()->EquirectangularMapToCubemap(equirectangular_map, 512);
+            irradiance_map = gear::gEngine.GetRenderer()->ComputeIrradianceMap(skybox_map);
+            prefiltered_map = gear::gEngine.GetRenderer()->ComputePrefilteredMap(skybox_map);
+            brdf_lut = gear::gEngine.GetRenderer()->ComputeBRDFLut();
             SAFE_DELETE(equirectangular_map);
+
             sun->AddComponent<gear::CSkybox>()->SetCubeMap(skybox_map);
+            ibl = gear::gEngine.GetEntityManager()->CreateEntity();
+            ibl->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
+            scene->AddEntity(ibl);
         }
     }
 
     void Exit() override {
         DestroyGltfAsset(gltf_asset);
         gear::gEngine.GetEntityManager()->DestroyEntity(sun);
+        gear::gEngine.GetEntityManager()->DestroyEntity(ibl);
         gear::gEngine.GetEntityManager()->DestroyEntity(quad);
         gear::gEngine.GetEntityManager()->DestroyEntity(camera);
         SAFE_DELETE(quad_texture);
         SAFE_DELETE(font_texture);
         SAFE_DELETE(skybox_map);
+        SAFE_DELETE(irradiance_map);
+        SAFE_DELETE(prefiltered_map);
+        SAFE_DELETE(brdf_lut);
         SAFE_DELETE(quad_vb);
         SAFE_DELETE(quad_ib);
         SAFE_DELETE(quad_mi);
@@ -390,6 +401,7 @@ private:
     gear::Entity* camera = nullptr;
     gear::Entity* quad = nullptr;
     gear::Entity* sun = nullptr;
+    gear::Entity* ibl = nullptr;
     gear::VertexBuffer* quad_vb = nullptr;
     gear::IndexBuffer* quad_ib = nullptr;
     gear::Material* quad_ma = nullptr;
@@ -399,6 +411,9 @@ private:
     gear::Texture* quad_texture = nullptr;
     gear::Texture* font_texture = nullptr;
     gear::Texture* skybox_map = nullptr;
+    gear::Texture* irradiance_map = nullptr;
+    gear::Texture* prefiltered_map = nullptr;
+    gear::Texture* brdf_lut = nullptr;
     CameraController* camera_controller = nullptr;
     GltfAsset* gltf_asset = nullptr;
     EventHandle mouse_position_cb_handle;

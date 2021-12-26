@@ -1,7 +1,7 @@
 #version 450 core
 
 #define PI 3.14159265359
-#define SampleDelta 0.25
+#define SampleDelta 0.025
 
 layout(binding = 1000) uniform textureCube src_texture;
 layout(binding = 3000) uniform sampler src_sampler;
@@ -31,7 +31,7 @@ vec4 ComputeIrradiance(vec3 N) {
 
             vec4 sampled_value = textureLod(samplerCube(src_texture, src_sampler), sample_vec, 0.0);
 
-            irradiance += vec4(sample_vec.rgb * vec3(cos(theta)) * vec3(sin(theta)), sample_vec.a);
+            irradiance += vec4(sampled_value.rgb * vec3(cos(theta)) * vec3(sin(theta)), sampled_value.a);
             num_samples++;
         }
     }

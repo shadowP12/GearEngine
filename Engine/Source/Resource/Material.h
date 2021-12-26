@@ -36,6 +36,7 @@ namespace gear {
         static constexpr Key SHADOW_RECEIVER        = 0x04; // 接收阴影
         static constexpr Key SKINNING_OR_MORPHING   = 0x08; // GPU蒙皮
         static constexpr Key DEPTH                  = 0x10; // 深度
+        static constexpr Key IBL                    = 0x20; // ibl
 
         static constexpr Key VERTEX_MASK =  DIRECTIONAL_LIGHTING |
                                             DYNAMIC_LIGHTING |
@@ -46,7 +47,8 @@ namespace gear {
         static constexpr Key FRAGMENT_MASK =    DIRECTIONAL_LIGHTING |
                                                 DYNAMIC_LIGHTING |
                                                 SHADOW_RECEIVER |
-                                                DEPTH;
+                                                DEPTH |
+                                                IBL;
 
         static constexpr Key DEPTH_MASK =   DIRECTIONAL_LIGHTING |
                                             DYNAMIC_LIGHTING |
@@ -58,11 +60,13 @@ namespace gear {
         inline bool HasDynamicLighting() const noexcept { return key & DYNAMIC_LIGHTING; }
         inline bool HasShadowReceiver() const noexcept { return key & SHADOW_RECEIVER; }
         inline bool HasDepth() noexcept { return key & DEPTH; }
+        inline bool HasIBL() noexcept { return key & IBL; }
 
         inline void SetSkinning(bool v) noexcept { Set(v, SKINNING_OR_MORPHING); }
         inline void SetDirectionalLighting(bool v) noexcept { Set(v, DIRECTIONAL_LIGHTING); }
         inline void SetDynamicLighting(bool v) noexcept { Set(v, DYNAMIC_LIGHTING); }
         inline void SetShadowReceiver(bool v) noexcept { Set(v, SHADOW_RECEIVER); }
+        inline void SetIBL(bool v) noexcept { Set(v, IBL); }
 
         inline bool IsValidDepthVariant() noexcept {
             // 深度变体只有两种情况

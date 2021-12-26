@@ -75,7 +75,7 @@ namespace gear {
     }
 
     Texture* Renderer::ComputeIrradianceMap(Texture* cube_map) {
-        uint32_t irradiance_map_size = 32;
+        uint32_t irradiance_map_size = 64;
 
         gear::Texture::Builder builder;
         builder.SetWidth(irradiance_map_size);
@@ -102,6 +102,9 @@ namespace gear {
         device->BindResource(current_cmd, cube_map->GetTexture(), 0);
 
         blast::GfxSamplerDesc default_sampler = {};
+        default_sampler.address_u = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
+        default_sampler.address_v = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
+        default_sampler.address_w = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
         device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);
 
         device->BindUAV(current_cmd, irradiance_map->GetTexture(), 0);
@@ -141,7 +144,7 @@ namespace gear {
 
         for (uint32_t i = 0; i < mip_level_count; ++i) {
             uint32_t mip_size = prefiltered_map_size >> i;
-            int32_t uav_sub_resource = gEngine.GetDevice()->CreateSubresource(prefiltered_map->GetTexture(), blast::UAV, 0, 1, i, 1);
+            int32_t uav_sub_resource = gEngine.GetDevice()->CreateSubresource(prefiltered_map->GetTexture(), blast::UAV, 0, 6, i, 1);
 
             ComputeSpecularConstant constant;
             constant.roughness = (float)i / (float)(mip_level_count - 1);
