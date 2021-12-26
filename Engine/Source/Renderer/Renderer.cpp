@@ -116,6 +116,7 @@ namespace gear {
         if (scene->light_info.has_direction_light) {
             view_storage.sun_direction = glm::vec4(scene->light_info.sun_direction, 1.0f);
         }
+        view_storage.view_position = glm::vec4(scene->display_camera_info.position, 1.0f);
         device->UpdateBuffer(current_cmd, main_view_ub, &view_storage, sizeof(ViewUniforms));
 
         ShadowPass(scene, view);
@@ -138,6 +139,10 @@ namespace gear {
                 uint32_t material_variant = 0;
                 if (scene->light_info.has_direction_light && rp->mi->GetMaterial()->GetShadingModel() == SHADING_MODEL_LIT) {
                     material_variant |= MaterialVariant::DIRECTIONAL_LIGHTING;
+                }
+
+                if (scene->light_info.has_ibl && rp->mi->GetMaterial()->GetShadingModel() == SHADING_MODEL_LIT) {
+                    material_variant |= MaterialVariant::IBL;
                 }
 
                 if (rp->receive_shadow) {
@@ -242,6 +247,15 @@ namespace gear {
 
             for (auto& texture_item : primitive.mi->GetGfxTextureGroup()) {
                 device->BindResource(current_cmd, texture_item.second->GetTexture(), texture_item.first);
+            }
+
+            // IBL
+            if (material_variant & MaterialVariant::IBL) {
+                blast::GfxSamplerDesc ibl_sampler_desc;
+                device->BindSampler(current_cmd, sampler_cache->GetSampler(ibl_sampler_desc), 11);
+                device->BindResource(current_cmd, scene->light_info.irradiance_map, 11);
+                device->BindResource(current_cmd, scene->light_info.prefiltered_map, 12);
+                device->BindResource(current_cmd, scene->light_info.lut, 13);
             }
 
             // 阴影贴图

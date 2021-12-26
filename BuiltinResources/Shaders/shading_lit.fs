@@ -9,6 +9,10 @@ vec4 EvaluateLights(const MaterialFragmentParams material_params) {
     EvaluatePunctualLights(material_params, color);
 #endif
 
+#if defined(HAS_IBL)
+    EvaluateIBL(material_params, color);
+#endif
+
     return vec4(color, material_params.base_color.a);
 }
 

@@ -275,6 +275,10 @@ namespace gear {
                         cg.GenerateDefine(fs, "HAS_SHADOWING");
                     }
 
+                    if (variant.HasIBL()) {
+                        cg.GenerateDefine(fs, "HAS_IBL");
+                    }
+
                     cg.GenerateShaderAttributes(fs, blast::SHADER_STAGE_FRAG, attributes);
                     cg.GenerateShaderInput(fs, blast::SHADER_STAGE_FRAG);
 

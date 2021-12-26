@@ -26,7 +26,7 @@ namespace gear {
     };
 
     // 材质的变体参数
-    static constexpr uint16_t MATERIAL_VARIANT_COUNT = 32;
+    static constexpr uint16_t MATERIAL_VARIANT_COUNT = 64;
     struct MaterialVariant {
     public:
         typedef uint16_t Key;

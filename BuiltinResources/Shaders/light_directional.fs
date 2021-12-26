@@ -45,15 +45,12 @@ float SampleCascadeShadowMapWithPCF() {
 #endif
 
 void EvaluateDirectionalLight(const MaterialFragmentParams material_params, inout vec3 color) {
-    color = material_params.base_color.xyz;
-
 #if defined(HAS_ATTRIBUTE_NORMAL)
-    color = max(dot(vertex_normal, -frame_uniforms.sun_direction.xyz), 0.0) * vec3(0.6);
+    color += max(dot(vertex_normal, - frame_uniforms.sun_direction.xyz), 0.0) * vec3(0.6);
 #endif
 
 #if defined(HAS_SHADOWING)
     float visibility = SampleCascadeShadowMapWithPCF();
     color *= (1.0 - visibility);
-    color += 0.3;
 #endif
 }

@@ -164,20 +164,6 @@ public:
         scene_view = new gear::View();
         scene = new gear::Scene();
         {
-            gear::VertexBuffer::Builder vb_builder;
-            vb_builder.SetVertexCount(4);
-            vb_builder.SetVertexLayoutType(gear::VLT_P_T0);
-            quad_vb = vb_builder.Build();
-            quad_vb->UpdateData(vertices, sizeof(Vertex) * 4);
-
-            gear::IndexBuffer::Builder ib_builder;
-            ib_builder.SetIndexCount(6);
-            ib_builder.SetIndexType(blast::INDEX_TYPE_UINT32);
-            quad_ib = ib_builder.Build();
-            quad_ib->UpdateData(indices, sizeof(unsigned int) * 6);
-
-            quad_texture = ImportTexture2D("./BuiltinResources/Textures/test.png");
-
             int tex_width, tex_height;
             unsigned char* pixels = nullptr;
             io.Fonts->GetTexDataAsRGBA32(&pixels, &tex_width, &tex_height);
@@ -188,24 +174,7 @@ public:
             font_texture = tex_builder.Build();
             font_texture->UpdateData(pixels);
 
-            quad_ma = gear::gEngine.GetMaterialCompiler()->Compile("./BuiltinResources/Materials/blit.mat", true);
-            quad_mi = quad_ma->CreateInstance();
-            quad_mi->SetTexture("src_texture", quad_texture);
-            blast::GfxSamplerDesc sampler_desc;
-            quad_mi->SetSampler("blit_sampler", sampler_desc);
-
             imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile("./BuiltinResources/Materials/ui.mat", true);
-
-            quad = gear::gEngine.GetEntityManager()->CreateEntity();
-            quad->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-            gear::CMesh* cmesh = quad->AddComponent<gear::CMesh>();
-            gear::SubMesh sub_mesh;
-            sub_mesh.ib = quad_ib;
-            sub_mesh.vb = quad_vb;
-            sub_mesh.mi = quad_mi;
-            sub_mesh.count = 6;
-            cmesh->AddSubMesh(sub_mesh);
-            scene->AddEntity(quad);
 
             camera = gear::gEngine.GetEntityManager()->CreateEntity();
             camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
@@ -247,6 +216,11 @@ public:
             sun->AddComponent<gear::CSkybox>()->SetCubeMap(skybox_map);
             ibl = gear::gEngine.GetEntityManager()->CreateEntity();
             ibl->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
+            ibl->AddComponent<gear::CLight>();
+            ibl->GetComponent<gear::CLight>()->SetLightType(gear::CLight::LightType::IBL);
+            ibl->GetComponent<gear::CLight>()->SetIrradianceMap(irradiance_map);
+            ibl->GetComponent<gear::CLight>()->SetPrefilteredMap(prefiltered_map);
+            ibl->GetComponent<gear::CLight>()->SetBRDFLut(brdf_lut);
             scene->AddEntity(ibl);
         }
     }
@@ -255,18 +229,12 @@ public:
         DestroyGltfAsset(gltf_asset);
         gear::gEngine.GetEntityManager()->DestroyEntity(sun);
         gear::gEngine.GetEntityManager()->DestroyEntity(ibl);
-        gear::gEngine.GetEntityManager()->DestroyEntity(quad);
         gear::gEngine.GetEntityManager()->DestroyEntity(camera);
-        SAFE_DELETE(quad_texture);
         SAFE_DELETE(font_texture);
         SAFE_DELETE(skybox_map);
         SAFE_DELETE(irradiance_map);
         SAFE_DELETE(prefiltered_map);
         SAFE_DELETE(brdf_lut);
-        SAFE_DELETE(quad_vb);
-        SAFE_DELETE(quad_ib);
-        SAFE_DELETE(quad_mi);
-        SAFE_DELETE(quad_ma);
         for (int i = 0; i < imgui_mis.size(); ++i) {
             SAFE_DELETE(imgui_mis[i]);
         }
@@ -399,16 +367,10 @@ private:
     gear::Canvas* canvas = nullptr;
     gear::View* scene_view = nullptr;
     gear::Entity* camera = nullptr;
-    gear::Entity* quad = nullptr;
     gear::Entity* sun = nullptr;
     gear::Entity* ibl = nullptr;
-    gear::VertexBuffer* quad_vb = nullptr;
-    gear::IndexBuffer* quad_ib = nullptr;
-    gear::Material* quad_ma = nullptr;
-    gear::MaterialInstance* quad_mi = nullptr;
     gear::Material* imgui_ma = nullptr;
     std::vector<gear::MaterialInstance*> imgui_mis;
-    gear::Texture* quad_texture = nullptr;
     gear::Texture* font_texture = nullptr;
     gear::Texture* skybox_map = nullptr;
     gear::Texture* irradiance_map = nullptr;

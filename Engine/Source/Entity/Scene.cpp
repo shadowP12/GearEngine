@@ -53,6 +53,7 @@ namespace gear {
         num_mesh_renderables = 0;
         num_ui_renderables = 0;
         light_info.has_direction_light = false;
+        light_info.has_ibl = false;
         skybox_map = nullptr;
 
         if (renderables.size() < num_mesh_entitys) {
@@ -99,9 +100,20 @@ namespace gear {
             }
 
             if (entity->HasComponent<CLight>()) {
-                light_info.has_direction_light = true;
-                light_info.sun_direction = entity->GetComponent<CTransform>()->GetFrontVector();
-                glm::normalize(light_info.sun_direction);
+                if (entity->GetComponent<CLight>()->GetLightType() == CLight::LightType::DIRECTION) {
+                    light_info.has_direction_light = true;
+                    light_info.sun_direction = entity->GetComponent<CTransform>()->GetFrontVector();
+                    glm::normalize(light_info.sun_direction);
+                } else if (entity->GetComponent<CLight>()->GetLightType() == CLight::LightType::IBL) {
+                    if (entity->GetComponent<CLight>()->GetIrradianceMap() &&
+                        entity->GetComponent<CLight>()->GetPrefilteredMap() &&
+                        entity->GetComponent<CLight>()->GetBRDFLut()) {
+                        light_info.has_ibl = true;
+                        light_info.irradiance_map = entity->GetComponent<CLight>()->GetIrradianceMap()->GetTexture();
+                        light_info.prefiltered_map = entity->GetComponent<CLight>()->GetPrefilteredMap()->GetTexture();
+                        light_info.lut = entity->GetComponent<CLight>()->GetBRDFLut()->GetTexture();
+                    }
+                }
             }
 
             if (entity->HasComponent<CSkybox>()) {

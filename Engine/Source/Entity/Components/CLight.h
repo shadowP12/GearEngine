@@ -6,6 +6,7 @@ namespace gear {
     class Entity;
     class Texture;
     class CLight : public Component {
+    public:
         enum class LightType {
             POINT,
             SPOT,
