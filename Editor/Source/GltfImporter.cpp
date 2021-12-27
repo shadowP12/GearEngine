@@ -141,8 +141,13 @@ gear::Material* GenMaterial(GltfMaterialConfig& config) {
     }
 
     if (config.has_metallic_roughness_tex) {
-        // TODO
+        frag_shader_code += "params.metallic = texture(sampler2D(metallic_roughness_texture, metallic_roughness_sampler), vertex_uv01.xy).r;\\n";
+        frag_shader_code += "params.roughness = texture(sampler2D(metallic_roughness_texture, metallic_roughness_sampler), vertex_uv01.xy).g;\\n";
+    } else {
+        frag_shader_code += "params.metallic = material_uniforms.metallic_roughness.r;\\n";
+        frag_shader_code += "params.roughness = material_uniforms.metallic_roughness.g;\\n";
     }
+
     frag_shader_code += "}\\n";
     Replace(code, "${FRAG_SHADER}", frag_shader_code);
 
