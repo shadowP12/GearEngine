@@ -196,7 +196,7 @@ public:
             camera_controller = new CameraController();
             camera_controller->SetCamera(camera);
 
-            gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/test.gltf");
+            gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/mech_drone/scene.gltf");
             for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
                 if (gltf_asset->entities[i]->HasComponent<gear::CMesh>()) {
                     gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetCastShadow(true);

@@ -3,6 +3,7 @@
 
 #include <Utility/Log.h>
 #include <Utility/Hash.h>
+#include <Resource/Texture.h>
 #include <Resource/GpuBuffer.h>
 #include <Resource/Material.h>
 #include <Entity/Entity.h>
@@ -12,6 +13,7 @@
 #include <Entity/Components/CMesh.h>
 #include <GearEngine.h>
 #include <MaterialCompiler/MaterialCompiler.h>
+#include <Utility/FileSystem.h>
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
 #include <unordered_map>
@@ -89,8 +91,8 @@ gear::Material* GenMaterial(GltfMaterialConfig& config) {
     std::string textures_code = "";
     std::string samplers_code = "";
     if (config.has_base_color_tex || config.has_normal_tex || config.has_metallic_roughness_tex) {
-        textures_code += "textures [\n";
-        samplers_code += "samplers [\n";
+        textures_code += "\"textures\": [\n";
+        samplers_code += "\"samplers\": [\n";
     }
     if (config.has_base_color_tex) {
         textures_code += "{\n";
@@ -102,12 +104,15 @@ gear::Material* GenMaterial(GltfMaterialConfig& config) {
     }
 
     if (config.has_normal_tex) {
+        // TODO
+        /*
         textures_code += "{\n";
         textures_code += "\"name\": \"normal_texture\",\n";
         textures_code += "\"type\": \"texture_2d\"\n";
         textures_code += "},\n";
 
-        samplers_code += "normal_sampler,\n";
+        samplers_code += "\"normal_sampler\",\n";
+        */
     }
 
     if (config.has_metallic_roughness_tex) {
@@ -116,7 +121,7 @@ gear::Material* GenMaterial(GltfMaterialConfig& config) {
         textures_code += "\"type\": \"texture_2d\"\n";
         textures_code += "},\n";
 
-        samplers_code += "metallic_roughness_sampler,\n";
+        samplers_code += "\"metallic_roughness_sampler\",\n";
     }
     if (config.has_base_color_tex || config.has_normal_tex || config.has_metallic_roughness_tex) {
         textures_code += "],";
@@ -186,7 +191,8 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
     std::map<cgltf_image*, gear::Texture*> image_helper;
     for (int i = 0; i < data->images_count; ++i) {
         cgltf_image* cimage = &data->images[i];
-        std::string image_path = path + "/" + cimage->uri;
+        std::string dir = filesystem::path(path).parent_path().str();
+        std::string image_path = dir + "/" + cimage->uri;
         gear::Texture* texture = ImportTexture2D(image_path);
         image_helper[cimage] = texture;
         textures.push_back(texture);

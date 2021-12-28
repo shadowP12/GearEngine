@@ -9,8 +9,9 @@ namespace gear {
     CTransform::~CTransform() {
         SetParent(nullptr);
 
-        for (int i = 0; i < _children.size(); ++i) {
-            _children[i]->GetComponent<CTransform>()->SetParent(nullptr);
+        std::vector<Entity*> remove_children = _children;
+        for (int i = 0; i < remove_children.size(); ++i) {
+            remove_children[i]->GetComponent<CTransform>()->SetParent(nullptr);
         }
         _children.clear();
     }
