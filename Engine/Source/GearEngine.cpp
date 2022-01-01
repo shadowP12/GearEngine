@@ -4,6 +4,7 @@
 #include "MaterialCompiler/MaterialCompiler.h"
 #include "Resource/BuiltinResources.h"
 #include "Input/InputSystem.h"
+#include "JobSystem/JobSystem.h"
 
 #include <Blast/Gfx/GfxDevice.h>
 #include <Blast/Gfx/Vulkan/VulkanDevice.h>
@@ -19,9 +20,11 @@ namespace gear {
         builtin_resources = new BuiltinResources();
         entity_manager = new EntityManager();
         input_system = new InputSystem();
+        job_system = new JobSystem(MAX_THREADS);
     }
 
     GearEngine::~GearEngine() {
+        SAFE_DELETE(job_system);
         SAFE_DELETE(input_system);
         SAFE_DELETE(shader_compiler);
         SAFE_DELETE(renderer);

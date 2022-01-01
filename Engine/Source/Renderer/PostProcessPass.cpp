@@ -40,22 +40,26 @@ namespace gear {
 
             VertexBuffer* quad_buffer = gEngine.GetBuiltinResources()->GetQuadBuffer();
 
-            blast::GfxPipelineDesc pipeline_state = {};
-            pipeline_state.rp = view->fxaa_renderpass0;
-            pipeline_state.vs = gEngine.GetBuiltinResources()->GetFXAAMaterial()->GetVertShader(0, quad_buffer->GetVertexLayoutType());
-            pipeline_state.fs = gEngine.GetBuiltinResources()->GetFXAAMaterial()->GetFragShader(0, quad_buffer->GetVertexLayoutType());
-            pipeline_state.il = vertex_layout_cache->GetVertexLayout(quad_buffer->GetVertexLayoutType());
-            pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-            pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
-            pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+            blast::GfxShader* vs = gEngine.GetBuiltinResources()->GetFXAAMaterial()->GetVertShader(0, quad_buffer->GetVertexLayoutType());
+            blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetFXAAMaterial()->GetFragShader(0, quad_buffer->GetVertexLayoutType());
+            if (vs != nullptr && fs != nullptr) {
+                blast::GfxPipelineDesc pipeline_state = {};
+                pipeline_state.rp = view->fxaa_renderpass0;
+                pipeline_state.vs = vs;
+                pipeline_state.fs = fs;
+                pipeline_state.il = vertex_layout_cache->GetVertexLayout(quad_buffer->GetVertexLayoutType());
+                pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+                pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+                pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
 
-            device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+                device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 
-            uint64_t vertex_offsets[] = {0};
-            blast::GfxBuffer* vertex_buffers[] = {quad_buffer->GetHandle()};
-            device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+                uint64_t vertex_offsets[] = {0};
+                blast::GfxBuffer* vertex_buffers[] = {quad_buffer->GetHandle()};
+                device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
 
-            device->Draw(current_cmd, 6, 0);
+                device->Draw(current_cmd, 6, 0);
+            }
 
             device->RenderPassEnd(current_cmd);
 

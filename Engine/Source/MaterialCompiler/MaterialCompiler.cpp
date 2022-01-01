@@ -239,20 +239,22 @@ namespace gear {
 
                     cg.GenerateEpilog(vs);
 
-                    blast::ShaderCompileDesc compile_desc;
-                    compile_desc.code = vs.str();
-                    compile_desc.stage = blast::SHADER_STAGE_VERT;
-                    blast::ShaderCompileResult compile_result = shader_compiler->Compile(compile_desc);
-                    if (compile_result.success) {
-                        blast::GfxShaderDesc shader_desc;
-                        shader_desc.stage = blast::SHADER_STAGE_VERT;
-                        shader_desc.bytecode = compile_result.bytes.data();
-                        shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
-                        blast::GfxShader* vert_shader = device->CreateShader(shader_desc);
-                        builder.AddVertShader(key, vertex_layout, vert_shader);
-                    } else {
-                        LOGE("\n %s \n", vs.str().c_str());
-                    }
+                    builder.AddVertShaderCode(key, vertex_layout, vs.str());
+//
+//                    blast::ShaderCompileDesc compile_desc;
+//                    compile_desc.code = vs.str();
+//                    compile_desc.stage = blast::SHADER_STAGE_VERT;
+//                    blast::ShaderCompileResult compile_result = shader_compiler->Compile(compile_desc);
+//                    if (compile_result.success) {
+//                        blast::GfxShaderDesc shader_desc;
+//                        shader_desc.stage = blast::SHADER_STAGE_VERT;
+//                        shader_desc.bytecode = compile_result.bytes.data();
+//                        shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
+//                        blast::GfxShader* vert_shader = device->CreateShader(shader_desc);
+//                        builder.AddVertShader(key, vertex_layout, vert_shader);
+//                    } else {
+//                        LOGE("\n %s \n", vs.str().c_str());
+//                    }
                 }
 
                 // 生成fragment shader
@@ -300,20 +302,22 @@ namespace gear {
 
                     cg.GenerateEpilog(fs);
 
-                    blast::ShaderCompileDesc compile_desc;
-                    compile_desc.code = fs.str();
-                    compile_desc.stage = blast::SHADER_STAGE_FRAG;
-                    blast::ShaderCompileResult compile_result = shader_compiler->Compile(compile_desc);
-                    if (compile_result.success) {
-                        blast::GfxShaderDesc shader_desc;
-                        shader_desc.stage = blast::SHADER_STAGE_FRAG;
-                        shader_desc.bytecode = compile_result.bytes.data();
-                        shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
-                        blast::GfxShader* frag_shader = device->CreateShader(shader_desc);
-                        builder.AddFragShader(key, vertex_layout, frag_shader);
-                    } else {
-                        LOGE("\n %s \n", fs.str().c_str());
-                    }
+                    builder.AddFragShaderCode(key, vertex_layout, fs.str());
+//
+//                    blast::ShaderCompileDesc compile_desc;
+//                    compile_desc.code = fs.str();
+//                    compile_desc.stage = blast::SHADER_STAGE_FRAG;
+//                    blast::ShaderCompileResult compile_result = shader_compiler->Compile(compile_desc);
+//                    if (compile_result.success) {
+//                        blast::GfxShaderDesc shader_desc;
+//                        shader_desc.stage = blast::SHADER_STAGE_FRAG;
+//                        shader_desc.bytecode = compile_result.bytes.data();
+//                        shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
+//                        blast::GfxShader* frag_shader = device->CreateShader(shader_desc);
+//                        builder.AddFragShader(key, vertex_layout, frag_shader);
+//                    } else {
+//                        LOGE("\n %s \n", fs.str().c_str());
+//                    }
                 }
             }
         }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/GearDefine.h"
 
+
 namespace blast {
     class GfxDevice;
     class ShaderCompiler;
@@ -12,6 +13,7 @@ namespace gear {
     class BuiltinResources;
     class EntityManager;
     class InputSystem;
+    class JobSystem;
     class GearEngine {
     public:
         GearEngine();
@@ -32,6 +34,8 @@ namespace gear {
 
         InputSystem* GetInputSystem() { return input_system; }
 
+        JobSystem* GetJobSystem() { return job_system; }
+
     private:
         blast::GfxDevice* device = nullptr;
         blast::ShaderCompiler* shader_compiler = nullptr;
@@ -40,6 +44,7 @@ namespace gear {
         BuiltinResources* builtin_resources = nullptr;
         EntityManager* entity_manager = nullptr;
         InputSystem* input_system = nullptr;
+        JobSystem* job_system = nullptr;
     };
 
     extern GearEngine gEngine;

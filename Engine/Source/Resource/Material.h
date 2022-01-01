@@ -11,6 +11,8 @@
 #include <set>
 #include <unordered_map>
 #include <tuple>
+#include <thread>
+#include <mutex>
 
 namespace blast {
     class GfxShader;
@@ -123,6 +125,10 @@ namespace gear {
 
             void AddFragShader(MaterialVariant::Key, VertexLayoutType, blast::GfxShader*);
 
+            void AddVertShaderCode(MaterialVariant::Key, VertexLayoutType, const std::string& code);
+
+            void AddFragShaderCode(MaterialVariant::Key, VertexLayoutType, const std::string& code);
+
             void AddUniform(const std::string& name, const blast::UniformType& type);
 
             void AddTexture(const std::string& name, const blast::TextureDimension& dim);
@@ -141,6 +147,8 @@ namespace gear {
             std::vector<std::string> samplers;
             std::unordered_map<ShaderKey, blast::GfxShader*, MurmurHash<ShaderKey>, ShaderEq> vert_shader_cache;
             std::unordered_map<ShaderKey, blast::GfxShader*, MurmurHash<ShaderKey>, ShaderEq> frag_shader_cache;
+            std::unordered_map<ShaderKey, std::string, MurmurHash<ShaderKey>, ShaderEq> vert_shader_code_cache;
+            std::unordered_map<ShaderKey, std::string, MurmurHash<ShaderKey>, ShaderEq> frag_shader_code_cache;
         };
 
         ~Material();
@@ -161,11 +169,16 @@ namespace gear {
         Material(Builder*);
 
     protected:
-        std::unordered_map<ShaderKey, blast::GfxShader*, MurmurHash<ShaderKey>, ShaderEq> vert_shader_cache;
-        std::unordered_map<ShaderKey, blast::GfxShader*, MurmurHash<ShaderKey>, ShaderEq> frag_shader_cache;
-
         friend class MaterialCompiler;
         friend class MaterialInstance;
+        std::unordered_map<ShaderKey, blast::GfxShader*, MurmurHash<ShaderKey>, ShaderEq> vert_shader_cache;
+        std::unordered_map<ShaderKey, blast::GfxShader*, MurmurHash<ShaderKey>, ShaderEq> frag_shader_cache;
+        std::unordered_map<ShaderKey, std::string, MurmurHash<ShaderKey>, ShaderEq> vert_shader_code_cache;
+        std::unordered_map<ShaderKey, std::string, MurmurHash<ShaderKey>, ShaderEq> frag_shader_code_cache;
+        std::unordered_map<ShaderKey, bool, MurmurHash<ShaderKey>, ShaderEq> vert_shader_triggered_cache;
+        std::unordered_map<ShaderKey, bool, MurmurHash<ShaderKey>, ShaderEq> frag_shader_triggered_cache;
+        std::mutex vs_cache_mutex;
+        std::mutex fs_cache_mutex;
         static uint32_t global_material_id;
         uint32_t material_id = 0;
         uint32_t current_material_instance_id = 0;

@@ -208,22 +208,26 @@ namespace gear {
 
             VertexBuffer* cube_buffer = gEngine.GetBuiltinResources()->GetCubeBuffer();
 
-            blast::GfxPipelineDesc pipeline_state = {};
-            pipeline_state.rp = view->renderpass;
-            pipeline_state.vs = gEngine.GetBuiltinResources()->GetSkyBoxMaterial()->GetVertShader(0, cube_buffer->GetVertexLayoutType());
-            pipeline_state.fs = gEngine.GetBuiltinResources()->GetSkyBoxMaterial()->GetFragShader(0, cube_buffer->GetVertexLayoutType());
-            pipeline_state.il = vertex_layout_cache->GetVertexLayout(cube_buffer->GetVertexLayoutType());
-            pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-            pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
-            pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+            blast::GfxShader* vs = gEngine.GetBuiltinResources()->GetSkyBoxMaterial()->GetVertShader(0, cube_buffer->GetVertexLayoutType());
+            blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetSkyBoxMaterial()->GetFragShader(0, cube_buffer->GetVertexLayoutType());
+            if (vs != nullptr && fs != nullptr) {
+                blast::GfxPipelineDesc pipeline_state = {};
+                pipeline_state.rp = view->renderpass;
+                pipeline_state.vs = vs;
+                pipeline_state.fs = fs;
+                pipeline_state.il = vertex_layout_cache->GetVertexLayout(cube_buffer->GetVertexLayoutType());
+                pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+                pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+                pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
 
-            device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+                device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 
-            uint64_t vertex_offsets[] = {0};
-            blast::GfxBuffer* vertex_buffers[] = {cube_buffer->GetHandle()};
-            device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+                uint64_t vertex_offsets[] = {0};
+                blast::GfxBuffer* vertex_buffers[] = {cube_buffer->GetHandle()};
+                device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
 
-            device->Draw(current_cmd, 36, 0);
+                device->Draw(current_cmd, 36, 0);
+            }
         }
 
         for (uint32_t i = dc_head; i < dc_head + dc_count; ++i) {
@@ -270,22 +274,26 @@ namespace gear {
                 device->BindResource(current_cmd, cascade_shadow_map, 10);
             }
 
-            pipeline_state.vs = primitive.mi->GetMaterial()->GetVertShader(material_variant, primitive.vb->GetVertexLayoutType());
-            pipeline_state.fs = primitive.mi->GetMaterial()->GetFragShader(material_variant, primitive.vb->GetVertexLayoutType());
-            pipeline_state.il = vertex_layout_cache->GetVertexLayout(primitive.vb->GetVertexLayoutType());
-            pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-            pipeline_state.bs = blend_state_cache->GetDepthStencilState(primitive.mi->GetMaterial()->GetBlendState());
-            pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_DEFAULT);
+            blast::GfxShader* vs = primitive.mi->GetMaterial()->GetVertShader(material_variant, primitive.vb->GetVertexLayoutType());
+            blast::GfxShader* fs = primitive.mi->GetMaterial()->GetFragShader(material_variant, primitive.vb->GetVertexLayoutType());
+            if (vs != nullptr && fs != nullptr) {
+                pipeline_state.vs = vs;
+                pipeline_state.fs = fs;
+                pipeline_state.il = vertex_layout_cache->GetVertexLayout(primitive.vb->GetVertexLayoutType());
+                pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+                pipeline_state.bs = blend_state_cache->GetDepthStencilState(primitive.mi->GetMaterial()->GetBlendState());
+                pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_DEFAULT);
 
-            device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+                device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 
-            uint64_t vertex_offsets[] = {0};
-            blast::GfxBuffer* vertex_buffers[] = {primitive.vb->GetHandle()};
-            device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+                uint64_t vertex_offsets[] = {0};
+                blast::GfxBuffer* vertex_buffers[] = {primitive.vb->GetHandle()};
+                device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
 
-            device->BindIndexBuffer(current_cmd, primitive.ib->GetHandle(), primitive.ib->GetIndexType(), 0);
+                device->BindIndexBuffer(current_cmd, primitive.ib->GetHandle(), primitive.ib->GetIndexType(), 0);
 
-            device->DrawIndexed(current_cmd, primitive.count, primitive.offset, 0);
+                device->DrawIndexed(current_cmd, primitive.count, primitive.offset, 0);
+            }
         }
         device->RenderPassEnd(current_cmd);
 
@@ -365,22 +373,26 @@ namespace gear {
 
             VertexBuffer* quad_buffer = gEngine.GetBuiltinResources()->GetQuadBuffer();
 
-            blast::GfxPipelineDesc pipeline_state = {};
-            pipeline_state.sc = swapchain;;
-            pipeline_state.vs = gEngine.GetBuiltinResources()->GetBlitMaterial()->GetVertShader(0, quad_buffer->GetVertexLayoutType());
-            pipeline_state.fs = gEngine.GetBuiltinResources()->GetBlitMaterial()->GetFragShader(0, quad_buffer->GetVertexLayoutType());
-            pipeline_state.il = vertex_layout_cache->GetVertexLayout(quad_buffer->GetVertexLayoutType());
-            pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-            pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
-            pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+            blast::GfxShader* vs = gEngine.GetBuiltinResources()->GetBlitMaterial()->GetVertShader(0, quad_buffer->GetVertexLayoutType());
+            blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetBlitMaterial()->GetFragShader(0, quad_buffer->GetVertexLayoutType());
+            if (vs != nullptr && fs != nullptr) {
+                blast::GfxPipelineDesc pipeline_state = {};
+                pipeline_state.sc = swapchain;;
+                pipeline_state.vs = vs;
+                pipeline_state.fs = fs;
+                pipeline_state.il = vertex_layout_cache->GetVertexLayout(quad_buffer->GetVertexLayoutType());
+                pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+                pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+                pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
 
-            device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+                device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 
-            uint64_t vertex_offsets[] = {0};
-            blast::GfxBuffer* vertex_buffers[] = {quad_buffer->GetHandle()};
-            device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+                uint64_t vertex_offsets[] = {0};
+                blast::GfxBuffer* vertex_buffers[] = {quad_buffer->GetHandle()};
+                device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
 
-            device->Draw(current_cmd, 6, 0);
+                device->Draw(current_cmd, 6, 0);
+            }
         }
 
         for (uint32_t i = 0; i < valid_canvases.size(); ++i) {
@@ -408,22 +420,26 @@ namespace gear {
                 rect.bottom = scissor.w;
                 device->BindScissorRects(current_cmd, 1, &rect);
 
-                pipeline_state.vs = element.mi->GetMaterial()->GetVertShader(0, element.vb->GetVertexLayoutType());
-                pipeline_state.fs = element.mi->GetMaterial()->GetFragShader(0, element.vb->GetVertexLayoutType());
-                pipeline_state.il = vertex_layout_cache->GetVertexLayout(element.vb->GetVertexLayoutType());
-                pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-                pipeline_state.bs = blend_state_cache->GetDepthStencilState(element.mi->GetMaterial()->GetBlendState());
-                pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+                blast::GfxShader* vs = element.mi->GetMaterial()->GetVertShader(0, element.vb->GetVertexLayoutType());
+                blast::GfxShader* fs = element.mi->GetMaterial()->GetFragShader(0, element.vb->GetVertexLayoutType());
+                if (vs != nullptr && fs != nullptr) {
+                    pipeline_state.vs = vs;
+                    pipeline_state.fs = fs;
+                    pipeline_state.il = vertex_layout_cache->GetVertexLayout(element.vb->GetVertexLayoutType());
+                    pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+                    pipeline_state.bs = blend_state_cache->GetDepthStencilState(element.mi->GetMaterial()->GetBlendState());
+                    pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
 
-                device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+                    device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 
-                uint64_t vertex_offsets[] = {0};
-                blast::GfxBuffer* vertex_buffers[] = {element.vb->GetHandle()};
-                device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+                    uint64_t vertex_offsets[] = {0};
+                    blast::GfxBuffer* vertex_buffers[] = {element.vb->GetHandle()};
+                    device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
 
-                device->BindIndexBuffer(current_cmd, element.ib->GetHandle(), element.ib->GetIndexType(), 0);
+                    device->BindIndexBuffer(current_cmd, element.ib->GetHandle(), element.ib->GetIndexType(), 0);
 
-                device->DrawIndexed(current_cmd, element.count, element.offset, 0);
+                    device->DrawIndexed(current_cmd, element.count, element.offset, 0);
+                }
             }
         }
 

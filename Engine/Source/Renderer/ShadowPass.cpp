@@ -201,22 +201,26 @@ namespace gear {
                     device->BindResource(current_cmd, texture_item.second->GetTexture(), texture_item.first);
                 }
 
-                pipeline_state.vs = primitive.mi->GetMaterial()->GetVertShader(material_variant, primitive.vb->GetVertexLayoutType());
-                pipeline_state.fs = primitive.mi->GetMaterial()->GetFragShader(material_variant, primitive.vb->GetVertexLayoutType());
-                pipeline_state.il = vertex_layout_cache->GetVertexLayout(primitive.vb->GetVertexLayoutType());
-                pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_BACK);
-                pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
-                pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_SHADOW);
+                blast::GfxShader* vs = primitive.mi->GetMaterial()->GetVertShader(material_variant, primitive.vb->GetVertexLayoutType());
+                blast::GfxShader* fs = primitive.mi->GetMaterial()->GetFragShader(material_variant, primitive.vb->GetVertexLayoutType());
+                if (vs != nullptr && fs != nullptr) {
+                    pipeline_state.vs = vs;
+                    pipeline_state.fs = fs;
+                    pipeline_state.il = vertex_layout_cache->GetVertexLayout(primitive.vb->GetVertexLayoutType());
+                    pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_BACK);
+                    pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+                    pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_SHADOW);
 
-                device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+                    device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 
-                uint64_t vertex_offsets[] = {0};
-                blast::GfxBuffer* vertex_buffers[] = {primitive.vb->GetHandle()};
-                device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+                    uint64_t vertex_offsets[] = {0};
+                    blast::GfxBuffer* vertex_buffers[] = {primitive.vb->GetHandle()};
+                    device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
 
-                device->BindIndexBuffer(current_cmd, primitive.ib->GetHandle(), primitive.ib->GetIndexType(), 0);
+                    device->BindIndexBuffer(current_cmd, primitive.ib->GetHandle(), primitive.ib->GetIndexType(), 0);
 
-                device->DrawIndexed(current_cmd, primitive.count, primitive.offset, 0);
+                    device->DrawIndexed(current_cmd, primitive.count, primitive.offset, 0);
+                }
             }
             device->RenderPassEnd(current_cmd);
         }
