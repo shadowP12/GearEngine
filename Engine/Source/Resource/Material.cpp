@@ -199,7 +199,7 @@ namespace gear {
                 // 若没有触发过编译，则异步编译对应shader
                 auto code_iter = vert_shader_code_cache.find(shader_key);
                 if (code_iter != vert_shader_code_cache.end()) {
-                    gEngine.GetJobSystem()->ExecuteJob([this, variant, vertex_layout_type, code_iter](JobSystem::JobArgs args) {
+                    gEngine.GetJobSystem()->ExecuteJob([this, key, vertex_layout_type, code_iter](JobSystem::JobArgs args) {
                         blast::ShaderCompileDesc compile_desc;
                         compile_desc.code = code_iter->second;
                         compile_desc.stage = blast::SHADER_STAGE_VERT;
@@ -214,7 +214,7 @@ namespace gear {
                             // 将编译好的shader放进cache
                             this->vs_cache_mutex.lock();
                             ShaderKey shader_key;
-                            shader_key.variant = variant;
+                            shader_key.variant = key;
                             shader_key.vertex_layout_type = vertex_layout_type;
                             this->vert_shader_cache[shader_key] = vert_shader;
                             this->vs_cache_mutex.unlock();
@@ -255,7 +255,7 @@ namespace gear {
                 // 若没有触发过编译，则异步编译对应shader
                 auto code_iter = frag_shader_code_cache.find(shader_key);
                 if (code_iter != frag_shader_code_cache.end()) {
-                    gEngine.GetJobSystem()->ExecuteJob([this, variant, vertex_layout_type, code_iter](JobSystem::JobArgs args) {
+                    gEngine.GetJobSystem()->ExecuteJob([this, key, vertex_layout_type, code_iter](JobSystem::JobArgs args) {
                         blast::ShaderCompileDesc compile_desc;
                         compile_desc.code = code_iter->second;
                         compile_desc.stage = blast::SHADER_STAGE_FRAG;
@@ -270,7 +270,7 @@ namespace gear {
                             // 将编译好的shader放进cache
                             this->fs_cache_mutex.lock();
                             ShaderKey shader_key;
-                            shader_key.variant = variant;
+                            shader_key.variant = key;
                             shader_key.vertex_layout_type = vertex_layout_type;
                             this->frag_shader_cache[shader_key] = frag_shader;
                             this->fs_cache_mutex.unlock();
