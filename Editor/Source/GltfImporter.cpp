@@ -327,9 +327,75 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
     }
 
     // 加载Skeleton
+    for (uint32_t i = 0; i < data->skins_count; ++i) {
+        cgltf_skin* cskin = &data->skins[i];
 
+        std::vector<glm::mat4> bind_poses(cskin->joints_count);
+        cgltf_accessor* accessor = cskin->inverse_bind_matrices;
+        cgltf_buffer_view* buffer_view = accessor->buffer_view;
+        memcpy(bind_poses.data(), ((uint8_t*)(buffer_view->buffer->data) + accessor->offset + buffer_view->offset), cskin->joints_count * sizeof(glm::mat4));
+
+        std::vector<gear::Joint> joints(cskin->joints_count);
+        std::map<cgltf_node*, uint32_t> joint_helper;
+        for (uint32_t j = 0; j < cskin->joints_count; ++j) {
+            cgltf_node* cjoint = cskin->joints[j];
+            joint_helper[cjoint] = j;
+            joints[j].name = cjoint->name;
+            joints[j].bind_pose = bind_poses[j];
+        }
+
+        for (uint32_t j = 0; j < cskin->joints_count; ++j) {
+            cgltf_node* cjoint = cskin->joints[j];
+            if(cjoint->parent != nullptr) {
+                joints[j].parent = joint_helper[cjoint->parent];
+            }
+        }
+
+        gear::Skeleton* skeleton = new gear::Skeleton(joints);
+        skeletons.push_back(skeleton);
+    }
 
     // 加载AnimationClip
+    for (uint32_t i = 0; i < data->animations_count; ++i) {
+        cgltf_animation* canimation = &data->animations[i];
+
+        std::vector<gear::AnimationTrack> tracks(canimation->channels_count);
+        for (uint32_t j = 0; j < canimation->channels_count; ++j) {
+            cgltf_animation_channel* cchannel = &canimation->channels[j];
+            cgltf_animation_sampler* csampler = cchannel->sampler;
+
+            tracks[j].joint_name = cchannel->target_node->name;
+            if (cchannel->target_path == cgltf_animation_path_type_translation) {
+                tracks[j].target = gear::AnimationTarget::POSITION;
+            } else if (cchannel->target_path == cgltf_animation_path_type_rotation) {
+                tracks[j].target = gear::AnimationTarget::ROTATION;
+            } else if (cchannel->target_path == cgltf_animation_path_type_scale) {
+                tracks[j].target = gear::AnimationTarget::SCALE;
+            }
+
+            cgltf_accessor* in_accessor = csampler->input;
+            cgltf_buffer_view* in_buffer_view = in_accessor->buffer_view;
+            uint8_t* in_data = (uint8_t*)(in_buffer_view->buffer->data) + in_accessor->offset + in_buffer_view->offset;
+
+            cgltf_accessor* out_accessor = csampler->output;
+            cgltf_buffer_view* out_buffer_view = in_accessor->buffer_view;
+            uint8_t* out_data = (uint8_t*)(out_buffer_view->buffer->data) + out_accessor->offset + out_buffer_view->offset;
+
+            tracks[j].keys.resize(csampler->input->count);
+            for (uint32_t k = 0; k < csampler->input->count; ++k) {
+                tracks[j].keys[k].time = *(float*)(in_data + k * sizeof(float));
+
+                if (cchannel->target_path == cgltf_animation_path_type_translation || cchannel->target_path == cgltf_animation_path_type_scale) {
+                    tracks[j].keys[k].vec_value = *(glm::vec3*)(out_data + k * sizeof(glm::vec3));
+                } else if (cchannel->target_path == cgltf_animation_path_type_rotation) {
+                    tracks[j].keys[k].quat_value = *(glm::quat*)(out_data + k * sizeof(glm::quat));
+                }
+            }
+        }
+
+        gear::AnimationClip* animation_clip = new gear::AnimationClip(tracks);
+        animation_clips.push_back(animation_clip);
+    }
 
     // 加载网格
     for (size_t i = 0; i < data->nodes_count; ++i) {

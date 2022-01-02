@@ -28,9 +28,15 @@ namespace gear {
     class Skeleton;
     class AnimationClip {
     public:
-        AnimationClip(std::vector<AnimationTrack>& tracks, float length) {
+        AnimationClip(std::vector<AnimationTrack>& tracks) {
             this->tracks = tracks;
-            this->length = length;
+            for (uint32_t i = 0; i < tracks.size(); ++i) {
+                for (uint32_t j = 0; j < tracks[i].keys.size(); ++j) {
+                    if (tracks[i].keys[j].time >= length) {
+                        length = tracks[i].keys[j].time;
+                    }
+                }
+            }
         }
 
         ~AnimationClip() {
