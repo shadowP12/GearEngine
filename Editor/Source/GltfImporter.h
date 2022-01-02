@@ -12,6 +12,8 @@ namespace gear {
     class Entity;
     class Material;
     class MaterialInstance;
+    class Skeleton;
+    class AnimationClip;
 }
 
 struct GltfAsset {
@@ -21,6 +23,8 @@ struct GltfAsset {
     std::vector<gear::Material*> materials;
     std::vector<gear::MaterialInstance*> material_instances;
     std::vector<gear::Entity*> entities;
+    std::vector<gear::Skeleton*> skeletons;
+    std::vector<gear::AnimationClip*> animation_clips;
 };
 
 struct alignas(4) GltfMaterialConfig {

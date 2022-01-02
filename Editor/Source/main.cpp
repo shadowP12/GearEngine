@@ -198,6 +198,10 @@ public:
 
             gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/mech_drone/scene.gltf");
             for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
+                if (i == 1) {
+                    gltf_asset->entities[i]->GetComponent<gear::CTransform>()->SetScale(glm::vec3(0.03f));
+                }
+
                 if (gltf_asset->entities[i]->HasComponent<gear::CMesh>()) {
                     gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetCastShadow(true);
                     gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetReceiveShadow(true);

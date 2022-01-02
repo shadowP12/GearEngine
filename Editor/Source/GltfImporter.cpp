@@ -6,6 +6,8 @@
 #include <Resource/Texture.h>
 #include <Resource/GpuBuffer.h>
 #include <Resource/Material.h>
+#include <Animation/Skeleton.h>
+#include <Animation/AnimationClip.h>
 #include <Entity/Entity.h>
 #include <Entity/EntityManager.h>
 #include <Entity/Components/CCamera.h>
@@ -167,6 +169,8 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
     std::vector<gear::IndexBuffer*> index_buffers;
     std::vector<gear::Material*> materials;
     std::vector<gear::MaterialInstance*> material_instances;
+    std::vector<gear::Skeleton*> skeletons;
+    std::vector<gear::AnimationClip*> animation_clips;
     std::vector<gear::Entity*> entities;
     std::unordered_map<GltfMaterialConfig, gear::Material*, MurmurHash<GltfMaterialConfig>, GltfMaterialConfig::Eq> material_map;
 
@@ -303,7 +307,7 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             glm::vec4 perspective;
             glm::decompose(mat, scale, rotation, translation, skew, perspective);
         }
-        gear::Entity* entity = gear::gEngine.GetEntityManager()->CreateEntity();
+        gear::Entity* entity = gear::gEngine.GetEntityManager()->CreateEntity(cnode->name);
         entities.push_back(entity);
         glm::mat4 r, t, s;
         r = glm::toMat4(rotation);
@@ -321,6 +325,11 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             child->GetComponent<gear::CTransform>()->SetParent(parent);
         }
     }
+
+    // 加载Skeleton
+
+
+    // 加载AnimationClip
 
     // 加载网格
     for (size_t i = 0; i < data->nodes_count; ++i) {
@@ -597,6 +606,8 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
     asset->index_buffers = std::move(index_buffers);
     asset->materials = std::move(materials);
     asset->material_instances = std::move(material_instances);
+    asset->skeletons = std::move(skeletons);
+    asset->animation_clips = std::move(animation_clips);
     asset->entities = std::move(entities);
     return asset;
 }
@@ -622,6 +633,14 @@ void DestroyGltfAsset(GltfAsset* asset) {
         SAFE_DELETE(asset->index_buffers[i]);
     }
 
+    for (int i = 0; i < asset->skeletons.size(); ++i) {
+        SAFE_DELETE(asset->skeletons[i]);
+    }
+
+    for (int i = 0; i < asset->animation_clips.size(); ++i) {
+        SAFE_DELETE(asset->animation_clips[i]);
+    }
+
     for (int i = 0; i < asset->entities.size(); ++i) {
         gear::gEngine.GetEntityManager()->DestroyEntity(asset->entities[i]);
     }
@@ -631,6 +650,8 @@ void DestroyGltfAsset(GltfAsset* asset) {
     asset->materials.clear();
     asset->vertex_buffers.clear();
     asset->index_buffers.clear();
+    asset->skeletons.clear();
+    asset->animation_clips.clear();
     asset->entities.clear();
     SAFE_DELETE(asset);
 }

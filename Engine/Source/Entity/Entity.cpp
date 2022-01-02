@@ -1,7 +1,8 @@
 #include "Entity.h"
 
 namespace gear {
-    Entity::Entity() {
+    Entity::Entity(const std::string& name) {
+        _name = name;
     }
 
     Entity::~Entity() {

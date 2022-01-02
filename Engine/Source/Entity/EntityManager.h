@@ -2,6 +2,7 @@
 #include "Utility/Event.h"
 #include <vector>
 #include <map>
+#include <string>
 
 namespace gear {
     class Entity;
@@ -11,7 +12,7 @@ namespace gear {
 
         ~EntityManager();
 
-        Entity* CreateEntity();
+        Entity* CreateEntity(const std::string& name = "");
 
         void DestroyEntity(Entity* entity);
 

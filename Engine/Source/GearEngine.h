@@ -14,6 +14,7 @@ namespace gear {
     class EntityManager;
     class InputSystem;
     class JobSystem;
+    class AnimationSystem;
     class GearEngine {
     public:
         GearEngine();
@@ -36,6 +37,8 @@ namespace gear {
 
         JobSystem* GetJobSystem() { return job_system; }
 
+        AnimationSystem* GetAnimationSystem() { return animation_system; }
+
     private:
         blast::GfxDevice* device = nullptr;
         blast::ShaderCompiler* shader_compiler = nullptr;
@@ -45,6 +48,7 @@ namespace gear {
         EntityManager* entity_manager = nullptr;
         InputSystem* input_system = nullptr;
         JobSystem* job_system = nullptr;
+        AnimationSystem* animation_system = nullptr;
     };
 
     extern GearEngine gEngine;

@@ -1,12 +1,13 @@
 #pragma once
 #include "Components/Component.h"
 #include <vector>
+#include <string>
 
 namespace gear {
     class Component;
     class Entity {
     public:
-        Entity();
+        Entity(const std::string& name);
         
         ~Entity();
 
@@ -58,6 +59,7 @@ namespace gear {
         
     protected:
         friend class Scene;
+        std::string _name;
         std::vector<Component*> _components;
     };
 }

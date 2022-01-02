@@ -12,8 +12,8 @@ namespace gear {
         _entities.clear();
     }
 
-    Entity* EntityManager::CreateEntity() {
-        Entity* entity = new Entity();
+    Entity* EntityManager::CreateEntity(const std::string& name) {
+        Entity* entity = new Entity(name);
         _entities.push_back(entity);
         return entity;
     }
