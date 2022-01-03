@@ -213,16 +213,8 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             config.blending_mode = gear::BlendStateType::BST_TRANSPARENT;
         }
 
-        if(cmaterial->pbr_metallic_roughness.base_color_texture.texture) {
-            config.has_base_color_tex = true;
-        }
-
         if(cmaterial->normal_texture.texture) {
             config.has_normal_tex = true;
-        }
-
-        if(cmaterial->pbr_metallic_roughness.metallic_roughness_texture.texture) {
-            config.has_metallic_roughness_tex = true;
         }
 
         gear::Material* material = nullptr;
@@ -247,15 +239,6 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
         metallic_roughness_value.y = cmaterial->pbr_metallic_roughness.roughness_factor;
         material_instance->SetFloat4("metallic_roughness", metallic_roughness_value);
 
-        if(cmaterial->pbr_metallic_roughness.base_color_texture.texture) {
-            // TODO: sampler
-            cgltf_image* cimage = cmaterial->pbr_metallic_roughness.base_color_texture.texture->image;
-            cgltf_sampler* csampler = cmaterial->pbr_metallic_roughness.base_color_texture.texture->sampler;
-            blast::GfxSamplerDesc sampler_desc;
-            material_instance->SetTexture("base_color_texture", image_helper[cimage]);
-            material_instance->SetSampler("base_color_sampler", sampler_desc);
-        }
-
         if(cmaterial->normal_texture.texture) {
             // TODO: sampler
             cgltf_image* cimage = cmaterial->normal_texture.texture->image;
@@ -263,6 +246,15 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             blast::GfxSamplerDesc sampler_desc;
             material_instance->SetTexture("normal_texture", image_helper[cimage]);
             material_instance->SetSampler("normal_sampler", sampler_desc);
+        }
+
+        if(cmaterial->pbr_metallic_roughness.base_color_texture.texture) {
+            // TODO: sampler
+            cgltf_image* cimage = cmaterial->pbr_metallic_roughness.base_color_texture.texture->image;
+            cgltf_sampler* csampler = cmaterial->pbr_metallic_roughness.base_color_texture.texture->sampler;
+            blast::GfxSamplerDesc sampler_desc;
+            material_instance->SetTexture("base_color_texture", image_helper[cimage]);
+            material_instance->SetSampler("base_color_sampler", sampler_desc);
         }
 
         if(cmaterial->pbr_metallic_roughness.metallic_roughness_texture.texture) {
