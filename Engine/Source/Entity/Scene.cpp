@@ -10,6 +10,7 @@
 #include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
 #include "Resource/Material.h"
+#include "Animation/Skeleton.h"
 
 #include <Blast/Gfx/GfxDevice.h>
 
@@ -121,6 +122,7 @@ namespace gear {
             }
 
             if (entity->HasComponent<CMesh>()) {
+                glm::mat4 local_matrix = entity->GetComponent<CTransform>()->GetTransform();
                 glm::mat4 model_matrix = entity->GetComponent<CTransform>()->GetWorldTransform();
                 glm::mat4 normal_matrix = glm::transpose(glm::inverse(glm::mat3(model_matrix)));
                 CMesh* cmesh = entity->GetComponent<CMesh>();
@@ -151,13 +153,16 @@ namespace gear {
                     renderables[num_renderables].primitives[i].bbox.bb_max = TransformPoint(renderables[num_renderables].primitives[i].bbox.bb_max, model_matrix);
                 }
 
-                // todo：更新bone_ub
                 renderables[num_renderables].bone_ub = nullptr;
+                if (cmesh->skeleton && cmesh->skeleton->Prepare(cmd)) {
+                    renderables[num_renderables].bone_ub = cmesh->skeleton->GetUniformBuffer();
+                }
 
                 // 更新renderable
                 renderables[num_renderables].renderable_ub = renderables_ub;
                 renderables[num_renderables].renderable_ub_size = sizeof(RenderableUniforms);
                 renderables[num_renderables].renderable_ub_offset = num_renderables * sizeof(RenderableUniforms);
+                renderables_storage[num_renderables].local_matrix = local_matrix;
                 renderables_storage[num_renderables].model_matrix = model_matrix;
                 renderables_storage[num_renderables].normal_matrix = normal_matrix;
 

@@ -2,6 +2,8 @@
 
 #include "Math/Math.h"
 
+#include <Blast/Gfx/GfxDefine.h>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -25,8 +27,20 @@ namespace gear {
         Joint* GetJoint(const std::string& name);
 
     private:
+        glm::mat4 GetPoseMatrix(int idx);
+
+        bool Prepare(blast::GfxCommandBuffer* cmd);
+
+        blast::GfxBuffer* GetUniformBuffer() {
+            return bone_ub;
+        }
+
+    private:
+        friend class Scene;
         friend class AnimationClip;
         std::vector<Joint> joints;
         std::map<std::string, uint32_t> joint_indices;
+        std::vector<glm::mat4> storage;
+        blast::GfxBuffer* bone_ub = nullptr;
     };
 }

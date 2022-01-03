@@ -9,9 +9,19 @@ layout(std140, set = 0, binding = 1) uniform FrameUniforms {
 } frame_uniforms;
 
 layout(std140, set = 0, binding = 2) uniform ObjectUniforms {
+    mat4 local_matrix;
     mat4 model_matrix;
     mat4 normal_matrix;
 } object_uniforms;
+
+#if defined(HAS_SKINNING_OR_MORPHING)
+#define MAX_NUM_JOINTS 64
+
+layout(std140, set = 0, binding = 3) uniform BoneUniforms {
+    mat4 joint_matrixs[MAX_NUM_JOINTS];
+} bone_uniforms;
+
+#endif
 
 #if defined(HAS_SHADOWING)
 layout(set = 0, binding = 1010) uniform texture2DArray cascade_shadow_map;

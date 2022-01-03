@@ -33,6 +33,8 @@ namespace gear {
 
         const glm::vec3& GetEuler() { return _euler; }
 
+        const glm::quat& GetRotation() { return _rot; }
+
         void SetTransform(const glm::mat4& local_transform);
 
         const glm::mat4& GetTransform();

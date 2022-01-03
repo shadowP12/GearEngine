@@ -69,6 +69,7 @@ namespace gear {
     };
 
     struct RenderableUniforms {
+        glm::mat4 local_matrix;
         glm::mat4 model_matrix;
         glm::mat4 normal_matrix;
     };

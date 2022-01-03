@@ -14,6 +14,7 @@ namespace gear {
     class IndexBuffer;
     class UniformBuffer;
     class MaterialInstance;
+    class Skeleton;
 
     struct SubMesh {
         bool cast_shadow = false;
@@ -41,6 +42,14 @@ namespace gear {
 
         void AddSubMesh(const SubMesh& sub_mesh);
 
+        const std::vector<SubMesh>& GetSubMeshs() {
+            return _sub_meshs;
+        }
+
+        void SetSkeleton(Skeleton* skeleton) {
+            this->skeleton = skeleton;
+        }
+
         void SetCastShadow(bool castShadow);
 
         void SetReceiveShadow(bool receiveShadow);
@@ -53,5 +62,6 @@ namespace gear {
         friend class Scene;
         RenderableType _renderable_type = RENDERABLE_COMMON;
         std::vector<SubMesh> _sub_meshs;
+        Skeleton* skeleton = nullptr;
     };
 }

@@ -16,11 +16,15 @@
 #include <Entity/Components/CTransform.h>
 #include <Entity/Components/CMesh.h>
 #include <Entity/Components/CSkybox.h>
+#include <Entity/Components/CAnimation.h>
 #include <Resource/GpuBuffer.h>
 #include <Resource/Texture.h>
 #include <Resource/Material.h>
 #include <Resource/BuiltinResources.h>
 #include <MaterialCompiler/MaterialCompiler.h>
+#include <Animation/Skeleton.h>
+#include <Animation/AnimationClip.h>
+#include <Animation/AnimationInstance.h>
 #include <Input/InputSystem.h>
 #include <UI/Canvas.h>
 
@@ -197,16 +201,35 @@ public:
             camera_controller->SetCamera(camera);
 
             gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/mech_drone/scene.gltf");
+
+            animation_instance = new gear::SimpleAnimationInstance();
+            animation_instance->SetAnimationMode(gear::AnimationMode::LOOP);
+            animation_instance->SetSkeleton(gltf_asset->skeletons[0]);
+            animation_instance->SetAnimationClip(gltf_asset->animation_clips[0]);
+
             for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
-                if (i == 1) {
+                if (i == 3) {
+                    gltf_asset->entities[i]->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(0.0f, glm::radians(180.0f), 0.0f));
                     gltf_asset->entities[i]->GetComponent<gear::CTransform>()->SetScale(glm::vec3(0.03f));
                 }
 
                 if (gltf_asset->entities[i]->HasComponent<gear::CMesh>()) {
                     gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetCastShadow(true);
                     gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetReceiveShadow(true);
+
+                    gear::VertexBuffer* vb = gltf_asset->entities[i]->GetComponent<gear::CMesh>()->GetSubMeshs()[0].vb;
+                    if (vb->GetVertexLayoutType() == gear::VLT_SKIN_MESH) {
+                        // 绑定skeleton
+                        gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetSkeleton(gltf_asset->skeletons[0]);
+
+                        // 创建动画组件
+                        gltf_asset->entities[i]->AddComponent<gear::CAnimation>();
+                        gltf_asset->entities[i]->GetComponent<gear::CAnimation>()->SetAnimationInstance(animation_instance);
+                        gltf_asset->entities[i]->GetComponent<gear::CAnimation>()->Play();
+
+                        scene->AddEntity(gltf_asset->entities[i]);
+                    }
                 }
-                scene->AddEntity(gltf_asset->entities[i]);
             }
 
             // 加载天空盒以及IBL资源
@@ -234,6 +257,7 @@ public:
         gear::gEngine.GetEntityManager()->DestroyEntity(sun);
         gear::gEngine.GetEntityManager()->DestroyEntity(ibl);
         gear::gEngine.GetEntityManager()->DestroyEntity(camera);
+        SAFE_DELETE(animation_instance);
         SAFE_DELETE(font_texture);
         SAFE_DELETE(skybox_map);
         SAFE_DELETE(irradiance_map);
@@ -382,6 +406,7 @@ private:
     gear::Texture* brdf_lut = nullptr;
     CameraController* camera_controller = nullptr;
     GltfAsset* gltf_asset = nullptr;
+    gear::SimpleAnimationInstance* animation_instance = nullptr;
     EventHandle mouse_position_cb_handle;
     EventHandle mouse_button_cb_handle;
     EventHandle mouse_scroll_cb_handle;

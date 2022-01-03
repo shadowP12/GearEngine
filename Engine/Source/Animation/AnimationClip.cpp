@@ -16,8 +16,17 @@ namespace gear {
                 }
             }
 
+            uint32_t next_idx = idx + 1;
+            if (next_idx == track.keys.size()) {
+                next_idx = idx;
+            }
+
             //插值计算
-            float ratio = (time - track.keys[idx].time) / (track.keys[idx+1].time - track.keys[idx].time);
+            float ratio = 0.0f;
+            if (next_idx > idx) {
+                ratio = (time - track.keys[idx].time) / (track.keys[next_idx].time - track.keys[idx].time);
+            }
+
             Joint* joint = skeleton->GetJoint(track.joint_name);
             if (!joint) {
                 continue;
@@ -25,19 +34,19 @@ namespace gear {
 
             if (track.target == AnimationTarget::POSITION) {
                 glm::vec3 cur = track.keys[idx].vec_value;
-                glm::vec3 next = track.keys[idx + 1].vec_value;
+                glm::vec3 next = track.keys[next_idx].vec_value;
                 joint->pos = lerp(cur, next, ratio);
             }
 
             if (track.target == AnimationTarget::ROTATION) {
                 glm::quat cur = track.keys[idx].quat_value;
-                glm::quat next = track.keys[idx + 1].quat_value;
+                glm::quat next = track.keys[next_idx].quat_value;
                 joint->rot = glm::normalize(glm::slerp(cur, next, ratio));
             }
 
             if (track.target == AnimationTarget::SCALE) {
                 glm::vec3 cur = track.keys[idx].vec_value;
-                glm::vec3 next = track.keys[idx + 1].vec_value;
+                glm::vec3 next = track.keys[next_idx].vec_value;
                 joint->scale = lerp(cur, next, ratio);
             }
         }

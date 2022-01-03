@@ -149,6 +149,11 @@ namespace gear {
                     material_variant |= MaterialVariant::SHADOW_RECEIVER;
                 }
 
+                if (rb->bone_ub &&
+                    rp->vb->GetVertexLayoutType() == VLT_SKIN_MESH) {
+                    material_variant |= MaterialVariant::SKINNING_OR_MORPHING;
+                }
+
                 dc_list[dc_idx] = {};
                 dc_list[dc_idx].renderable_id = scene->mesh_renderables[i];
                 dc_list[dc_idx].primitive_id = j;
@@ -243,6 +248,11 @@ namespace gear {
             // 材质参数
             if (primitive.material_ub != nullptr) {
                 device->BindConstantBuffer(current_cmd, primitive.material_ub->GetHandle(), 0, primitive.material_ub->GetSize(), 0);
+            }
+
+            // 骨骼矩阵
+            if (material_variant & MaterialVariant::SKINNING_OR_MORPHING) {
+                device->BindConstantBuffer(current_cmd, renderable.bone_ub, 3, renderable.bone_ub->desc.size, 0);
             }
 
             for (auto& sampler_item : primitive.mi->GetGfxSamplerGroup()) {

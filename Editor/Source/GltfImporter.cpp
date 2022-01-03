@@ -342,12 +342,19 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             joint_helper[cjoint] = j;
             joints[j].name = cjoint->name;
             joints[j].bind_pose = bind_poses[j];
+            joints[j].pos = node_helper[cjoint]->GetComponent<gear::CTransform>()->GetPosition();
+            joints[j].rot = node_helper[cjoint]->GetComponent<gear::CTransform>()->GetRotation();
+            joints[j].scale = node_helper[cjoint]->GetComponent<gear::CTransform>()->GetScale();
         }
 
         for (uint32_t j = 0; j < cskin->joints_count; ++j) {
             cgltf_node* cjoint = cskin->joints[j];
+
             if(cjoint->parent != nullptr) {
-                joints[j].parent = joint_helper[cjoint->parent];
+                auto iter = joint_helper.find(cjoint->parent);
+                if (iter != joint_helper.end()) {
+                    joints[j].parent = joint_helper[cjoint->parent];
+                }
             }
         }
 
@@ -378,7 +385,7 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             uint8_t* in_data = (uint8_t*)(in_buffer_view->buffer->data) + in_accessor->offset + in_buffer_view->offset;
 
             cgltf_accessor* out_accessor = csampler->output;
-            cgltf_buffer_view* out_buffer_view = in_accessor->buffer_view;
+            cgltf_buffer_view* out_buffer_view = out_accessor->buffer_view;
             uint8_t* out_data = (uint8_t*)(out_buffer_view->buffer->data) + out_accessor->offset + out_buffer_view->offset;
 
             tracks[j].keys.resize(csampler->input->count);
@@ -414,8 +421,7 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
 
             gear::VertexLayoutType vertex_layout = gear::VLT_STATIC_MESH;
             if(HasGltfAttribute(cprimitive, cgltf_attribute_type_joints)) {
-                // TODO: joints and weights
-                //vertex_layout = gear::VLT_SKIN_MESH;
+                vertex_layout = gear::VLT_SKIN_MESH;
             }
             uint32_t vertex_count = GetGltfAttribute(cprimitive, cgltf_attribute_type_position)->data->count;
             uint32_t vertex_stride = gear::GetVertexLayoutStride(vertex_layout);
@@ -482,11 +488,16 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
                 bitangentDataSize = bitangentAttributeSize * vertex_count;
                 vertex_buffer_offset += bitangentAttributeSize;
             }
-            {
-                //TODO:joint
-            }
-            {
-                //TODO:Weight
+            if (vertex_layout == gear::VLT_SKIN_MESH) {
+                jointOffset = vertex_buffer_offset;
+                jointAttributeSize = sizeof(glm::u16vec4);
+                jointDataSize = jointAttributeSize * vertex_count;
+                vertex_buffer_offset += jointAttributeSize;
+
+                weightOffset = vertex_buffer_offset;
+                weightAttributeSize = sizeof(glm::vec4);
+                weightDataSize = weightAttributeSize * vertex_count;
+                vertex_buffer_offset += weightAttributeSize;
             }
 
             // 获取顶点数据
@@ -610,6 +621,11 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
                 CombindVertexData(vertexData, tangentData, vertex_count, tangentAttributeSize, tangentOffset, vertex_stride, tangentDataSize);
                 CombindVertexData(vertexData, bitangentData, vertex_count, bitangentAttributeSize, bitangentOffset, vertex_stride, bitangentDataSize);
             } else {
+                CombindVertexData(vertexData, positionData, vertex_count, positionAttributeSize, positionOffset, vertex_stride, positionDataSize);
+                CombindVertexData(vertexData, uvData, vertex_count, uvAttributeSize, uvOffset, vertex_stride, uvDataSize);
+                CombindVertexData(vertexData, normalData, vertex_count, normalAttributeSize, normalOffset, vertex_stride, normalDataSize);
+                CombindVertexData(vertexData, tangentData, vertex_count, tangentAttributeSize, tangentOffset, vertex_stride, tangentDataSize);
+                CombindVertexData(vertexData, bitangentData, vertex_count, bitangentAttributeSize, bitangentOffset, vertex_stride, bitangentDataSize);
                 CombindVertexData(vertexData, jointData, vertex_count, jointAttributeSize, jointOffset, vertex_stride, jointDataSize);
                 CombindVertexData(vertexData, weightData, vertex_count, weightAttributeSize, weightOffset, vertex_stride, weightDataSize);
             }

@@ -19,7 +19,7 @@ namespace gear {
                 return 56;
                 break;
             case VLT_SKIN_MESH:
-                return 0;
+                return 80;
                 break;
         }
         return 0;

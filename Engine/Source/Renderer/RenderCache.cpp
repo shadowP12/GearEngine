@@ -24,7 +24,8 @@ namespace gear {
             element.location = 5;
             element.offset = offset;
             element.size = blast::GetFormatStride(element.format);
-            layout->elements.push_back(element);
+            layout->elements.push_back(element);\
+            offset += element.size;
 
             input_layouts[VLT_P_T0] = layout;
         }
@@ -53,8 +54,8 @@ namespace gear {
             element.location = 0;
             element.offset = offset;
             element.size = blast::GetFormatStride(element.format);
-            offset += element.size;
             layout->elements.push_back(element);
+            offset += element.size;
 
             element.semantic = blast::SEMANTIC_COLOR;
             element.format = blast::FORMAT_R8G8B8A8_UNORM;
@@ -62,6 +63,7 @@ namespace gear {
             element.offset = offset;
             element.size = blast::GetFormatStride(element.format);
             layout->elements.push_back(element);
+            offset += element.size;
 
             input_layouts[VLT_DEBUG] = layout;
         }
@@ -92,6 +94,7 @@ namespace gear {
             element.offset = offset;
             element.size = blast::GetFormatStride(element.format);
             layout->elements.push_back(element);
+            offset += element.size;
 
             input_layouts[VLT_UI] = layout;
         }
@@ -138,8 +141,72 @@ namespace gear {
             element.offset = offset;
             element.size = blast::GetFormatStride(element.format);
             layout->elements.push_back(element);
+            offset += element.size;
 
             input_layouts[VLT_STATIC_MESH] = layout;
+        }
+
+        {
+            blast::GfxInputLayout* layout = new blast::GfxInputLayout();
+            uint32_t offset = 0;
+            blast::GfxInputLayout::Element element;
+            element.semantic = blast::SEMANTIC_POSITION;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 0;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_TEXCOORD0;
+            element.format = blast::FORMAT_R32G32_FLOAT;
+            element.location = 5;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_NORMAL;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 1;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_TANGENT;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 2;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_BITANGENT;
+            element.format = blast::FORMAT_R32G32B32_FLOAT;
+            element.location = 3;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_JOINTS;
+            element.format = blast::FORMAT_R16G16B16A16_UINT;
+            element.location = 7;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            element.semantic = blast::SEMANTIC_WEIGHTS;
+            element.format = blast::FORMAT_R32G32B32A32_FLOAT;
+            element.location = 8;
+            element.offset = offset;
+            element.size = blast::GetFormatStride(element.format);
+            layout->elements.push_back(element);
+            offset += element.size;
+
+            input_layouts[VLT_SKIN_MESH] = layout;
         }
     }
 
