@@ -29,6 +29,20 @@ namespace gear {
 
         bool ResizeBuffers();
 
+        void SwapPostProcess();
+
+        blast::GfxTexture* GetInPostProcessRT();
+
+        blast::GfxTexture* GetOutPostProcessRT();
+
+        blast::GfxRenderPass* GetFXAARenderPass();
+
+        blast::GfxRenderPass* GetDebugRenderPass();
+
+        void AddDebugLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& c);
+
+        void DrawDebugBox(const glm::vec3* corners, const glm::vec4& c);
+
     private:
         friend class Renderer;
         BaseWindow* window = nullptr;
@@ -46,10 +60,16 @@ namespace gear {
         blast::GfxRenderPass* renderpass = nullptr;
 
         // 后处理(采用ping-pong的方法进行后处理)
-        uint32_t last_postprocess_idx = 0;
+        uint32_t out_postprocess_idx = 0;
         blast::GfxTexture* postprocess_rt0 = nullptr;
         blast::GfxTexture* postprocess_rt1 = nullptr;
         blast::GfxRenderPass* fxaa_renderpass0 = nullptr;
         blast::GfxRenderPass* fxaa_renderpass1 = nullptr;
+        blast::GfxRenderPass* debug_renderpass0 = nullptr;
+        blast::GfxRenderPass* debug_renderpass1 = nullptr;
+
+        // debug
+        uint32_t num_debug_lines = 0;
+        std::vector<float> debug_lines;
     };
 }

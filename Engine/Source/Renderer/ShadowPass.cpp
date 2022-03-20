@@ -45,6 +45,9 @@ namespace gear {
             ws_clipped_shadow_caster_volume[i] = ws_view_frustum_vertices[i];
         }
 
+        // debug draw
+        view->DrawDebugBox(ws_clipped_shadow_caster_volume, glm::vec4(1.0, 0.0, 0.0, 0.0));
+
         // Get frustum center
         glm::vec3 center = glm::vec3(0.0f);
         for (uint32_t i = 0; i < vertex_count; i++) {

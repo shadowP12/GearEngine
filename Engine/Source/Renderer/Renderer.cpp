@@ -25,23 +25,25 @@ namespace gear {
         pipeline_cache = new PipelineCache();
 
         // 初始化渲染器资源
-        blast::GfxBufferDesc buffer_desc = {};
-        buffer_desc.size = sizeof(ViewUniforms);
-        buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
-        buffer_desc.res_usage = blast::RESOURCE_USAGE_UNIFORM_BUFFER;
-        main_view_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
-        common_view_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
-        window_view_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
+        {
+            blast::GfxBufferDesc buffer_desc = {};
+            buffer_desc.size = sizeof(ViewUniforms);
+            buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
+            buffer_desc.res_usage = blast::RESOURCE_USAGE_UNIFORM_BUFFER;
+            main_view_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
+            common_view_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
+            window_view_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
 
-        buffer_desc.size = sizeof(RenderableUniforms);
-        buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
-        buffer_desc.res_usage = blast::RESOURCE_USAGE_UNIFORM_BUFFER;
-        renderable_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
+            buffer_desc.size = sizeof(RenderableUniforms);
+            buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
+            buffer_desc.res_usage = blast::RESOURCE_USAGE_UNIFORM_BUFFER;
+            renderable_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
 
-        view_storage.view_matrix = glm::mat4(1.0f);
-        view_storage.proj_matrix = glm::mat4(1.0f);
-        identity_renderable_storage.model_matrix = glm::mat4(1.0);
-        identity_renderable_storage.normal_matrix = glm::mat4(1.0);
+            view_storage.view_matrix = glm::mat4(1.0f);
+            view_storage.proj_matrix = glm::mat4(1.0f);
+            identity_renderable_storage.model_matrix = glm::mat4(1.0);
+            identity_renderable_storage.normal_matrix = glm::mat4(1.0);
+        }
 
         // shadow
         {
@@ -71,6 +73,15 @@ namespace gear {
                 cascade_shadow_passes[i] = gEngine.GetDevice()->CreateRenderPass(renderpass_desc);
             }
         }
+
+        // debug
+        {
+            blast::GfxBufferDesc buffer_desc = {};
+            buffer_desc.size = MAX_DEBUG_LINES * 14 * sizeof(float);
+            buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
+            buffer_desc.res_usage = blast::RESOURCE_USAGE_VERTEX_BUFFER;
+            debug_line_vb = gEngine.GetDevice()->CreateBuffer(buffer_desc);
+        }
     }
 
     Renderer::~Renderer() {
@@ -85,6 +96,9 @@ namespace gear {
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
             device->DestroyRenderPass(cascade_shadow_passes[i]);
         }
+
+        // debug
+        device->DestroyBuffer(debug_line_vb);
 
         SAFE_DELETE(vertex_layout_cache);
         SAFE_DELETE(rasterizer_state_cache);
@@ -124,6 +138,8 @@ namespace gear {
         BasePass(scene, view);
 
         PostProcessPass(scene, view);
+
+        DebugPass(scene, view);
     }
 
     void Renderer::BasePass(Scene* scene, View* view) {
@@ -372,11 +388,7 @@ namespace gear {
             device->BindConstantBuffer(current_cmd, common_view_ub, 1, common_view_ub->desc.size, 0);
             device->BindConstantBuffer(current_cmd, renderable_ub, 2, renderable_ub->desc.size, 0);
 
-            if (valid_views[i]->last_postprocess_idx == 0) {
-                device->BindResource(current_cmd, valid_views[i]->postprocess_rt0, 0);
-            } else {
-                device->BindResource(current_cmd, valid_views[i]->postprocess_rt1, 0);
-            }
+            device->BindResource(current_cmd, valid_views[i]->GetOutPostProcessRT(), 0);
 
             blast::GfxSamplerDesc default_sampler = {};
             device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);

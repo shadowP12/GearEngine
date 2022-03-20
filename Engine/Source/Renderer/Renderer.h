@@ -59,6 +59,8 @@ namespace gear {
 
         void PostProcessPass(Scene* scene, View* view);
 
+        void DebugPass(Scene* scene, View* view);
+
     private:
         VertexLayoutCache* vertex_layout_cache = nullptr;
         RasterizerStateCache* rasterizer_state_cache = nullptr;
@@ -86,6 +88,9 @@ namespace gear {
         blast::GfxTexture* cascade_shadow_map = nullptr;
         blast::GfxRenderPass* cascade_shadow_passes[SHADOW_CASCADE_COUNT];
         ShadowMapInfo cascade_shadow_map_infos[SHADOW_CASCADE_COUNT];
+
+        // debug
+        blast::GfxBuffer* debug_line_vb = nullptr;
 
         DrawCall dc_list[10240];
     };

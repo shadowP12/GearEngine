@@ -3,7 +3,8 @@
         Source/CameraController.cpp
         Source/TextureImporter.cpp
         Source/GltfImporter.cpp
-        Source/TestScene/AnimationTestScene.cpp)
+        Source/TestScene/AnimationTestScene.cpp
+        Source/TestScene/ShadowTestScene.cpp)
 
 target_link_libraries(GearEditor PRIVATE GearEngine)
 

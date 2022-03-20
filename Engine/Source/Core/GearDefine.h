@@ -27,6 +27,9 @@
 // 最大的Primitive个数
 #define MAX_RENDER_PRIMITIVE_COUNT 6
 
+// Debug Line数量
+#define MAX_DEBUG_LINES 1024
+
 #define SAFE_DELETE(x) \
     { \
         delete x; \

@@ -33,6 +33,7 @@
 #include "CameraController.h"
 #include "TestScene/TestScene.h"
 #include "TestScene/AnimationTestScene.h"
+#include "TestScene/ShadowTestScene.h"
 
 class Window;
 static std::map<GLFWwindow*, Window*> glfw_window_table;
@@ -164,7 +165,7 @@ public:
         scene_view = new gear::View();
         canvas = new gear::Canvas();
 
-        test_scene = new AnimationTestScene();
+        test_scene = new ShadowTestScene();
         test_scene->Load();
     }
 
