@@ -210,8 +210,7 @@ protected:
         }
 
         ImGui::NewFrame();
-        bool show_demo_window = true;
-        ImGui::ShowDemoWindow(&show_demo_window);
+
         test_scene->DrawUI();
 
         ImGui::Render();

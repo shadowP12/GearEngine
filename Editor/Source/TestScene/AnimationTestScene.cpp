@@ -3,6 +3,8 @@
 #include <GearEngine.h>
 #include <Renderer/Renderer.h>
 
+#include <imgui.h>
+
 AnimationTestScene::AnimationTestScene() {
 }
 
@@ -37,6 +39,8 @@ void AnimationTestScene::Load() {
         animation_instance->SetAnimationMode(gear::AnimationMode::LOOP);
         animation_instance->SetSkeleton(gltf_asset->skeletons[0]);
         animation_instance->SetAnimationClip(gltf_asset->animation_clips[0]);
+        // debug
+        //animation_instance->Puase();
 
         for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
             if (i == 3) {
@@ -98,7 +102,16 @@ void AnimationTestScene::Clear() {
 }
 
 void AnimationTestScene::DrawUI() {
+//    bool show_demo_window = true;
+//    ImGui::ShowDemoWindow(&show_demo_window);
 
+    if (animation_instance) {
+        ImGui::Begin("Anim Debug");
+        float time = animation_instance->GetTime();
+        ImGui::DragFloat("time", &time, 0.001f, 0.0f, 10000.0f);
+        animation_instance->SetTime(time);
+        ImGui::End();
+    }
 }
 
 gear::Scene * AnimationTestScene::GetScene() {

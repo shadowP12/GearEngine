@@ -7,8 +7,16 @@ namespace gear {
     SimpleAnimationInstance::~SimpleAnimationInstance() {
     }
 
-    void SimpleAnimationInstance::Tick(float dt) {
+    void SimpleAnimationInstance::SetTime(float time) {
+        this->time = time;
         if (!skeleton || !animation_clip) {
+            return;
+        }
+        animation_clip->Sample(time, skeleton);
+    }
+
+    void SimpleAnimationInstance::Tick(float dt) {
+        if (!skeleton || !animation_clip || puase) {
             return;
         }
 

@@ -11,7 +11,7 @@ namespace gear {
             // TODO: 优化查询速度
             uint32_t idx = 0;
             for (uint32_t j = 0; j < track.keys.size() - 1; ++j) {
-                if (time > track.keys[j].time && time < track.keys[j + 1].time) {
+                if (time >= track.keys[j].time && time <= track.keys[j + 1].time) {
                     idx = j;
                 }
             }
