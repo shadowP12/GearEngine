@@ -31,24 +31,8 @@
 #include <map>
 
 #include "CameraController.h"
-#include "TextureImporter.h"
-#include "GltfImporter.h"
-
-struct Vertex {
-    float pos[3];
-    float uv[2];
-};
-
-float vertices[] = {
-        -0.5f,  0.5f, 0.0f, 0.0f, 0.0f,
-        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
-};
-
-unsigned int indices[] = {
-        0, 1, 2, 2, 3, 0
-};
+#include "TestScene/TestScene.h"
+#include "TestScene/AnimationTestScene.h"
 
 class Window;
 static std::map<GLFWwindow*, Window*> glfw_window_table;
@@ -160,109 +144,35 @@ public:
         io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
         io.Fonts->AddFontFromFileTTF("./BuiltinResources/Fonts/Roboto-Medium.ttf", 16.0f);
 
+        int tex_width, tex_height;
+        unsigned char* pixels = nullptr;
+        io.Fonts->GetTexDataAsRGBA32(&pixels, &tex_width, &tex_height);
+        gear::Texture::Builder tex_builder;
+        tex_builder.SetWidth(tex_width);
+        tex_builder.SetHeight(tex_height);
+        tex_builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
+        font_texture = tex_builder.Build();
+        font_texture->UpdateData(pixels);
+
+        imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile("./BuiltinResources/Materials/ui.mat", true);
+
         mouse_position_cb_handle = gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Bind(ImGuiMousePositionCB, 100);
         mouse_button_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseButtonEvent().Bind(ImGuiMouseButtonCB, 100);
         mouse_scroll_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseScrollEvent().Bind(ImGuiMouseScrollCB, 100);
 
         main_window = new Window(800, 600);
         scene_view = new gear::View();
-        scene = new gear::Scene();
-        {
-            int tex_width, tex_height;
-            unsigned char* pixels = nullptr;
-            io.Fonts->GetTexDataAsRGBA32(&pixels, &tex_width, &tex_height);
-            gear::Texture::Builder tex_builder;
-            tex_builder.SetWidth(tex_width);
-            tex_builder.SetHeight(tex_height);
-            tex_builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
-            font_texture = tex_builder.Build();
-            font_texture->UpdateData(pixels);
+        canvas = new gear::Canvas();
 
-            imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile("./BuiltinResources/Materials/ui.mat", true);
-
-            camera = gear::gEngine.GetEntityManager()->CreateEntity();
-            camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-            camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 0.0f, 5.0f));
-            //camera->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(-0.358f, 0.46f, 0.0f));
-            camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 100.0);
-            //camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::ORTHO, -1.0, 1.0, 1.0, -1.0, 0.0, 1.0);
-            scene->AddEntity(camera);
-
-            sun = gear::gEngine.GetEntityManager()->CreateEntity();
-            sun->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-            sun->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
-            sun->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(glm::radians(120.0f), 0.0f, 0.0f));
-            sun->AddComponent<gear::CLight>();
-            scene->AddEntity(sun);
-
-            canvas = new gear::Canvas();
-
-            camera_controller = new CameraController();
-            camera_controller->SetCamera(camera);
-
-            gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/mech_drone/scene.gltf");
-
-            animation_instance = new gear::SimpleAnimationInstance();
-            animation_instance->SetAnimationMode(gear::AnimationMode::LOOP);
-            animation_instance->SetSkeleton(gltf_asset->skeletons[0]);
-            animation_instance->SetAnimationClip(gltf_asset->animation_clips[0]);
-
-            for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
-                if (i == 3) {
-                    gltf_asset->entities[i]->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(0.0f, glm::radians(180.0f), 0.0f));
-                    gltf_asset->entities[i]->GetComponent<gear::CTransform>()->SetScale(glm::vec3(0.03f));
-                }
-
-                if (gltf_asset->entities[i]->HasComponent<gear::CMesh>()) {
-                    gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetCastShadow(true);
-                    gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetReceiveShadow(true);
-
-                    gear::VertexBuffer* vb = gltf_asset->entities[i]->GetComponent<gear::CMesh>()->GetSubMeshs()[0].vb;
-                    if (vb->GetVertexLayoutType() == gear::VLT_SKIN_MESH) {
-                        // 绑定skeleton
-                        gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetSkeleton(gltf_asset->skeletons[0]);
-
-                        // 创建动画组件
-                        gltf_asset->entities[i]->AddComponent<gear::CAnimation>();
-                        gltf_asset->entities[i]->GetComponent<gear::CAnimation>()->SetAnimationInstance(animation_instance);
-                        gltf_asset->entities[i]->GetComponent<gear::CAnimation>()->Play();
-
-                        scene->AddEntity(gltf_asset->entities[i]);
-                    }
-                }
-            }
-
-            // 加载天空盒以及IBL资源
-            gear::Texture* equirectangular_map = ImportTexture2DWithFloat("./BuiltinResources/Textures/Ridgecrest_Road_Ref.hdr");
-            skybox_map = gear::gEngine.GetRenderer()->EquirectangularMapToCubemap(equirectangular_map, 512);
-            irradiance_map = gear::gEngine.GetRenderer()->ComputeIrradianceMap(skybox_map);
-            prefiltered_map = gear::gEngine.GetRenderer()->ComputePrefilteredMap(skybox_map);
-            brdf_lut = gear::gEngine.GetRenderer()->ComputeBRDFLut();
-            SAFE_DELETE(equirectangular_map);
-
-            sun->AddComponent<gear::CSkybox>()->SetCubeMap(skybox_map);
-            ibl = gear::gEngine.GetEntityManager()->CreateEntity();
-            ibl->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-            ibl->AddComponent<gear::CLight>();
-            ibl->GetComponent<gear::CLight>()->SetLightType(gear::CLight::LightType::IBL);
-            ibl->GetComponent<gear::CLight>()->SetIrradianceMap(irradiance_map);
-            ibl->GetComponent<gear::CLight>()->SetPrefilteredMap(prefiltered_map);
-            ibl->GetComponent<gear::CLight>()->SetBRDFLut(brdf_lut);
-            scene->AddEntity(ibl);
-        }
+        test_scene = new AnimationTestScene();
+        test_scene->Load();
     }
 
     void Exit() override {
-        DestroyGltfAsset(gltf_asset);
-        gear::gEngine.GetEntityManager()->DestroyEntity(sun);
-        gear::gEngine.GetEntityManager()->DestroyEntity(ibl);
-        gear::gEngine.GetEntityManager()->DestroyEntity(camera);
-        SAFE_DELETE(animation_instance);
+        test_scene->Clear();
+        SAFE_DELETE(test_scene);
+
         SAFE_DELETE(font_texture);
-        SAFE_DELETE(skybox_map);
-        SAFE_DELETE(irradiance_map);
-        SAFE_DELETE(prefiltered_map);
-        SAFE_DELETE(brdf_lut);
         for (int i = 0; i < imgui_mis.size(); ++i) {
             SAFE_DELETE(imgui_mis[i]);
         }
@@ -271,8 +181,6 @@ public:
         SAFE_DELETE(main_window);
         SAFE_DELETE(scene_view);
         SAFE_DELETE(canvas);
-        SAFE_DELETE(scene);
-        SAFE_DELETE(camera_controller);
 
         ImGui::DestroyContext();
         glfwTerminate();
@@ -304,6 +212,8 @@ protected:
         ImGui::NewFrame();
         bool show_demo_window = true;
         ImGui::ShowDemoWindow(&show_demo_window);
+        test_scene->DrawUI();
+
         ImGui::Render();
 
         canvas->Begin();
@@ -360,7 +270,7 @@ protected:
         // 绘制场景
         scene_view->SetSize(main_window->GetWidth(), main_window->GetHeight());
         scene_view->SetViewport(0, 0, main_window->GetWidth(), main_window->GetHeight());
-        gear::gEngine.GetRenderer()->RenderScene(scene, scene_view);
+        gear::gEngine.GetRenderer()->RenderScene(test_scene->GetScene(), scene_view);
 
         // 绘制到window上
         gear::View* views[] = { scene_view };
@@ -391,22 +301,12 @@ protected:
 
 private:
     Window* main_window = nullptr;
-    gear::Scene* scene = nullptr;
     gear::Canvas* canvas = nullptr;
     gear::View* scene_view = nullptr;
-    gear::Entity* camera = nullptr;
-    gear::Entity* sun = nullptr;
-    gear::Entity* ibl = nullptr;
     gear::Material* imgui_ma = nullptr;
     std::vector<gear::MaterialInstance*> imgui_mis;
     gear::Texture* font_texture = nullptr;
-    gear::Texture* skybox_map = nullptr;
-    gear::Texture* irradiance_map = nullptr;
-    gear::Texture* prefiltered_map = nullptr;
-    gear::Texture* brdf_lut = nullptr;
-    CameraController* camera_controller = nullptr;
-    GltfAsset* gltf_asset = nullptr;
-    gear::SimpleAnimationInstance* animation_instance = nullptr;
+    TestScene* test_scene = nullptr;
     EventHandle mouse_position_cb_handle;
     EventHandle mouse_button_cb_handle;
     EventHandle mouse_scroll_cb_handle;

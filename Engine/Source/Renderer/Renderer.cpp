@@ -46,8 +46,8 @@ namespace gear {
         // shadow
         {
             blast::GfxTextureDesc texture_desc = {};
-            texture_desc.width = 2048;
-            texture_desc.height = 2048;
+            texture_desc.width = 1024;
+            texture_desc.height = 1024;
             texture_desc.num_layers = SHADOW_CASCADE_COUNT;
             texture_desc.format = blast::FORMAT_D24_UNORM_S8_UINT;
             texture_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
