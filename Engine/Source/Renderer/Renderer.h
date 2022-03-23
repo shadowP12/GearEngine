@@ -55,7 +55,7 @@ namespace gear {
 
         void ShadowPass(Scene* scene, View* view);
 
-        void UpdateShadowMapInfo(Scene* scene, View* view, ShadowMapInfo& shadow_map_info);
+        void UpdateShadowMapInfo(Scene* scene, View* view, BBox ws_shadow_receivers_volume, ShadowMapInfo& shadow_map_info);
 
         void PostProcessPass(Scene* scene, View* view);
 

@@ -42,7 +42,7 @@ namespace gear {
 
         void AddSubMesh(const SubMesh& sub_mesh);
 
-        const std::vector<SubMesh>& GetSubMeshs() {
+        std::vector<SubMesh>& GetSubMeshs() {
             return _sub_meshs;
         }
 

@@ -19,9 +19,9 @@ float SampleCascadeShadowMapWithPCF() {
 	vec2 uv = proj_coords.xy;
     float depth = proj_coords.z;
 
-    float bias = 0.003;
+    float bias = 0.008;
 #if defined(HAS_ATTRIBUTE_NORMAL)
-    //bias = max(0.003 * (1.0 - dot(normalize(vertex_normal), normalize(frame_uniforms.sun_direction.xyz))), 0.0005);
+    //bias = max(0.006 * (1.0 - dot(normalize(vertex_normal), normalize(frame_uniforms.sun_direction.xyz))), 0.0005);
 #endif
 
     float sum = 0.0;

@@ -13,7 +13,142 @@
 #include <Blast/Gfx/GfxDevice.h>
 
 namespace gear {
-    void Renderer::UpdateShadowMapInfo(Scene* scene, View* view, ShadowMapInfo& shadow_map_info) {
+    // 线段与三角形相交
+    bool IntersectSegmentWithTriangle(glm::vec3& p, glm::vec3 s0, glm::vec3 s1, glm::vec3 t0, glm::vec3 t1, glm::vec3 t2) {
+        constexpr const float EPSILON = 1.0f / 65536.0f;  // ~1e-5
+        const auto e1 = t1 - t0;
+        const auto e2 = t2 - t0;
+        const auto d = s1 - s0;
+        const auto q = glm::cross(d, e2);
+        const auto a = glm::dot(e1, q);
+        if (std::abs(a) < EPSILON) {
+            // 无法构成三角形
+            return false;
+        }
+        const auto s = s0 - t0;
+        const auto u = dot(s, q) * glm::sign(a);
+        const auto r = cross(s, e1);
+        const auto v = dot(d, r) * glm::sign(a);
+        if (u < 0 || v < 0 || u + v > std::abs(a)) {
+            // 射线没有和三角形相交
+            return false;
+        }
+        const auto t = dot(e2, r) * glm::sign(a);
+        if (t < 0 || t > std::abs(a)) {
+            // 射线相交但是不在线段内
+            return false;
+        }
+
+        // 计算相交点位置
+        p = s0 + d * (t / std::abs(a));
+        return true;
+    }
+
+    // 线段与平面相交
+    bool IntersectSegmentWithPlanarQuad(glm::vec3& p, glm::vec3 s0, glm::vec3 s1, glm::vec3 t0, glm::vec3 t1, glm::vec3 t2, glm::vec3 t3) {
+        bool hit = IntersectSegmentWithTriangle(p, s0, s1, t0, t1, t2) || IntersectSegmentWithTriangle(p, s0, s1, t0, t2, t3);
+        return hit;
+    }
+
+    struct SegmentIndex {
+        uint8_t v0, v1;
+    };
+
+    struct QuadIndex {
+        uint8_t v0, v1, v2, v3;
+    };
+
+    static SegmentIndex g_box_segments[12] = {
+            { 0, 1 }, { 1, 3 }, { 3, 2 }, { 2, 0 },
+            { 4, 5 }, { 5, 7 }, { 7, 6 }, { 6, 4 },
+            { 0, 4 }, { 1, 5 }, { 3, 7 }, { 2, 6 },
+    };
+
+    static QuadIndex g_box_quads[6] = {
+            { 2, 0, 1, 3 },  // far
+            { 6, 4, 5, 7 },  // near
+            { 2, 0, 4, 6 },  // left
+            { 3, 1, 5, 7 },  // right
+            { 0, 4, 5, 1 },  // bottom
+            { 2, 6, 7, 3 },  // top
+    };
+
+    // 计算与视锥体相交的点
+    void IntersectFrustum(glm::vec3* out_vertices, uint32_t& out_vertex_count, glm::vec3 const* segments_vertices, glm::vec3 const* quads_vertices) {
+        for (const SegmentIndex segment : g_box_segments) {
+            const glm::vec3 s0{ segments_vertices[segment.v0] };
+            const glm::vec3 s1{ segments_vertices[segment.v1] };
+            // 每条线段最多与两个quad相交
+            uint32_t max_vertex_count = out_vertex_count + 2;
+            for (uint32_t j = 0; j < 6 && out_vertex_count < max_vertex_count; ++j) {
+                const QuadIndex quad = g_box_quads[j];
+                const glm::vec3 t0{ quads_vertices[quad.v0] };
+                const glm::vec3 t1{ quads_vertices[quad.v1] };
+                const glm::vec3 t2{ quads_vertices[quad.v2] };
+                const glm::vec3 t3{ quads_vertices[quad.v3] };
+                if (IntersectSegmentWithPlanarQuad(out_vertices[out_vertex_count], s0, s1, t0, t1, t2, t3)) {
+                    out_vertex_count++;
+                }
+            }
+        }
+    }
+
+    // 计算视锥体与包围盒相交的顶点
+    void IntersectFrustumWithBBox(const glm::vec3* ws_frustum_corners, const BBox& ws_bbox, glm::vec3* out_vertices, uint32_t& out_vertex_count) {
+        /*
+         * 1.计算视锥体处于包围盒的顶点
+         * 2.计算包围盒处于视锥体的顶点
+         * 3.计算包围盒的边和视锥体平面之间的相交
+         * 4.计算视锥体的边和包围盒平面之间的相交
+         */
+
+        for (uint32_t i = 0; i < 8; i++) {
+            glm::vec3 p = ws_frustum_corners[i];
+            out_vertices[out_vertex_count] = p;
+            if ((p.x >= ws_bbox.bb_min.x && p.x <= ws_bbox.bb_max.x) &&
+                (p.y >= ws_bbox.bb_min.y && p.y <= ws_bbox.bb_max.y) &&
+                (p.z >= ws_bbox.bb_min.z && p.z <= ws_bbox.bb_max.z)) {
+                out_vertex_count++;
+            }
+        }
+        const bool some_frustum_vertices_are_in_bbox = out_vertex_count > 0;
+        constexpr const float EPSILON = 1.0f / 8192.0f; // ~0.012 mm
+
+        // 如果顶点数量等于8说明视锥体被完全覆盖，不需要再进行剩余步骤
+        if (out_vertex_count < 8) {
+            Frustum frustum(ws_frustum_corners);
+            glm::vec4* ws_frustum_planes = frustum.planes;
+
+            // 包围盒的8个顶点
+            const glm::vec3* ws_scene_receivers_corners = ws_bbox.GetCorners().vertices;
+
+            for (uint32_t i = 0; i < 8; ++i) {
+                glm::vec3 p = ws_scene_receivers_corners[i];
+                out_vertices[out_vertex_count] = p;
+                // l/b/r/t/f/n分别表示到视锥体对应平面的距离
+                float l = glm::dot(glm::vec3(ws_frustum_planes[0]), p) + ws_frustum_planes[0].w;
+                float b = glm::dot(glm::vec3(ws_frustum_planes[1]), p) + ws_frustum_planes[1].w;
+                float r = glm::dot(glm::vec3(ws_frustum_planes[2]), p) + ws_frustum_planes[2].w;
+                float t = glm::dot(glm::vec3(ws_frustum_planes[3]), p) + ws_frustum_planes[3].w;
+                float f = glm::dot(glm::vec3(ws_frustum_planes[4]), p) + ws_frustum_planes[4].w;
+                float n = glm::dot(glm::vec3(ws_frustum_planes[5]), p) + ws_frustum_planes[5].w;
+                if ((l >= EPSILON) && (b >= EPSILON) &&
+                    (r >= EPSILON) && (t >= EPSILON) &&
+                    (f >= EPSILON) && (n >= EPSILON)) {
+                    ++out_vertex_count;
+                }
+            }
+
+            // 如果视锥体没有被包围盒完全包围，或者没有包围整个包围盒，则说明两者边界存在交点
+            if (some_frustum_vertices_are_in_bbox || out_vertex_count < 8) {
+                IntersectFrustum(out_vertices, out_vertex_count, ws_scene_receivers_corners, ws_frustum_corners);
+
+                IntersectFrustum(out_vertices, out_vertex_count, ws_frustum_corners, ws_scene_receivers_corners);
+            }
+        }
+    }
+
+    void Renderer::UpdateShadowMapInfo(Scene* scene, View* view, BBox ws_shadow_receivers_volume, ShadowMapInfo& shadow_map_info) {
         // 计算相机视锥体在世界坐标的顶点
         glm::vec3 cs_view_frustum_corners[8] = {
                 { -1, -1,  -1.0 },
@@ -40,13 +175,20 @@ namespace gear {
 
         // 计算投射阴影包围盒与相机视锥体的相交的顶点
         glm::vec3 ws_clipped_shadow_caster_volume[64];
-        uint32_t vertex_count = 8;
-        for (uint32_t i = 0; i < vertex_count; ++i) {
-            ws_clipped_shadow_caster_volume[i] = ws_view_frustum_vertices[i];
+        uint32_t vertex_count = 0;
+
+        IntersectFrustumWithBBox(ws_view_frustum_vertices, ws_shadow_receivers_volume, ws_clipped_shadow_caster_volume, vertex_count);
+
+        // 相交顶点小于等于2时，说明当前没有一个renderable受阴影影响，所以说不需要阴影贴图
+        if (vertex_count <= 2) {
+            vertex_count = 8;
+            for (uint32_t i = 0; i < vertex_count; ++i) {
+                ws_clipped_shadow_caster_volume[i] = ws_view_frustum_vertices[i];
+            }
         }
 
         // debug draw
-        view->DrawDebugBox(ws_clipped_shadow_caster_volume, glm::vec4(1.0, 0.0, 0.0, 1.0));
+        //view->DrawDebugBox(ws_view_frustum_vertices, glm::vec4(1.0, 0.0, 0.0, 1.0));
 
         // Get frustum center
         glm::vec3 center = glm::vec3(0.0f);
@@ -86,6 +228,28 @@ namespace gear {
     }
 
     void Renderer::ShadowPass(Scene* scene, View* view) {
+        // 计算shadow volume
+        // TODO: 不应该在每一帧计算阴影体积
+        BBox ws_shadow_casters_volume = BBox();
+        BBox ws_shadow_receivers_volume = BBox();
+        for (uint32_t i = 0; i < scene->num_mesh_renderables; ++i) {
+            Renderable* rb = &scene->renderables[scene->mesh_renderables[i]];
+            for (uint32_t j = 0; j < rb->num_primitives; ++j) {
+                RenderPrimitive* rp = &rb->primitives[j];
+                if (rp->cast_shadow) {
+                    ws_shadow_casters_volume.bb_min = glm::min(ws_shadow_casters_volume.bb_min, rp->bbox.bb_min);
+                    ws_shadow_casters_volume.bb_max = glm::max(ws_shadow_casters_volume.bb_max, rp->bbox.bb_max);
+                }
+
+                if (rp->receive_shadow) {
+                    ws_shadow_receivers_volume.bb_min = min(ws_shadow_receivers_volume.bb_min, rp->bbox.bb_min);
+                    ws_shadow_receivers_volume.bb_max = max(ws_shadow_receivers_volume.bb_max, rp->bbox.bb_max);
+                }
+            }
+        }
+
+        //view->DrawDebugBox(ws_shadow_receivers_volume.GetCorners().vertices, glm::vec4(1.0, 1.0, 0.0, 1.0));
+
         float camera_near = scene->main_camera_info.zn;
         float camera_far = scene->main_camera_info.zf;
         float camera_range = camera_far - camera_near;
@@ -113,7 +277,7 @@ namespace gear {
         float cascade_split = 0.0f;
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
             cascade_shadow_map_infos[i].cs_near_far = { cascade_split, cascade_splits[i] };
-            UpdateShadowMapInfo(scene, view, cascade_shadow_map_infos[i]);
+            UpdateShadowMapInfo(scene, view, ws_shadow_receivers_volume, cascade_shadow_map_infos[i]);
             cascade_split = cascade_splits[i];
         }
 

@@ -293,9 +293,9 @@ namespace gear {
                 blast::GfxSamplerDesc shadow_sampler_desc;
                 shadow_sampler_desc.min_filter = blast::FILTER_NEAREST;
                 shadow_sampler_desc.mag_filter = blast::FILTER_NEAREST;
-                shadow_sampler_desc.address_u = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
-                shadow_sampler_desc.address_v = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
-                shadow_sampler_desc.address_w = blast::ADDRESS_MODE_CLAMP_TO_EDGE;
+                shadow_sampler_desc.address_u = blast::ADDRESS_MODE_CLAMP_TO_BORDER;
+                shadow_sampler_desc.address_v = blast::ADDRESS_MODE_CLAMP_TO_BORDER;
+                shadow_sampler_desc.address_w = blast::ADDRESS_MODE_CLAMP_TO_BORDER;
                 device->BindSampler(current_cmd, sampler_cache->GetSampler(shadow_sampler_desc), 10);
                 device->BindResource(current_cmd, cascade_shadow_map, 10);
             }

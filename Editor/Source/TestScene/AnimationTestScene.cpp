@@ -54,6 +54,13 @@ void AnimationTestScene::Load() {
 
                 gear::VertexBuffer* vb = gltf_asset->entities[i]->GetComponent<gear::CMesh>()->GetSubMeshs()[0].vb;
                 if (vb->GetVertexLayoutType() == gear::VLT_SKIN_MESH) {
+                    // 调整包围盒
+                    gear::BBox new_bbox = gltf_asset->entities[i]->GetComponent<gear::CMesh>()->GetSubMeshs()[0].bbox;
+                    float d = glm::distance(new_bbox.bb_max, new_bbox.bb_min);
+                    new_bbox.bb_max.y += d / 4.0f;
+                    new_bbox.bb_min.y -= d / 4.0f;
+                    gltf_asset->entities[i]->GetComponent<gear::CMesh>()->GetSubMeshs()[0].bbox = new_bbox;
+
                     // 绑定skeleton
                     gltf_asset->entities[i]->GetComponent<gear::CMesh>()->SetSkeleton(gltf_asset->skeletons[0]);
 
