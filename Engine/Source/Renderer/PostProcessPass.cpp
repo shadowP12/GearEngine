@@ -16,6 +16,9 @@ namespace gear {
     void Renderer::PostProcessPass(Scene* scene, View* view) {
         blast::GfxDevice* device = gEngine.GetDevice();
 
+        // 初始化
+        view->out_postprocess_idx = 0;
+
         view_storage.view_matrix = glm::mat4(1.0f);
         view_storage.proj_matrix = glm::mat4(1.0f);
         device->UpdateBuffer(current_cmd, common_view_ub, &view_storage, sizeof(ViewUniforms));

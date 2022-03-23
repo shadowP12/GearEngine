@@ -173,9 +173,6 @@ namespace gear {
             return false;
         }
 
-        // reset
-        out_postprocess_idx = 0;
-
         return true;
     }
 

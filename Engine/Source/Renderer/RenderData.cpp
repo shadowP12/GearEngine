@@ -13,7 +13,7 @@ namespace gear {
                 return 20;
                 break;
             case VLT_DEBUG:
-                return 16;
+                return 28;
                 break;
             case VLT_STATIC_MESH:
                 return 56;

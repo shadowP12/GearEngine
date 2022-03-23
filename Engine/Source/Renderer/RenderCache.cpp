@@ -58,7 +58,7 @@ namespace gear {
             offset += element.size;
 
             element.semantic = blast::SEMANTIC_COLOR;
-            element.format = blast::FORMAT_R8G8B8A8_UNORM;
+            element.format = blast::FORMAT_R32G32B32A32_FLOAT;
             element.location = 4;
             element.offset = offset;
             element.size = blast::GetFormatStride(element.format);
