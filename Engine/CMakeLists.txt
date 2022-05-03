@@ -74,3 +74,6 @@ target_link_libraries(GearEngine PUBLIC glm)
 add_library(rapidjson INTERFACE)
 target_include_directories(rapidjson INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/External/rapidjson/include)
 target_link_libraries(GearEngine PUBLIC rapidjson)
+
+# builtin resources
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/BuiltinResources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

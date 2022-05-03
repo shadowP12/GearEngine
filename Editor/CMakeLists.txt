@@ -26,4 +26,4 @@ target_include_directories(GearEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Externa
 target_link_libraries(GearEditor PRIVATE imgui)
 
 # builtin resources
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../BuiltinResources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/BuiltinResources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

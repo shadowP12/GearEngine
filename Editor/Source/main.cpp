@@ -110,7 +110,7 @@ public:
     }
 
     void Init() override {
-        gear::gEngine.GetBuiltinResources()->Initialize("./BuiltinResources/");
+        gear::gEngine.GetBuiltinResources()->Initialize("../Engine/BuiltinResources/");
 
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
