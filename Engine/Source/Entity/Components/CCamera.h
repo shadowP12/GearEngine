@@ -42,11 +42,26 @@ namespace gear {
 
         bool GetDisplay();
 
+        void SetAperture(float aperture) { this->aperture = aperture; }
+
+        float GetAperture() { return aperture; }
+
+        void SetShutterSpeed(float shutter_speed) { this->shutter_speed = shutter_speed; }
+
+        float GetShutterSpeed() { return shutter_speed; }
+
+        void SetSensitivity(float sensitivity) { this->sensitivity = sensitivity; }
+
+        float GetSensitivity() { return sensitivity; }
+
     private:
         float _near = 0.0f;
         float _far = 100.0f;
-        glm::mat4 _proj_matrix;
-        bool _is_main = true;
-        bool _is_display = true;
+        glm::mat4 proj_matrix;
+        bool is_main = true;
+        bool is_display = true;
+        float aperture = 16.0f;
+        float shutter_speed = 1.0f / 125.0f;
+        float sensitivity = 100.0f;
     };
 }

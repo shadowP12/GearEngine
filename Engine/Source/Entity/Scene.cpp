@@ -86,6 +86,8 @@ namespace gear {
                     display_camera_info.view = ccamera->GetViewMatrix();
                     display_camera_info.projection = ccamera->GetProjMatrix();
                     display_camera_info.position = GetTranslate(display_camera_info.model);
+                    display_camera_info.ev100 = std::log2((ccamera->GetAperture() * ccamera->GetAperture()) / ccamera->GetShutterSpeed() * 100.0f / ccamera->GetSensitivity());
+                    display_camera_info.exposure = 1.0f / (1.2f * std::pow(2.0, display_camera_info.ev100));
                 }
 
                 if (ccamera->GetMain()) {
@@ -95,6 +97,8 @@ namespace gear {
                     main_camera_info.view = ccamera->GetViewMatrix();
                     main_camera_info.projection = ccamera->GetProjMatrix();
                     main_camera_info.position = GetTranslate(main_camera_info.model);
+                    main_camera_info.ev100 = std::log2((ccamera->GetAperture() * ccamera->GetAperture()) / ccamera->GetShutterSpeed() * 100.0f / ccamera->GetSensitivity());
+                    main_camera_info.exposure = 1.0f / (1.2f * std::pow(2.0, main_camera_info.ev100));
                 }
 
                 num_cameras++;

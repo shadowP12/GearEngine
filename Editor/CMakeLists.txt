@@ -4,7 +4,8 @@
         Source/TextureImporter.cpp
         Source/GltfImporter.cpp
         Source/TestScene/AnimationTestScene.cpp
-        Source/TestScene/ShadowTestScene.cpp)
+        Source/TestScene/ShadowTestScene.cpp
+        Source/TestScene/MaterialTestScene.cpp)
 
 target_link_libraries(GearEditor PRIVATE GearEngine)
 

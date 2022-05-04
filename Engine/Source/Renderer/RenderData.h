@@ -96,6 +96,8 @@ namespace gear {
     struct CameraInfo {
         float zn;
         float zf;
+        float ev100;
+        float exposure;
         glm::vec3 position;
         glm::mat4 model;
         glm::mat4 view;

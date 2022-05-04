@@ -18,11 +18,11 @@ namespace gear {
             // 后续暴露fov参数
             double fov = glm::radians(45.0);
             double aspect = (right - left) / (bottom - top);
-            _proj_matrix = glm::perspective(fov, aspect, near, far);
+            proj_matrix = glm::perspective(fov, aspect, near, far);
             // 翻转y轴
-            _proj_matrix[1][1] *= -1;
+            proj_matrix[1][1] *= -1;
         } else {
-            _proj_matrix = glm::ortho(left, right, top, bottom, near, far);
+            proj_matrix = glm::ortho(left, right, top, bottom, near, far);
         }
     }
 
@@ -36,7 +36,7 @@ namespace gear {
     }
 
     glm::mat4 CCamera::GetProjMatrix() {
-        return _proj_matrix;
+        return proj_matrix;
     }
 
     float CCamera::GetNear() {
@@ -48,14 +48,14 @@ namespace gear {
     }
 
     void CCamera::SetMain(bool enable) {
-        _is_main = enable;
+        is_main = enable;
     }
 
-    bool CCamera::GetMain() { return _is_main; }
+    bool CCamera::GetMain() { return is_main; }
 
     void CCamera::SetDisplay(bool enable) {
-        _is_display = enable;
+        is_display = enable;
     }
 
-    bool CCamera::GetDisplay() { return _is_display; }
+    bool CCamera::GetDisplay() { return is_display; }
 }
