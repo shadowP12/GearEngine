@@ -63,9 +63,12 @@ namespace gear {
         glm::mat4 proj_matrix;
         glm::mat4 sun_matrixs[SHADOW_CASCADE_COUNT];
         glm::vec4 sun_direction;
+        glm::vec4 sun_color_intensity;
         glm::vec4 view_position;
         // 级联阴影的划分参数
         glm::vec4 cascade_splits;
+        float ev100;
+        float exposure;
     };
 
     struct RenderableUniforms {
@@ -87,6 +90,7 @@ namespace gear {
     struct LightInfo {
         bool has_direction_light = false;
         glm::vec3 sun_direction;
+        glm::vec4 sun_color_intensity;
         bool has_ibl = false;
         blast::GfxTexture* irradiance_map = nullptr;
         blast::GfxTexture* prefiltered_map = nullptr;

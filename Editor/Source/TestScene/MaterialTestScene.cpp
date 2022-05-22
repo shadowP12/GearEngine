@@ -26,6 +26,8 @@ void MaterialTestScene::Load() {
         sun->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
         sun->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(glm::radians(120.0f), 0.0f, 0.0f));
         sun->AddComponent<gear::CLight>();
+        sun->GetComponent<gear::CLight>()->SetColor(glm::vec3(0.8f, 0.8f, 0.9f));
+        sun->GetComponent<gear::CLight>()->SetIntensity(120000.0f);
         scene->AddEntity(sun);
 
         camera_controller = new CameraController();

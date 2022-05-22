@@ -129,8 +129,11 @@ namespace gear {
         view_storage.main_view_matrix = scene->main_camera_info.view;
         if (scene->light_info.has_direction_light) {
             view_storage.sun_direction = glm::vec4(scene->light_info.sun_direction, 1.0f);
+            view_storage.sun_color_intensity = scene->light_info.sun_color_intensity;
         }
         view_storage.view_position = glm::vec4(scene->display_camera_info.position, 1.0f);
+        view_storage.ev100 = scene->main_camera_info.ev100;
+        view_storage.exposure = scene->main_camera_info.exposure;
         device->UpdateBuffer(current_cmd, main_view_ub, &view_storage, sizeof(ViewUniforms));
 
         ShadowPass(scene, view);

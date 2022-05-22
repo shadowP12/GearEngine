@@ -45,12 +45,20 @@ float SampleCascadeShadowMapWithPCF() {
 #endif
 
 void EvaluateDirectionalLight(const MaterialFragmentParams material_params, inout vec3 color) {
-#if defined(HAS_ATTRIBUTE_NORMAL)
-    color += max(dot(vertex_normal, - frame_uniforms.sun_direction.xyz), 0.0) * vec3(0.6);
+#if !defined(HAS_ATTRIBUTE_NORMAL)
+    return;
 #endif
 
+    float visibility = 1.0;
 #if defined(HAS_SHADOWING)
-    float visibility = SampleCascadeShadowMapWithPCF();
-    color *= (1.0 - visibility);
+    visibility = SampleCascadeShadowMapWithPCF();
 #endif
+
+    Light light;
+    light.color_intensity.rgb = frame_uniforms.sun_color_intensity.rgb;
+    light.color_intensity.w = frame_uniforms.sun_color_intensity.w * frame_uniforms.exposure;
+    light.attenuation = 1.0;
+    light.L = -frame_uniforms.sun_direction.xyz;
+
+    color.rgb += SurfaceShading(material_params, light, visibility);
 }

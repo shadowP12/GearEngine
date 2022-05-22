@@ -4,8 +4,11 @@ layout(std140, set = 0, binding = 1) uniform FrameUniforms {
     mat4 proj_matrix;
     mat4 sun_matrixs[SHADOW_CASCADE_COUNT];
     vec4 sun_direction;
+    vec4 sun_color_intensity;
     vec4 view_position;
     vec4 cascade_splits;
+    float ev100;
+    float exposure;
 } frame_uniforms;
 
 layout(std140, set = 0, binding = 2) uniform ObjectUniforms {
@@ -34,3 +37,23 @@ layout(set = 0, binding = 1012) uniform textureCube prefiltered_map;
 layout(set = 0, binding = 1013) uniform texture2D brdf_lut;
 layout(set = 0, binding = 3011) uniform sampler ibl_sampler;
 #endif
+
+#define PI                 3.14159265359
+
+#define HALF_PI            1.570796327
+
+#define saturate(x)        clamp(x, 0.0, 1.0)
+
+#define atan2(x, y)        atan(y, x)
+
+struct Light {
+    vec4 color_intensity;
+    float attenuation;
+    vec3 world_position;
+    vec3 L;
+};
+
+// Global Params
+vec3 shading_view;
+
+vec3 shading_normal;

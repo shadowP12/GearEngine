@@ -197,6 +197,8 @@ namespace gear {
         }
 
         if (shading_model == SHADING_MODEL_LIT) {
+            out << BRDF_FS_DATA << "\n";
+            out << SHADING_MODEL_STANDARD_FS_DATA << "\n";
             out << LIGHT_DIRECTIONAL_FS_DATA << "\n";
             out << LIGHT_PUNCTUAL_FS_DATA << "\n";
             out << LIGHT_INDIRECT_FS_DATA << "\n";

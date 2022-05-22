@@ -27,6 +27,14 @@ namespace gear {
 
         LightType GetLightType() { return type; }
 
+        void SetIntensity(float intensity) { this->intensity = intensity; }
+
+        float GetIntensity() { return intensity; }
+
+        void SetColor(glm::vec3 color) { this->color = color; }
+
+        glm::vec3 GetColor() { return color; }
+
         void SetIrradianceMap(Texture* irradiance_map) { this->irradiance_map = irradiance_map; }
 
         Texture* GetIrradianceMap() { return irradiance_map; }
@@ -44,5 +52,10 @@ namespace gear {
         Texture* irradiance_map = nullptr;
         Texture* prefiltered_map = nullptr;
         Texture* brdf_lut = nullptr;
+        /*
+         * DIRECTION : lux
+        */
+        float intensity = 0.0f;
+        glm::vec3 color = glm::vec3(0.0f);
     };
 }

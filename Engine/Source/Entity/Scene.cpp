@@ -108,6 +108,9 @@ namespace gear {
                 if (entity->GetComponent<CLight>()->GetLightType() == CLight::LightType::DIRECTION) {
                     light_info.has_direction_light = true;
                     light_info.sun_direction = entity->GetComponent<CTransform>()->GetFrontVector();
+                    glm::vec3 light_color = entity->GetComponent<CLight>()->GetColor();
+                    float light_intensity = entity->GetComponent<CLight>()->GetIntensity();
+                    light_info.sun_color_intensity = glm::vec4(light_color, light_intensity);
                     glm::normalize(light_info.sun_direction);
                 } else if (entity->GetComponent<CLight>()->GetLightType() == CLight::LightType::IBL) {
                     if (entity->GetComponent<CLight>()->GetIrradianceMap() &&
