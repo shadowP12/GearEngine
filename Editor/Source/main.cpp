@@ -166,7 +166,7 @@ public:
         scene_view = new gear::View();
         canvas = new gear::Canvas();
 
-        test_scene = new MaterialTestScene();
+        test_scene = new AnimationTestScene();
         test_scene->Load();
     }
 
