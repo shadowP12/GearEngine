@@ -5,7 +5,8 @@ vec3 FresnelSchlickRoughness(float cos_theta, vec3 F0, float roughness) {
 #if defined(HAS_IBL)
 void EvaluateIBL(const MaterialFragmentParams material_params, inout vec3 color) {
 #if defined(HAS_ATTRIBUTE_NORMAL)
-    vec3 F0 = vec3(0.04);
+    // Todo: Flexible f0
+    vec3 F0 = vec3(material_params.metallic);
     vec3 N = normalize(vertex_normal);
 	vec3 V = normalize(frame_uniforms.view_position.xyz - vertex_world_position);
 	vec3 R = reflect(-V, N);

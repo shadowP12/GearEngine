@@ -3,7 +3,7 @@ vec3 SpecularLobe(const MaterialFragmentParams params, vec3 H, float NoV, float 
     // Todo: Flexible f0
     float D = Distribution(params.roughness, NoH, H);
     float G = Visibility(params.roughness, NoV, NoL);
-    vec3  F = Fresnel(params.specular_color, LoH);
+    vec3  F = Fresnel(vec3(params.metallic), LoH);
     return (D * G * F) / (4.0 * max(NoV, 0.0) * max(NoL, 0.0) + 0.001);
 }
 

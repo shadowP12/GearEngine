@@ -109,9 +109,6 @@ void AnimationTestScene::Clear() {
 }
 
 void AnimationTestScene::DrawUI() {
-//    bool show_demo_window = true;
-//    ImGui::ShowDemoWindow(&show_demo_window);
-
     if (animation_instance) {
         ImGui::Begin("Anim Debug");
         float time = animation_instance->GetTime();

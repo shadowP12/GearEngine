@@ -95,7 +95,7 @@ void MaterialTestScene::DrawUI() {
         blast::UniformType type = std::get<0>(u.second);
         uint32_t offset = std::get<1>(u.second);
         if (type == blast::UNIFORM_FLOAT4) {
-            ImGui::DragFloat4(u.first.c_str(), reinterpret_cast<float*>(uniform_data + offset), 0.1f, 0.0f, 1.0f);
+            ImGui::DragFloat4(u.first.c_str(), reinterpret_cast<float*>(uniform_data + offset), 0.02f, 0.0f, 1.0f);
         }
     }
     ImGui::End();
