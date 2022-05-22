@@ -22,7 +22,7 @@ void EvaluateIBL(const MaterialFragmentParams material_params, inout vec3 color)
 	vec3 specular = prefiltered_color * (F * brdf.x + brdf.y);
 	vec3 ambient = diffuse + specular;
 	
-	color += ambient * 0.8;
+	color += ambient * 0.3;
 #endif
 }
 #endif

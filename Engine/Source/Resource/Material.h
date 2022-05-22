@@ -165,6 +165,10 @@ namespace gear {
 
         MaterialInstance* CreateInstance();
 
+        std::unordered_map<std::string, blast::UniformType> GetUniformLayout() { return uniforms; }
+
+        std::unordered_map<std::string, blast::TextureDimension> GetTextureLayout() { return textures; }
+
     private:
         Material(Builder*);
 
@@ -210,6 +214,8 @@ namespace gear {
         bool IsStorageDirty() { return storage_dirty; }
 
         UniformBuffer* GetUniformBuffer();
+
+        const std::unordered_map<std::string, std::tuple<blast::UniformType, uint32_t>>& GetUniformGroup() { return uniforms; }
 
         const std::unordered_map<TextureSlot, Texture*>& GetGfxTextureGroup() { return texture_group; }
 

@@ -2,8 +2,10 @@
 
 #include <GearEngine.h>
 #include <Renderer/Renderer.h>
+#include <Resource/Material.h>
 
 #include <imgui.h>
+
 
 MaterialTestScene::MaterialTestScene() {
 }
@@ -33,7 +35,7 @@ void MaterialTestScene::Load() {
         camera_controller = new CameraController();
         camera_controller->SetCamera(main_camera);
 
-        gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/test.gltf");
+        gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/material_sphere/material_sphere.gltf");
 
         for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
             if (gltf_asset->entities[i]->HasComponent<gear::CMesh>()) {
@@ -77,6 +79,26 @@ void MaterialTestScene::Clear() {
 }
 
 void MaterialTestScene::DrawUI() {
+    // Get Material
+    gear::Material* ma = nullptr;
+    gear::MaterialInstance* mi = nullptr;
+    mi = gltf_asset->entities[0]->GetComponent<gear::CMesh>()->GetSubMeshs()[0].mi;
+    ma = mi->GetMaterial();
+    if (!ma || !mi) {
+        return;
+    }
+
+    ImGui::Begin("Material Setting");
+    auto uniforms = mi->GetUniformGroup();
+    uint8_t* uniform_data = mi->GetStorage();
+    for (auto u : uniforms) {
+        blast::UniformType type = std::get<0>(u.second);
+        uint32_t offset = std::get<1>(u.second);
+        if (type == blast::UNIFORM_FLOAT4) {
+            ImGui::DragFloat4(u.first.c_str(), reinterpret_cast<float*>(uniform_data + offset), 0.1f, 0.0f, 1.0f);
+        }
+    }
+    ImGui::End();
 }
 
 gear::Scene* MaterialTestScene::GetScene() {

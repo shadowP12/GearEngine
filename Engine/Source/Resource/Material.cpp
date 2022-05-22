@@ -154,8 +154,6 @@ namespace gear {
         uniforms = builder->uniforms;
         textures = builder->textures;
         samplers = builder->samplers;
-//        vert_shader_cache = builder->vert_shader_cache;
-//        frag_shader_cache = builder->frag_shader_cache;
         vert_shader_code_cache = builder->vert_shader_code_cache;
         frag_shader_code_cache = builder->frag_shader_code_cache;
         material_id = global_material_id;
