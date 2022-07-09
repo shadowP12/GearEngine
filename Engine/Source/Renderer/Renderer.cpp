@@ -311,7 +311,12 @@ namespace gear {
                 pipeline_state.il = vertex_layout_cache->GetVertexLayout(primitive.vb->GetVertexLayoutType());
                 pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
                 pipeline_state.bs = blend_state_cache->GetDepthStencilState(primitive.mi->GetMaterial()->GetBlendState());
-                pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_DEFAULT);
+                // 半透的深度特殊处理
+                if (primitive.mi->GetMaterial()->GetBlendState() == BST_TRANSPARENT) {
+                    pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+                } else {
+                    pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_DEFAULT);
+                }
 
                 device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 

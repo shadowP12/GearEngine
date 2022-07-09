@@ -35,6 +35,7 @@
 #include "TestScene/AnimationTestScene.h"
 #include "TestScene/ShadowTestScene.h"
 #include "TestScene/MaterialTestScene.h"
+#include "TestScene/TransparencyTestScene.h"
 
 class Window;
 static std::map<GLFWwindow*, Window*> glfw_window_table;
@@ -166,7 +167,7 @@ public:
         scene_view = new gear::View();
         canvas = new gear::Canvas();
 
-        test_scene = new AnimationTestScene();
+        test_scene = new MaterialTestScene();
         test_scene->Load();
     }
 

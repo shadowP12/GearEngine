@@ -1,0 +1,10 @@
+{
+    "state": {
+        "shading_model": "lit",
+        "blending_mode": "transparent"
+    },
+    "vertex_layout": [
+        "static_mesh"
+    ],
+    "fragment_file": "transparency_test.fs"
+}
