@@ -37,6 +37,7 @@
 #include "TestScene/ShadowTestScene.h"
 #include "TestScene/MaterialTestScene.h"
 #include "TestScene/TransparencyTestScene.h"
+#include "TestScene/SkyAtmosphereTestScene.h"
 
 class Window;
 static std::map<GLFWwindow*, Window*> glfw_window_table;
@@ -173,7 +174,7 @@ public:
         scene_view = new gear::View();
         canvas = new gear::Canvas();
 
-        test_scene = new MaterialTestScene();
+        test_scene = new SkyAtmosphereTestScene();
         test_scene->Load();
     }
 

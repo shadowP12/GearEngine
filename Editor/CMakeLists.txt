@@ -6,7 +6,8 @@
         Source/TestScene/AnimationTestScene.cpp
         Source/TestScene/ShadowTestScene.cpp
         Source/TestScene/MaterialTestScene.cpp
-        Source/TestScene/TransparencyTestScene.cpp)
+        Source/TestScene/TransparencyTestScene.cpp
+        Source/TestScene/SkyAtmosphereTestScene.cpp)
 
 target_link_libraries(GearEditor PRIVATE GearEngine)
 
