@@ -82,23 +82,23 @@ namespace gear {
         UpdateTransform();
     }
 
-    const glm::mat4& CTransform::GetTransform() {
+    glm::mat4 CTransform::GetTransform() {
         return _local;
     }
 
-    const glm::mat4& CTransform::GetWorldTransform() {
+    glm::mat4 CTransform::GetWorldTransform() {
         return _world;
     }
 
-    const glm::vec3& CTransform::GetRightVector() {
+    glm::vec3 CTransform::GetRightVector() {
         return GetAxisX(_world);
     }
 
-    const glm::vec3& CTransform::GetUpVector() {
+    glm::vec3 CTransform::GetUpVector() {
         return GetAxisY(_world);
     }
 
-    const glm::vec3& CTransform::GetFrontVector() {
+    glm::vec3 CTransform::GetFrontVector() {
         return GetAxisZ(_world);
     }
 

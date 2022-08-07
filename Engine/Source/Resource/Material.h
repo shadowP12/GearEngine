@@ -76,15 +76,15 @@ namespace gear {
         }
 
         // 过滤掉不需要的顶点变体
-        static constexpr Key FilterVariantVertex(Key variant) noexcept;
+        static Key FilterVariantVertex(Key variant);
         // 过滤掉不需要的片段变体
-        static constexpr Key FilterVariantFragment(Key variant) noexcept;
+        static Key FilterVariantFragment(Key variant);
 
         // 通过着色模型过滤掉不需要的变体
-        static constexpr Key FilterVariantShadingMode(Key variant, ShadingModel shading_model) noexcept;
+        static Key FilterVariantShadingMode(Key variant, ShadingModel shading_model);
 
         // 通过顶点布局模型过滤掉不需要的片段变体
-        static constexpr Key FilterVariantVertexLayout(Key variant, VertexLayoutType vertex_layout_type) noexcept;
+        static Key FilterVariantVertexLayout(Key variant, VertexLayoutType vertex_layout_type);
 
     private:
         void Set(bool v, Key mask) noexcept {
@@ -102,15 +102,6 @@ namespace gear {
 
     class Material {
     public:
-        struct ShaderKey {
-            MaterialVariant::Key variant;
-            VertexLayoutType vertex_layout_type;
-        };
-
-        struct ShaderEq {
-            bool operator()(const ShaderKey& key1, const ShaderKey& key2) const;
-        };
-
         class Builder {
         public:
             Builder() = default;
@@ -145,10 +136,10 @@ namespace gear {
             std::unordered_map<std::string, blast::UniformType> uniforms;
             std::unordered_map<std::string, blast::TextureDimension> textures;
             std::vector<std::string> samplers;
-            std::unordered_map<ShaderKey, blast::GfxShader*, MurmurHash<ShaderKey>, ShaderEq> vert_shader_cache;
-            std::unordered_map<ShaderKey, blast::GfxShader*, MurmurHash<ShaderKey>, ShaderEq> frag_shader_cache;
-            std::unordered_map<ShaderKey, std::string, MurmurHash<ShaderKey>, ShaderEq> vert_shader_code_cache;
-            std::unordered_map<ShaderKey, std::string, MurmurHash<ShaderKey>, ShaderEq> frag_shader_code_cache;
+            std::unordered_map<std::size_t, blast::GfxShader*> vert_shader_cache;
+            std::unordered_map<std::size_t, blast::GfxShader*> frag_shader_cache;
+            std::unordered_map<std::size_t, std::string> vert_shader_code_cache;
+            std::unordered_map<std::size_t, std::string> frag_shader_code_cache;
         };
 
         ~Material();
@@ -175,12 +166,12 @@ namespace gear {
     protected:
         friend class MaterialCompiler;
         friend class MaterialInstance;
-        std::unordered_map<ShaderKey, blast::GfxShader*, MurmurHash<ShaderKey>, ShaderEq> vert_shader_cache;
-        std::unordered_map<ShaderKey, blast::GfxShader*, MurmurHash<ShaderKey>, ShaderEq> frag_shader_cache;
-        std::unordered_map<ShaderKey, std::string, MurmurHash<ShaderKey>, ShaderEq> vert_shader_code_cache;
-        std::unordered_map<ShaderKey, std::string, MurmurHash<ShaderKey>, ShaderEq> frag_shader_code_cache;
-        std::unordered_map<ShaderKey, bool, MurmurHash<ShaderKey>, ShaderEq> vert_shader_triggered_cache;
-        std::unordered_map<ShaderKey, bool, MurmurHash<ShaderKey>, ShaderEq> frag_shader_triggered_cache;
+        std::unordered_map<std::size_t, blast::GfxShader*> vert_shader_cache;
+        std::unordered_map<std::size_t, blast::GfxShader*> frag_shader_cache;
+        std::unordered_map<std::size_t, std::string> vert_shader_code_cache;
+        std::unordered_map<std::size_t, std::string> frag_shader_code_cache;
+        std::unordered_map<std::size_t, bool> vert_shader_triggered_cache;
+        std::unordered_map<std::size_t, bool> frag_shader_triggered_cache;
         std::mutex vs_cache_mutex;
         std::mutex fs_cache_mutex;
         static uint32_t global_material_id;

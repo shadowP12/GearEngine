@@ -41,7 +41,7 @@ void ShadowTestScene::Load() {
         camera_controller = new CameraController();
         camera_controller->SetCamera(main_camera);
 
-        gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/test.gltf");
+        gltf_asset = ImportGltfAsset("../BuiltinResources/GltfFiles/test.gltf");
 
         for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
             if (gltf_asset->entities[i]->HasComponent<gear::CMesh>()) {
@@ -52,7 +52,7 @@ void ShadowTestScene::Load() {
         }
 
         // 加载天空盒以及IBL资源
-        gear::Texture* equirectangular_map = ImportTexture2DWithFloat("./BuiltinResources/Textures/Ridgecrest_Road_Ref.hdr");
+        gear::Texture* equirectangular_map = ImportTexture2DWithFloat("../BuiltinResources/Textures/Ridgecrest_Road_Ref.hdr");
         skybox_map = gear::gEngine.GetRenderer()->EquirectangularMapToCubemap(equirectangular_map, 512);
         irradiance_map = gear::gEngine.GetRenderer()->ComputeIrradianceMap(skybox_map);
         prefiltered_map = gear::gEngine.GetRenderer()->ComputePrefilteredMap(skybox_map);

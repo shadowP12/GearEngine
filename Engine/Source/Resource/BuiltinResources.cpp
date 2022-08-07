@@ -25,10 +25,10 @@ namespace gear {
     }
 
     void BuiltinResources::Initialize(const std::string& path) {
-        blit_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/blit.mat", true);
-        debug_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/debug.mat", true);
-        skybox_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/skybox.mat", true);
-        fxaa_ma = gEngine.GetMaterialCompiler()->Compile(path + "Materials/fxaa.mat", true);
+        blit_ma = gEngine.GetMaterialCompiler()->Compile(path + "/Materials/blit.mat", true);
+        debug_ma = gEngine.GetMaterialCompiler()->Compile(path + "/Materials/debug.mat", true);
+        skybox_ma = gEngine.GetMaterialCompiler()->Compile(path + "/Materials/skybox.mat", true);
+        fxaa_ma = gEngine.GetMaterialCompiler()->Compile(path + "/Materials/fxaa.mat", true);
         CreateQuadBuffer();
         CreateCubeBuffer();
 

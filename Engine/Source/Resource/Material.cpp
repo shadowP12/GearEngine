@@ -14,17 +14,17 @@ namespace gear {
     uint32_t Material::global_material_id = 0;
 
     // 过滤掉不需要的顶点变体
-    constexpr MaterialVariant::Key MaterialVariant::FilterVariantVertex(Key variant) noexcept {
+    MaterialVariant::Key MaterialVariant::FilterVariantVertex(Key variant) {
         return variant & VERTEX_MASK;
     }
 
     // 过滤掉不需要的片段变体
-    constexpr MaterialVariant::Key MaterialVariant::FilterVariantFragment(Key variant) noexcept {
+    MaterialVariant::Key MaterialVariant::FilterVariantFragment(Key variant) {
         return variant & FRAGMENT_MASK;
     }
 
     // 通过着色模型过滤掉不需要的变体
-    constexpr MaterialVariant::Key MaterialVariant::FilterVariantShadingMode(Key variant, ShadingModel shading_model) noexcept {
+    MaterialVariant::Key MaterialVariant::FilterVariantShadingMode(Key variant, ShadingModel shading_model) {
         if (shading_model == SHADING_MODEL_UNLIT) {
             Set(variant, false, DYNAMIC_LIGHTING);
             Set(variant, false, DIRECTIONAL_LIGHTING);
@@ -33,7 +33,7 @@ namespace gear {
     }
 
     // 通过顶点布局模型过滤掉不需要的片段变体
-    constexpr MaterialVariant::Key MaterialVariant::FilterVariantVertexLayout(Key variant, VertexLayoutType vertex_layout_type) noexcept {
+    MaterialVariant::Key MaterialVariant::FilterVariantVertexLayout(Key variant, VertexLayoutType vertex_layout_type) {
         if (vertex_layout_type == VLT_P || vertex_layout_type == VLT_P_T0 || vertex_layout_type == VLT_DEBUG || vertex_layout_type == VLT_UI) {
             Set(variant, false, DYNAMIC_LIGHTING);
             Set(variant, false, DIRECTIONAL_LIGHTING);
@@ -90,12 +90,6 @@ namespace gear {
         }
     }
 
-    bool Material::ShaderEq::operator()(const ShaderKey& key1, const ShaderKey& key2) const {
-        if (key1.variant != key2.variant) return false;
-        if (key1.vertex_layout_type != key2.vertex_layout_type) return false;
-        return true;
-    }
-
     void Material::Builder::SetShadingModel(ShadingModel shading_model) {
         this->shading_model = shading_model;
     }
@@ -105,31 +99,31 @@ namespace gear {
     }
 
     void Material::Builder::AddVertShader(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, blast::GfxShader* shader) {
-        ShaderKey shader_key;
-        shader_key.variant = key;
-        shader_key.vertex_layout_type = vertex_layout_type;
-        vert_shader_cache[shader_key] = shader;
+        std::size_t shader_hash = 0;
+        HashCombine(shader_hash, key);
+        HashCombine(shader_hash, vertex_layout_type);
+        vert_shader_cache[shader_hash] = shader;
     }
 
     void Material::Builder::AddFragShader(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, blast::GfxShader* shader) {
-        ShaderKey shader_key;
-        shader_key.variant = key;
-        shader_key.vertex_layout_type = vertex_layout_type;
-        frag_shader_cache[shader_key] = shader;
+        std::size_t shader_hash = 0;
+        HashCombine(shader_hash, key);
+        HashCombine(shader_hash, vertex_layout_type);
+        frag_shader_cache[shader_hash] = shader;
     }
 
     void Material::Builder::AddVertShaderCode(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, const std::string& code) {
-        ShaderKey shader_key;
-        shader_key.variant = key;
-        shader_key.vertex_layout_type = vertex_layout_type;
-        vert_shader_code_cache[shader_key] = code;
+        std::size_t shader_hash = 0;
+        HashCombine(shader_hash, key);
+        HashCombine(shader_hash, vertex_layout_type);
+        vert_shader_code_cache[shader_hash] = code;
     }
 
     void Material::Builder::AddFragShaderCode(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, const std::string& code) {
-        ShaderKey shader_key;
-        shader_key.variant = key;
-        shader_key.vertex_layout_type = vertex_layout_type;
-        frag_shader_code_cache[shader_key] = code;
+        std::size_t shader_hash = 0;
+        HashCombine(shader_hash, key);
+        HashCombine(shader_hash, vertex_layout_type);
+        frag_shader_code_cache[shader_hash] = code;
     }
 
     void Material::Builder::AddUniform(const std::string& name, const blast::UniformType& type) {
@@ -176,13 +170,13 @@ namespace gear {
         key = MaterialVariant::FilterVariantShadingMode(key, shading_model);
         key = MaterialVariant::FilterVariantVertexLayout(key, vertex_layout_type);
 
-        ShaderKey shader_key;
-        shader_key.variant = key;
-        shader_key.vertex_layout_type = vertex_layout_type;
+        std::size_t shader_hash = 0;
+        HashCombine(shader_hash, key);
+        HashCombine(shader_hash, vertex_layout_type);
 
         blast::GfxShader* shader = nullptr;
         vs_cache_mutex.lock();
-        auto shader_iter = vert_shader_cache.find(shader_key);
+        auto shader_iter = vert_shader_cache.find(shader_hash);
         if (shader_iter != vert_shader_cache.end()) {
             shader = shader_iter->second;
         }
@@ -190,14 +184,14 @@ namespace gear {
 
         if (shader == nullptr) {
             // 判断是否已经触发过编译
-            auto triggered_iter = vert_shader_triggered_cache.find(shader_key);
+            auto triggered_iter = vert_shader_triggered_cache.find(shader_hash);
             if (triggered_iter == vert_shader_triggered_cache.end()) {
-                vert_shader_triggered_cache[shader_key] = true;
+                vert_shader_triggered_cache[shader_hash] = true;
 
                 // 若没有触发过编译，则异步编译对应shader
-                auto code_iter = vert_shader_code_cache.find(shader_key);
+                auto code_iter = vert_shader_code_cache.find(shader_hash);
                 if (code_iter != vert_shader_code_cache.end()) {
-                    gEngine.GetJobSystem()->ExecuteJob([this, key, vertex_layout_type, code_iter](JobSystem::JobArgs args) {
+                    gEngine.GetJobSystem()->ExecuteJob([this, shader_hash, code_iter](JobSystem::JobArgs args) {
                         blast::ShaderCompileDesc compile_desc;
                         compile_desc.code = code_iter->second;
                         compile_desc.stage = blast::SHADER_STAGE_VERT;
@@ -211,10 +205,7 @@ namespace gear {
 
                             // 将编译好的shader放进cache
                             this->vs_cache_mutex.lock();
-                            ShaderKey shader_key;
-                            shader_key.variant = key;
-                            shader_key.vertex_layout_type = vertex_layout_type;
-                            this->vert_shader_cache[shader_key] = vert_shader;
+                            this->vert_shader_cache[shader_hash] = vert_shader;
                             this->vs_cache_mutex.unlock();
                         } else {
                             LOGE("\n %s \n", code_iter->second.c_str());
@@ -228,17 +219,17 @@ namespace gear {
     }
 
     blast::GfxShader* Material::GetFragShader(MaterialVariant::Key variant, VertexLayoutType vertex_layout_type) {
-        uint8_t key = MaterialVariant::FilterVariantFragment(variant);
+        MaterialVariant::Key key = MaterialVariant::FilterVariantFragment(variant);
         key = MaterialVariant::FilterVariantShadingMode(key, shading_model);
         key = MaterialVariant::FilterVariantVertexLayout(key, vertex_layout_type);
 
-        ShaderKey shader_key;
-        shader_key.variant = key;
-        shader_key.vertex_layout_type = vertex_layout_type;
+        std::size_t shader_hash = 0;
+        HashCombine(shader_hash, key);
+        HashCombine(shader_hash, vertex_layout_type);
 
         blast::GfxShader* shader = nullptr;
         fs_cache_mutex.lock();
-        auto shader_iter = frag_shader_cache.find(shader_key);
+        auto shader_iter = frag_shader_cache.find(shader_hash);
         if (shader_iter != frag_shader_cache.end()) {
             shader = shader_iter->second;
         }
@@ -246,14 +237,14 @@ namespace gear {
 
         if (shader == nullptr) {
             // 判断是否已经触发过编译
-            auto triggered_iter = frag_shader_triggered_cache.find(shader_key);
+            auto triggered_iter = frag_shader_triggered_cache.find(shader_hash);
             if (triggered_iter == frag_shader_triggered_cache.end()) {
-                frag_shader_triggered_cache[shader_key] = true;
+                frag_shader_triggered_cache[shader_hash] = true;
 
                 // 若没有触发过编译，则异步编译对应shader
-                auto code_iter = frag_shader_code_cache.find(shader_key);
+                auto code_iter = frag_shader_code_cache.find(shader_hash);
                 if (code_iter != frag_shader_code_cache.end()) {
-                    gEngine.GetJobSystem()->ExecuteJob([this, key, vertex_layout_type, code_iter](JobSystem::JobArgs args) {
+                    gEngine.GetJobSystem()->ExecuteJob([this, shader_hash, code_iter](JobSystem::JobArgs args) {
                         blast::ShaderCompileDesc compile_desc;
                         compile_desc.code = code_iter->second;
                         compile_desc.stage = blast::SHADER_STAGE_FRAG;
@@ -267,10 +258,7 @@ namespace gear {
 
                             // 将编译好的shader放进cache
                             this->fs_cache_mutex.lock();
-                            ShaderKey shader_key;
-                            shader_key.variant = key;
-                            shader_key.vertex_layout_type = vertex_layout_type;
-                            this->frag_shader_cache[shader_key] = frag_shader;
+                            this->frag_shader_cache[shader_hash] = frag_shader;
                             this->fs_cache_mutex.unlock();
                         } else {
                             LOGE("\n %s \n", code_iter->second.c_str());

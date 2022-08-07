@@ -35,8 +35,8 @@ void TransparencyTestScene::Load() {
         camera_controller = new CameraController();
         camera_controller->SetCamera(main_camera);
 
-        transparency_test_ma = gear::gEngine.GetMaterialCompiler()->Compile("./BuiltinResources/Materials/transparency_test.mat", true);
-        gltf_asset = ImportGltfAsset("./BuiltinResources/GltfFiles/transparency_test/transparency_test.gltf");
+        transparency_test_ma = gear::gEngine.GetMaterialCompiler()->Compile("../BuiltinResources/Materials/transparency_test.mat", true);
+        gltf_asset = ImportGltfAsset("../BuiltinResources/GltfFiles/transparency_test/transparency_test.gltf");
         for (uint32_t i = 0; i < gltf_asset->entities.size(); ++i) {
             if (gltf_asset->entities[i]->HasComponent<gear::CMesh>()) {
                 gear::MaterialInstance* transparency_test_mi = transparency_test_ma->CreateInstance();
@@ -49,7 +49,7 @@ void TransparencyTestScene::Load() {
         }
 
         // 加载天空盒以及IBL资源
-        gear::Texture* equirectangular_map = ImportTexture2DWithFloat("./BuiltinResources/Textures/Ridgecrest_Road_Ref.hdr");
+        gear::Texture* equirectangular_map = ImportTexture2DWithFloat("../BuiltinResources/Textures/Ridgecrest_Road_Ref.hdr");
         skybox_map = gear::gEngine.GetRenderer()->EquirectangularMapToCubemap(equirectangular_map, 512);
         irradiance_map = gear::gEngine.GetRenderer()->ComputeIrradianceMap(skybox_map);
         prefiltered_map = gear::gEngine.GetRenderer()->ComputePrefilteredMap(skybox_map);

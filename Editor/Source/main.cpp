@@ -27,6 +27,7 @@
 #include <Animation/AnimationInstance.h>
 #include <Input/InputSystem.h>
 #include <UI/Canvas.h>
+#include <filesystem/path.h>
 
 #include <map>
 
@@ -112,7 +113,10 @@ public:
     }
 
     void Init() override {
-        gear::gEngine.GetBuiltinResources()->Initialize("../Engine/BuiltinResources/");
+        filesystem::path root_path = filesystem::path::getcwd();
+
+        filesystem::path engine_resource_path = root_path / "../../Engine/BuiltinResources";
+        gear::gEngine.GetBuiltinResources()->Initialize(engine_resource_path.str(filesystem::path::path_type::posix_path));
 
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -145,7 +149,8 @@ public:
         io.KeyMap[ImGuiKey_X] = GLFW_KEY_X;
         io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
         io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
-        io.Fonts->AddFontFromFileTTF("./BuiltinResources/Fonts/Roboto-Medium.ttf", 16.0f);
+        filesystem::path imgui_font_path = root_path / "../BuiltinResources/Fonts/Roboto-Medium.ttf";
+        io.Fonts->AddFontFromFileTTF(imgui_font_path.str(filesystem::path::path_type::posix_path).c_str(), 16.0f);
 
         int tex_width, tex_height;
         unsigned char* pixels = nullptr;
@@ -157,7 +162,8 @@ public:
         font_texture = tex_builder.Build();
         font_texture->UpdateData(pixels);
 
-        imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile("./BuiltinResources/Materials/ui.mat", true);
+        filesystem::path imgui_material_path = root_path / "../BuiltinResources/Materials/ui.mat";
+        imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile(imgui_material_path.str(filesystem::path::path_type::posix_path), true);
 
         mouse_position_cb_handle = gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Bind(ImGuiMousePositionCB, 100);
         mouse_button_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseButtonEvent().Bind(ImGuiMouseButtonCB, 100);

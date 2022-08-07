@@ -23,29 +23,29 @@ namespace gear {
 
         void SetPosition(const glm::vec3& pos);
 
-        const glm::vec3& GetPosition(){ return _translation; }
+        glm::vec3 GetPosition(){ return _translation; }
 
         void SetScale(const glm::vec3& scale);
 
-        const glm::vec3& GetScale(){ return _scale; }
+        glm::vec3 GetScale(){ return _scale; }
 
         void SetEuler(const glm::vec3& euler);
 
-        const glm::vec3& GetEuler() { return _euler; }
+        glm::vec3 GetEuler() { return _euler; }
 
-        const glm::quat& GetRotation() { return _rot; }
+        glm::quat GetRotation() { return _rot; }
 
         void SetTransform(const glm::mat4& local_transform);
 
-        const glm::mat4& GetTransform();
+        glm::mat4 GetTransform();
 
-        const glm::mat4& GetWorldTransform();
+        glm::mat4 GetWorldTransform();
 
-        const glm::vec3& GetRightVector();
+        glm::vec3 GetRightVector();
 
-        const glm::vec3& GetUpVector();
+        glm::vec3 GetUpVector();
 
-        const glm::vec3& GetFrontVector();
+        glm::vec3 GetFrontVector();
 
     private:
         void UpdateTransform();
