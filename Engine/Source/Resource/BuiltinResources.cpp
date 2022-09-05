@@ -2,6 +2,7 @@
 #include "Material.h"
 #include "GpuBuffer.h"
 #include "GearEngine.h"
+#include "Shader.h"
 #include "MaterialCompiler/MaterialCompiler.h"
 #include "MaterialCompiler/ShaderCode.h"
 

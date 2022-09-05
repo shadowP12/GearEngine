@@ -4,6 +4,7 @@
 #include <string>
 
 namespace gear {
+	class SimpleShader;
     class Material;
     class VertexBuffer;
     class MaterialInstance;
