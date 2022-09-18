@@ -19,6 +19,8 @@ namespace gear {
         SAFE_DELETE(fxaa_ma);
         SAFE_DELETE(quad_buffer);
         SAFE_DELETE(cube_buffer);
+		SAFE_DELETE(atmosphere_comon_vs);
+		SAFE_DELETE(atmosphere_compute_transmittance_fs);
         gEngine.GetDevice()->DestroyShader(pano_to_cube_shader);
         gEngine.GetDevice()->DestroyShader(compute_irradiance_map_shader);
         gEngine.GetDevice()->DestroyShader(compute_specular_map_shader);
@@ -80,6 +82,18 @@ namespace gear {
             shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
             brdf_integration_shader = gEngine.GetDevice()->CreateShader(shader_desc);
         }
+
+		// Atmosphere
+		{
+			SimpleShaderDesc desc;
+			desc.stage = blast::SHADER_STAGE_VERT;
+			desc.code = ATMOSPHERE_COMON_VS_DATA;
+			atmosphere_comon_vs = new SimpleShader(desc);
+
+			desc.stage = blast::SHADER_STAGE_FRAG;
+			desc.code = ATMOSPHERE_COMPUTE_TRANSMITTANCE_FS_DATA;
+			atmosphere_compute_transmittance_fs = new SimpleShader(desc);
+		}
     }
 
     void BuiltinResources::CreateQuadBuffer() {
@@ -154,4 +168,11 @@ namespace gear {
         cube_buffer->UpdateData(cube_vertices, sizeof(cube_vertices));
     }
 
+	blast::GfxShader* BuiltinResources::GetAtmosphereCommonVS(uint32_t var) {
+		atmosphere_comon_vs->GetShader(var);
+	}
+
+	blast::GfxShader* BuiltinResources::GetAtmosphereComputeTransmittanceFS(uint32_t var) {
+		atmosphere_compute_transmittance_fs->GetShader(var);
+	}
 }

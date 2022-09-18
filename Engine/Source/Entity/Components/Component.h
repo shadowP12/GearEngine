@@ -9,7 +9,8 @@ namespace gear {
         Light,
         Mesh,
         Skybox,
-        Animation
+        Animation,
+		Atmosphere,
     };
 
     class Entity;

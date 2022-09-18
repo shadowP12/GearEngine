@@ -37,6 +37,8 @@ namespace gear {
         CameraInfo main_camera_info;
         LightInfo light_info;
 
+		AtmosphereParameters atmosphere_parameters;
+
         blast::GfxBuffer* renderables_ub = nullptr;
 
         blast::GfxTexture* skybox_map = nullptr;

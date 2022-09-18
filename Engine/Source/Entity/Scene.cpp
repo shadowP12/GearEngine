@@ -7,6 +7,7 @@
 #include "Components/CMesh.h"
 #include "Components/CSkybox.h"
 #include "Components/CTransform.h"
+#include "Components/CAtmosphere.h"
 #include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
 #include "Resource/Material.h"
@@ -127,6 +128,32 @@ namespace gear {
             if (entity->HasComponent<CSkybox>()) {
                 skybox_map = entity->GetComponent<CSkybox>()->GetCubeMap()->GetTexture();
             }
+
+			if (entity->HasComponent<CAtmosphere>()) {
+				atmosphere_parameters.bottom_radius = 6360.0f;
+				atmosphere_parameters.top_radius = 6460.0f;
+
+				atmosphere_parameters.rayleigh_density_exp_scale = -1.0f / 8.0f;
+				atmosphere_parameters.rayleigh_scattering = glm::vec3(0.005802f, 0.013558f, 0.033100f);
+
+				atmosphere_parameters.mie_density_exp_scale = -1.0f / 1.2f;
+				atmosphere_parameters.mie_scattering = glm::vec3(0.003996f, 0.003996f, 0.003996f);
+				atmosphere_parameters.mie_extinction = glm::vec3(0.004440f, 0.004440f, 0.004440f);
+				atmosphere_parameters.mie_absorption = atmosphere_parameters.mie_extinction - atmosphere_parameters.mie_scattering;
+				atmosphere_parameters.mie_absorption.x = glm::max(0.0f, atmosphere_parameters.mie_absorption.x);
+				atmosphere_parameters.mie_absorption.y = glm::max(0.0f, atmosphere_parameters.mie_absorption.y);
+				atmosphere_parameters.mie_absorption.z = glm::max(0.0f, atmosphere_parameters.mie_absorption.z);
+				atmosphere_parameters.mie_phase_g = 0.8f;
+
+				atmosphere_parameters.absorption_density0_layer_width = 25.0f;
+				atmosphere_parameters.absorption_density0_constant_term = -2.0f / 3.0f;
+				atmosphere_parameters.absorption_density0_linear_term = 1.0f / 15.0f;
+				atmosphere_parameters.absorption_density1_constant_term = 8.0f / 3.0f;
+				atmosphere_parameters.absorption_density1_linear_term = -1.0f / 15.0f;
+				atmosphere_parameters.absorption_extinction = glm::vec3(0.000650f, 0.001881f, 0.000085f);
+
+				atmosphere_parameters.ground_albedo = glm::vec3(0.0f);
+			}
 
             if (entity->HasComponent<CMesh>()) {
                 glm::mat4 local_matrix = entity->GetComponent<CTransform>()->GetTransform();

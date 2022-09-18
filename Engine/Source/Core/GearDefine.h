@@ -30,6 +30,18 @@
 // Debug Line数量
 #define MAX_DEBUG_LINES 1024
 
+// Atmosphere
+#define TRANSMITTANCE_TEXTURE_WIDTH = 64;
+#define TRANSMITTANCE_TEXTURE_HEIGHT = 16;
+
+#define SCATTERING_TEXTURE_R_SIZE = 16;
+#define SCATTERING_TEXTURE_MU_SIZE = 16;
+#define SCATTERING_TEXTURE_MU_S_SIZE = 16;
+#define SCATTERING_TEXTURE_NU_SIZE = 4;
+
+#define IRRADIANCE_TEXTURE_WIDTH = 32;
+#define IRRADIANCE_TEXTURE_HEIGHT = 8;
+
 #define SAFE_DELETE(x) \
     { \
         delete x; \

@@ -39,6 +39,11 @@ namespace gear {
             buffer_desc.res_usage = blast::RESOURCE_USAGE_UNIFORM_BUFFER;
             renderable_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
 
+			buffer_desc.size = sizeof(AtmosphereParameters);
+			buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
+			buffer_desc.res_usage = blast::RESOURCE_USAGE_UNIFORM_BUFFER;
+			atmosphere_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
+
             view_storage.view_matrix = glm::mat4(1.0f);
             view_storage.proj_matrix = glm::mat4(1.0f);
             identity_renderable_storage.model_matrix = glm::mat4(1.0);
@@ -90,6 +95,7 @@ namespace gear {
         device->DestroyBuffer(common_view_ub);
         device->DestroyBuffer(window_view_ub);
         device->DestroyBuffer(renderable_ub);
+		device->DestroyBuffer(atmosphere_ub);
 
         // shadow
         device->DestroyTexture(cascade_shadow_map);
@@ -135,6 +141,8 @@ namespace gear {
         view_storage.ev100 = scene->main_camera_info.ev100;
         view_storage.exposure = scene->main_camera_info.exposure;
         device->UpdateBuffer(current_cmd, main_view_ub, &view_storage, sizeof(ViewUniforms));
+
+		device->UpdateBuffer(current_cmd, atmosphere_ub, &scene->atmosphere_parameters, sizeof(AtmosphereParameters));
 
         ShadowPass(scene, view);
 

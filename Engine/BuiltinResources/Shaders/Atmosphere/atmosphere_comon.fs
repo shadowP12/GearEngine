@@ -1,0 +1,152 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+uint TRANSMITTANCE_TEXTURE_WIDTH = 64;
+uint TRANSMITTANCE_TEXTURE_HEIGHT = 16;
+
+uint SCATTERING_TEXTURE_R_SIZE = 16;
+uint SCATTERING_TEXTURE_MU_SIZE = 16;
+uint SCATTERING_TEXTURE_MU_S_SIZE = 16;
+uint SCATTERING_TEXTURE_NU_SIZE = 4;
+
+uint IRRADIANCE_TEXTURE_WIDTH = 32;
+uint IRRADIANCE_TEXTURE_HEIGHT = 8;
+
+layout(std140, set = 0, binding = 0) uniform ViewParameters {
+    vec2 resolution;
+} view_parameters;
+
+layout(std140, set = 0, binding = 1) uniform AtmosphereParameters {
+    float bottom_radius;
+    float top_radius;
+
+    float rayleigh_density_expScale;
+    vec3 rayleigh_scattering;
+
+    float mie_density_expScale;
+    vec3 mie_scattering;
+    vec3 mie_extinction;
+    vec3 mie_absorption;
+    float mie_phase_g;
+
+    float absorption_density0_layer_width;
+    float absorption_density0_constant_term;
+    float absorption_density0_linear_term;
+    float absorption_density1_constant_term;
+    float absorption_density1_linear_term;
+    vec3 absorption_extinction;
+
+    vec3 ground_albedo;
+} atmosphere_parameters;
+
+
+AtmosphereParameters GetAtmosphereParameters()
+{
+    return atmosphere_parameters;
+}
+
+float RaySphereIntersectNearest(vec3 r0, vec3 rd, vec3 s0, vec3 sr)
+{
+    float a = dot(rd, rd);
+    vec3 s0_r0 = r0 - s0;
+    float b = 2.0 * dot(rd, s0_r0);
+    float c = dot(s0_r0, s0_r0) - (sr * sr);
+    float delta = b * b - 4.0*a*c;
+    if (delta < 0.0 || a == 0.0)
+    {
+        return -1.0;
+    }
+    float sol0 = (-b - sqrt(delta)) / (2.0*a);
+    float sol1 = (-b + sqrt(delta)) / (2.0*a);
+    if (sol0 < 0.0 && sol1 < 0.0)
+    {
+        return -1.0;
+    }
+    if (sol0 < 0.0)
+    {
+        return max(0.0, sol1);
+    }
+    else if (sol1 < 0.0)
+    {
+        return max(0.0, sol0);
+    }
+    return max(0.0, min(sol0, sol1));
+}
+
+struct MediumSampleResult
+{
+    vec3 scattering;
+    vec3 absorption;
+    vec3 extinction;
+
+    vec3 scattering_mie;
+    vec3 absorption_mie;
+    vec3 extinction_mie;
+
+    vec3 scattering_ray;
+    vec3 absorption_ray;
+    vec3 extinction_ray;
+
+    vec3 scattering_ozo;
+    vec3 absorption_ozo;
+    vec3 extinction_ozo;
+
+    vec3 albedo;
+};
+
+vec3 GetAlbedo(vec3 scattering, vec3 extinction)
+{
+    return scattering / max(vec3(0.001), extinction);
+}
+
+MediumSampleResult SampleMedium(in vec3 world_pos, in AtmosphereParameters atmosphere)
+{
+    float view_height = length(world_pos) - atmosphere.bottom_radius;
+
+    float density_mie = exp(atmosphere.mie_density_exp_scale * view_height);
+    float density_ray = exp(atmosphere.rayleigh_density_exp_scale * view_height);
+    float density_ozo = saturate(view_height < atmosphere.absorption_density0_layer_width ?
+    atmosphere.absorption_density0_linear_term * view_height + atmosphere.absorption_density0_constant_term :
+    atmosphere.absorption_density1_linear_term * view_height + atmosphere.absorption_density1_constant_term);
+
+    MediumSampleResult s;
+
+    s.scattering_mie = density_mie * atmosphere.mie_scattering;
+    s.absorption_mie = density_mie * atmosphere.mie_absorption;
+    s.extinction_mie = density_mie * atmosphere.mie_extinction;
+
+    s.scattering_ray = density_ray * atmosphere.rayleigh_scattering;
+    s.absorption_ray = vec3(0.0);
+    s.extinction_ray = s.scattering_ray + s.absorption_ray;
+
+    s.scattering_ozo = vec3(0.0);
+    s.absorption_ozo = density_ozo * atmosphere.absorption_extinction;
+    s.extinction_ozo = s.scattering_ozo + s.absorption_ozo;
+
+    s.scattering = s.scattering_mie + s.scattering_ray + s.scattering_ozo;
+    s.absorption = s.absorption_mie + s.absorption_ray + s.absorption_ozo;
+    s.extinction = s.extinction_mie + s.extinction_ray + s.extinction_ozo;
+    s.albedo = GetAlbedo(s.scattering, s.extinction);
+
+    return s;
+}
+
+// 纹理采样的是纹素中心,多做一步转化可以避免边界数据丢失
+float FromUnitToSubUvs(float u, float resolution) { return (u + 0.5 / resolution) * (resolution / (resolution + 1.0)); }
+float FromSubUvsToUnit(float u, float resolution) { return (u - 0.5 / resolution) * (resolution / (resolution - 1.0)); }
+
+void UvToLutTransmittanceParams(AtmosphereParameters atmosphere, out float view_height, out float view_zenith_cos_angle, in vec2 uv)
+{
+    float x_mu = uv.x;
+    float x_r = uv.y;
+
+    float H = sqrt(atmosphere.top_radius * atmosphere.top_radius - atmosphere.bottom_radius * atmosphere.bottom_radius);
+    float rho = H * x_r;
+    view_height = sqrt(rho * rho + atmosphere.bottom_radius * atmosphere.bottom_radius);
+
+    float d_min = atmosphere.top_radius - view_height;
+    float d_max = rho + H;
+    float d = d_min + x_mu * (d_max - d_min);
+    view_zenith_cos_angle = d == 0.0 ? 1.0f : (H * H - rho * rho - d * d) / (2.0 * view_height * d);
+    view_zenith_cos_angle = clamp(view_zenith_cos_angle, -1.0, 1.0);
+}

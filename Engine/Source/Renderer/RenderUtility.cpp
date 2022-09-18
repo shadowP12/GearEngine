@@ -203,11 +203,4 @@ namespace gear {
 
         return lut;
     }
-
-    struct AtmosphereParameters {
-        float bottom_radius;
-        float top_radius;
-    };
-
-
 }

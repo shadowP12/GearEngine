@@ -80,6 +80,7 @@ namespace gear {
         blast::GfxBuffer* common_view_ub = nullptr;
         blast::GfxBuffer* window_view_ub = nullptr;
         blast::GfxBuffer* renderable_ub = nullptr;
+		blast::GfxBuffer* atmosphere_ub = nullptr;
 
         ViewUniforms view_storage;
         RenderableUniforms identity_renderable_storage;

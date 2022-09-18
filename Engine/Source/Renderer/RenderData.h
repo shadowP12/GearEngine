@@ -121,6 +121,29 @@ namespace gear {
         uint32_t shadow_dimension = 0;
     };
 
+	struct AtmosphereParameters {
+		float bottom_radius;
+		float top_radius;
+
+		float rayleigh_density_exp_scale;
+		glm::vec3 rayleigh_scattering;
+
+		float mie_density_exp_scale;
+		glm::vec3 mie_scattering;
+		glm::vec3 mie_extinction;
+		glm::vec3 mie_absorption;
+		float mie_phase_g;
+
+		float absorption_density0_layer_width;
+		float absorption_density0_constant_term;
+		float absorption_density0_linear_term;
+		float absorption_density1_constant_term;
+		float absorption_density1_linear_term;
+		glm::vec3 absorption_extinction;
+
+		glm::vec3 ground_albedo;
+	};
+
     enum RenderableType {
         RENDERABLE_COMMON = 0,
         RENDERABLE_UI = 1

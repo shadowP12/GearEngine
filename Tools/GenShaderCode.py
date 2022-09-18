@@ -3,12 +3,16 @@ import os
 
 def is_atmosphere_shader(shader_name):
     if shader_name.find('atmosphere') >= 0:
+        if shader_name.find('.vs') >= 0:
+            return False
         return True
     return False
 
 def handle_atmosphere_shader(shader_datas, shader_name, shader_path):
     if shader_name == 'atmosphere_comon.fs':
         return
+
+    predefine_data = ''
 
     common_path = os.path.join(os.path.dirname(shader_path), 'atmosphere_comon.fs')
     common_data = ''
@@ -62,7 +66,7 @@ def main():
     content = content + '}\n'
 
     gen_file = os.path.join(gen_dir, 'ShaderCode.h')
-    with open(gen_file, 'w') as f:
+    with open(gen_file, 'w', encoding='utf8') as f:
         f.write(content)
 
 if __name__ == '__main__':

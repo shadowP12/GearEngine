@@ -36,6 +36,10 @@ namespace gear {
 
         blast::GfxShader* GetBRDFIntegrationShader() { return brdf_integration_shader; }
 
+		blast::GfxShader* GetAtmosphereCommonVS(uint32_t var = 0);
+
+		blast::GfxShader* GetAtmosphereComputeTransmittanceFS(uint32_t var = 0);
+
     private:
         void CreateQuadBuffer();
 
@@ -52,5 +56,7 @@ namespace gear {
         blast::GfxShader* compute_irradiance_map_shader = nullptr;
         blast::GfxShader* compute_specular_map_shader = nullptr;
         blast::GfxShader* brdf_integration_shader = nullptr;
+		SimpleShader* atmosphere_comon_vs = nullptr;
+		SimpleShader* atmosphere_compute_transmittance_fs = nullptr;
     };
 }
