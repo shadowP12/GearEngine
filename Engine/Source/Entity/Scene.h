@@ -37,6 +37,7 @@ namespace gear {
         CameraInfo main_camera_info;
         LightInfo light_info;
 
+		bool should_render_atmosphere = false;
 		AtmosphereParameters atmosphere_parameters;
 
         blast::GfxBuffer* renderables_ub = nullptr;

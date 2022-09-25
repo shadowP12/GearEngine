@@ -169,10 +169,10 @@ namespace gear {
     }
 
 	blast::GfxShader* BuiltinResources::GetAtmosphereCommonVS(uint32_t var) {
-		atmosphere_comon_vs->GetShader(var);
+		return atmosphere_comon_vs->GetShader(var);
 	}
 
 	blast::GfxShader* BuiltinResources::GetAtmosphereComputeTransmittanceFS(uint32_t var) {
-		atmosphere_compute_transmittance_fs->GetShader(var);
+		return atmosphere_compute_transmittance_fs->GetShader(var);
 	}
 }

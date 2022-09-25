@@ -79,6 +79,21 @@ namespace gear {
             }
         }
 
+		// Atmoshpere
+		{
+			blast::GfxTextureDesc texture_desc = {};
+			texture_desc.width = TRANSMITTANCE_TEXTURE_WIDTH;
+			texture_desc.height = TRANSMITTANCE_TEXTURE_HEIGHT;
+			texture_desc.format = blast::FORMAT_R16G16B16A16_FLOAT;
+			texture_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
+			texture_desc.res_usage = blast::RESOURCE_USAGE_SHADER_RESOURCE | blast::RESOURCE_USAGE_RENDER_TARGET;
+			transmittance_lut = gEngine.GetDevice()->CreateTexture(texture_desc);
+
+			blast::GfxRenderPassDesc renderpass_desc = {};
+			renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(transmittance_lut, -1, blast::LOAD_CLEAR));
+			transmittance_rp = gEngine.GetDevice()->CreateRenderPass(renderpass_desc);
+		}
+
         // debug
         {
             blast::GfxBufferDesc buffer_desc = {};
@@ -102,6 +117,10 @@ namespace gear {
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
             device->DestroyRenderPass(cascade_shadow_passes[i]);
         }
+
+		// Atmoshpere
+		device->DestroyTexture(transmittance_lut);
+		device->DestroyRenderPass(transmittance_rp);
 
         // debug
         device->DestroyBuffer(debug_line_vb);
@@ -143,6 +162,8 @@ namespace gear {
         device->UpdateBuffer(current_cmd, main_view_ub, &view_storage, sizeof(ViewUniforms));
 
 		device->UpdateBuffer(current_cmd, atmosphere_ub, &scene->atmosphere_parameters, sizeof(AtmosphereParameters));
+
+		RenderTransmittanceLut(scene, view);
 
         ShadowPass(scene, view);
 

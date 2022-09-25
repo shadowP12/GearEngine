@@ -54,6 +54,8 @@ namespace gear
 		shader_desc.bytecode = compile_result.bytes.data();
 		shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
 		cache_shaders[variant] = gEngine.GetDevice()->CreateShader(shader_desc);
+
+		return cache_shaders[variant];
 	}
 
 }

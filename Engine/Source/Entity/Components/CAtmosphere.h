@@ -13,7 +13,10 @@ namespace gear {
 
 		ComponentType GetType() override { return ComponentType::Atmosphere; }
 
-	private:
+		void ShouldRenderAtmosphere(bool enable) { should_render_atmosphere = enable; };
 
+	private:
+		friend class Scene;
+		bool should_render_atmosphere = true;
 	};
 }

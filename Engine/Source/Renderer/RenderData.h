@@ -103,6 +103,7 @@ namespace gear {
         float ev100;
         float exposure;
         glm::vec3 position;
+		glm::vec3 view_direction;
         glm::mat4 model;
         glm::mat4 view;
         glm::mat4 projection;
@@ -122,26 +123,24 @@ namespace gear {
     };
 
 	struct AtmosphereParameters {
+		glm::vec4 rayleigh_scattering;
+		glm::vec4 mie_scattering;
+		glm::vec4 mie_extinction;
+		glm::vec4 mie_absorption;
+		glm::vec4 absorption_extinction;
+		glm::vec4 ground_albedo;
+		glm::vec4 sun_direction;
+		glm::vec4 view_direction;
 		float bottom_radius;
 		float top_radius;
-
 		float rayleigh_density_exp_scale;
-		glm::vec3 rayleigh_scattering;
-
 		float mie_density_exp_scale;
-		glm::vec3 mie_scattering;
-		glm::vec3 mie_extinction;
-		glm::vec3 mie_absorption;
 		float mie_phase_g;
-
 		float absorption_density0_layer_width;
 		float absorption_density0_constant_term;
 		float absorption_density0_linear_term;
 		float absorption_density1_constant_term;
 		float absorption_density1_linear_term;
-		glm::vec3 absorption_extinction;
-
-		glm::vec3 ground_albedo;
 	};
 
     enum RenderableType {

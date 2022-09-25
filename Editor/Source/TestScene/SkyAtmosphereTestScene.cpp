@@ -3,6 +3,7 @@
 #include <GearEngine.h>
 #include <Renderer/Renderer.h>
 #include <Resource/Material.h>
+#include <Entity/Components/CAtmosphere.h>
 
 #include <imgui.h>
 
@@ -28,6 +29,9 @@ void SkyAtmosphereTestScene::Load() {
         sun->AddComponent<gear::CLight>();
         sun->GetComponent<gear::CLight>()->SetColor(glm::vec3(0.8f, 0.8f, 0.9f));
         sun->GetComponent<gear::CLight>()->SetIntensity(120000.0f);
+		// 大气组件
+		sun->AddComponent<gear::CAtmosphere>();
+		sun->GetComponent<gear::CAtmosphere>()->ShouldRenderAtmosphere(true);
         scene->AddEntity(sun);
 
         camera_controller = new CameraController();

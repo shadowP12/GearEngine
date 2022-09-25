@@ -12,18 +12,37 @@ uint SCATTERING_TEXTURE_NU_SIZE = 4;
 uint IRRADIANCE_TEXTURE_WIDTH = 32;
 uint IRRADIANCE_TEXTURE_HEIGHT = 8;
 
-layout(std140, set = 0, binding = 0) uniform ViewParameters {
-    vec2 resolution;
-} view_parameters;
+#define saturate(x)        clamp(x, 0.0, 1.0)
 
-layout(std140, set = 0, binding = 1) uniform AtmosphereParameters {
+layout(std140, set = 0, binding = 0) uniform AtmosphereCB {
+    vec4 rayleigh_scattering;
+    vec4 mie_scattering;
+    vec4 mie_extinction;
+    vec4 mie_absorption;
+    vec4 absorption_extinction;
+    vec4 ground_albedo;
+    vec4 sun_direction;
+    vec4 view_direction;
+    float bottom_radius;
+    float top_radius;
+    float rayleigh_density_exp_scale;
+    float mie_density_exp_scale;
+    float mie_phase_g;
+    float absorption_density0_layer_width;
+    float absorption_density0_constant_term;
+    float absorption_density0_linear_term;
+    float absorption_density1_constant_term;
+    float absorption_density1_linear_term;
+} atmosphere_cb;
+
+struct AtmosphereParameters {
     float bottom_radius;
     float top_radius;
 
-    float rayleigh_density_expScale;
+    float rayleigh_density_exp_scale;
     vec3 rayleigh_scattering;
 
-    float mie_density_expScale;
+    float mie_density_exp_scale;
     vec3 mie_scattering;
     vec3 mie_extinction;
     vec3 mie_absorption;
@@ -37,15 +56,42 @@ layout(std140, set = 0, binding = 1) uniform AtmosphereParameters {
     vec3 absorption_extinction;
 
     vec3 ground_albedo;
-} atmosphere_parameters;
 
+    vec3 sun_direction;
+    vec3 view_direction;
+};
 
 AtmosphereParameters GetAtmosphereParameters()
 {
+    AtmosphereParameters atmosphere_parameters;
+    atmosphere_parameters.bottom_radius = atmosphere_cb.bottom_radius;
+    atmosphere_parameters.top_radius = atmosphere_cb.top_radius;
+
+    atmosphere_parameters.rayleigh_density_exp_scale = atmosphere_cb.rayleigh_density_exp_scale;
+    atmosphere_parameters.rayleigh_scattering = atmosphere_cb.rayleigh_scattering.xyz;
+
+    atmosphere_parameters.mie_density_exp_scale = atmosphere_cb.mie_density_exp_scale;
+    atmosphere_parameters.mie_scattering = atmosphere_cb.mie_scattering.xyz;
+    atmosphere_parameters.mie_extinction = atmosphere_cb.mie_extinction.xyz;
+    atmosphere_parameters.mie_absorption = atmosphere_cb.mie_absorption.xyz;
+    atmosphere_parameters.mie_phase_g = atmosphere_cb.mie_phase_g;
+
+    atmosphere_parameters.absorption_density0_layer_width = atmosphere_cb.absorption_density0_layer_width;
+    atmosphere_parameters.absorption_density0_constant_term = atmosphere_cb.absorption_density0_constant_term;
+    atmosphere_parameters.absorption_density0_linear_term = atmosphere_cb.absorption_density0_linear_term;
+    atmosphere_parameters.absorption_density1_constant_term = atmosphere_cb.absorption_density1_constant_term;
+    atmosphere_parameters.absorption_density1_linear_term = atmosphere_cb.absorption_density1_linear_term;
+    atmosphere_parameters.absorption_extinction = atmosphere_cb.absorption_extinction.xyz;
+
+    atmosphere_parameters.ground_albedo = atmosphere_cb.ground_albedo.xyz;
+
+    atmosphere_parameters.sun_direction = atmosphere_cb.sun_direction.xyz;
+    atmosphere_parameters.view_direction = atmosphere_cb.view_direction.xyz;
+
     return atmosphere_parameters;
 }
 
-float RaySphereIntersectNearest(vec3 r0, vec3 rd, vec3 s0, vec3 sr)
+float RaySphereIntersectNearest(vec3 r0, vec3 rd, vec3 s0, float sr)
 {
     float a = dot(rd, rd);
     vec3 s0_r0 = r0 - s0;

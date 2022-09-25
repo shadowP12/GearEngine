@@ -61,6 +61,8 @@ namespace gear {
 
         void DebugPass(Scene* scene, View* view);
 
+		void RenderTransmittanceLut(Scene* scene, View* view);
+
     private:
         VertexLayoutCache* vertex_layout_cache = nullptr;
         RasterizerStateCache* rasterizer_state_cache = nullptr;
@@ -89,6 +91,10 @@ namespace gear {
         blast::GfxTexture* cascade_shadow_map = nullptr;
         blast::GfxRenderPass* cascade_shadow_passes[SHADOW_CASCADE_COUNT];
         ShadowMapInfo cascade_shadow_map_infos[SHADOW_CASCADE_COUNT];
+
+		// Atmosphere
+		blast::GfxTexture* transmittance_lut = nullptr;
+		blast::GfxRenderPass* transmittance_rp = nullptr;
 
         // debug
         blast::GfxBuffer* debug_line_vb = nullptr;

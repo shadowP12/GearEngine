@@ -6,27 +6,25 @@ struct SingleScatteringResult
 };
 
 SingleScatteringResult IntegrateScatteredLuminance(
-    in vec2 pix_pos, in vec3 world_pos, in vec3 world_dir, in vec3 sun_dir,
+    in vec2 pix_pos, in vec3 world_pos, in vec3 world_dir,
     in AtmosphereParameters atmosphere, in float sample_count, in float t_max_max)
 {
     SingleScatteringResult result;
 
-    // 计算地表或大气层的相交
-    vec3 planetO = vec3(0.0, 0.0, 0.0);
-    float t_bottom = RaySphereIntersectNearest(world_pos, world_dir, planetO, atmosphere.bottom_radius);
-    float t_top = RaySphereIntersectNearest(world_pos, world_dir, planetO, atmosphere.top_radius);
+    vec3 planet0 = vec3(0.0, 0.0, 0.0);
+    float t_bottom = RaySphereIntersectNearest(world_pos, world_dir, planet0, atmosphere.bottom_radius);
+    float t_top = RaySphereIntersectNearest(world_pos, world_dir, planet0, atmosphere.top_radius);
     float t_max = 0.0;
     if (t_bottom < 0.0)
     {
         if (t_top < 0.0f)
         {
-            // 没有任何相交
+            // No intersect
             t_max = 0.0f;
             return result;
         }
         else
         {
-            // 仅相交大气层
             t_max = t_top;
         }
     }
@@ -34,12 +32,10 @@ SingleScatteringResult IntegrateScatteredLuminance(
     {
         if (t_top > 0.0f)
         {
-            // 相交于地表还有大气层,取最近距离
             t_max = min(t_top, t_bottom);
         }
     }
 
-    // 限制最大距离
     t_max = min(t_max, t_max_max);
 
     // Ray march
@@ -52,7 +48,7 @@ SingleScatteringResult IntegrateScatteredLuminance(
         t = dt * s;
         vec3 p = world_pos + t * world_dir;
 
-        // 采样介质
+        // Sample medium
         MediumSampleResult medium = SampleMedium(p, atmosphere);
         vec3 sample_optical_depth = medium.extinction * dt;
         optical_depth += sample_optical_depth;
@@ -77,7 +73,7 @@ void main() {
     vec3 world_dir = vec3(0.0, sqrt(1.0 - view_zenith_cos_angle * view_zenith_cos_angle), view_zenith_cos_angle);
     float sample_count = 40.0;
     float t_max_max = 9000000;
-    vec3 transmittance = exp(-IntegrateScatteredLuminance(pix_pos, world_pos, world_dir, sun_direction, atmosphere, sample_count, t_max_max).optical_depth);
+    vec3 transmittance = exp(-IntegrateScatteredLuminance(pix_pos, world_pos, world_dir, atmosphere, sample_count, t_max_max).optical_depth);
 
     out_color = vec4(transmittance, 1.0);
 }

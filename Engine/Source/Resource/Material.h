@@ -28,7 +28,7 @@ namespace gear {
     };
 
     // 材质的变体参数
-    static constexpr uint16_t MATERIAL_VARIANT_COUNT = 64;
+    static constexpr uint16_t MATERIAL_VARIANT_COUNT = 128;
     struct MaterialVariant {
     public:
         typedef uint16_t Key;
@@ -39,6 +39,7 @@ namespace gear {
         static constexpr Key SKINNING_OR_MORPHING   = 0x08; // GPU蒙皮
         static constexpr Key DEPTH                  = 0x10; // 深度
         static constexpr Key IBL                    = 0x20; // ibl
+		static constexpr Key ATMOSPHERE             = 0x40; // 大气散射
 
         static constexpr Key VERTEX_MASK =  DIRECTIONAL_LIGHTING |
                                             DYNAMIC_LIGHTING |
@@ -50,7 +51,8 @@ namespace gear {
                                                 DYNAMIC_LIGHTING |
                                                 SHADOW_RECEIVER |
                                                 DEPTH |
-                                                IBL;
+                                                IBL |
+												ATMOSPHERE;
 
         static constexpr Key DEPTH_MASK =   DIRECTIONAL_LIGHTING |
                                             DYNAMIC_LIGHTING |
@@ -63,6 +65,7 @@ namespace gear {
         inline bool HasShadowReceiver() const noexcept { return key & SHADOW_RECEIVER; }
         inline bool HasDepth() noexcept { return key & DEPTH; }
         inline bool HasIBL() noexcept { return key & IBL; }
+		inline bool HasAtmosphere() noexcept { return key & ATMOSPHERE; }
 
         inline void SetSkinning(bool v) noexcept { Set(v, SKINNING_OR_MORPHING); }
         inline void SetDirectionalLighting(bool v) noexcept { Set(v, DIRECTIONAL_LIGHTING); }

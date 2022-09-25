@@ -57,6 +57,7 @@ namespace gear {
         light_info.has_direction_light = false;
         light_info.has_ibl = false;
         skybox_map = nullptr;
+		should_render_atmosphere = false;
 
         if (renderables.size() < num_mesh_entitys) {
             renderables.resize(num_mesh_entitys);
@@ -87,6 +88,7 @@ namespace gear {
                     display_camera_info.view = ccamera->GetViewMatrix();
                     display_camera_info.projection = ccamera->GetProjMatrix();
                     display_camera_info.position = GetTranslate(display_camera_info.model);
+					display_camera_info.view_direction = entity->GetComponent<CTransform>()->GetFrontVector();
                     display_camera_info.ev100 = std::log2((ccamera->GetAperture() * ccamera->GetAperture()) / ccamera->GetShutterSpeed() * 100.0f / ccamera->GetSensitivity());
                     display_camera_info.exposure = 1.0f / (1.2f * std::pow(2.0, display_camera_info.ev100));
                 }
@@ -98,6 +100,7 @@ namespace gear {
                     main_camera_info.view = ccamera->GetViewMatrix();
                     main_camera_info.projection = ccamera->GetProjMatrix();
                     main_camera_info.position = GetTranslate(main_camera_info.model);
+					main_camera_info.view_direction = entity->GetComponent<CTransform>()->GetFrontVector();
                     main_camera_info.ev100 = std::log2((ccamera->GetAperture() * ccamera->GetAperture()) / ccamera->GetShutterSpeed() * 100.0f / ccamera->GetSensitivity());
                     main_camera_info.exposure = 1.0f / (1.2f * std::pow(2.0, main_camera_info.ev100));
                 }
@@ -130,15 +133,17 @@ namespace gear {
             }
 
 			if (entity->HasComponent<CAtmosphere>()) {
+				should_render_atmosphere = true;
+
 				atmosphere_parameters.bottom_radius = 6360.0f;
 				atmosphere_parameters.top_radius = 6460.0f;
 
 				atmosphere_parameters.rayleigh_density_exp_scale = -1.0f / 8.0f;
-				atmosphere_parameters.rayleigh_scattering = glm::vec3(0.005802f, 0.013558f, 0.033100f);
+				atmosphere_parameters.rayleigh_scattering = glm::vec4(0.005802f, 0.013558f, 0.033100f, 0.0f);
 
 				atmosphere_parameters.mie_density_exp_scale = -1.0f / 1.2f;
-				atmosphere_parameters.mie_scattering = glm::vec3(0.003996f, 0.003996f, 0.003996f);
-				atmosphere_parameters.mie_extinction = glm::vec3(0.004440f, 0.004440f, 0.004440f);
+				atmosphere_parameters.mie_scattering = glm::vec4(0.003996f, 0.003996f, 0.003996f, 0.0f);
+				atmosphere_parameters.mie_extinction = glm::vec4(0.004440f, 0.004440f, 0.004440f, 0.0f);
 				atmosphere_parameters.mie_absorption = atmosphere_parameters.mie_extinction - atmosphere_parameters.mie_scattering;
 				atmosphere_parameters.mie_absorption.x = glm::max(0.0f, atmosphere_parameters.mie_absorption.x);
 				atmosphere_parameters.mie_absorption.y = glm::max(0.0f, atmosphere_parameters.mie_absorption.y);
@@ -150,9 +155,9 @@ namespace gear {
 				atmosphere_parameters.absorption_density0_linear_term = 1.0f / 15.0f;
 				atmosphere_parameters.absorption_density1_constant_term = 8.0f / 3.0f;
 				atmosphere_parameters.absorption_density1_linear_term = -1.0f / 15.0f;
-				atmosphere_parameters.absorption_extinction = glm::vec3(0.000650f, 0.001881f, 0.000085f);
+				atmosphere_parameters.absorption_extinction = glm::vec4(0.000650f, 0.001881f, 0.000085f, 0.0f);
 
-				atmosphere_parameters.ground_albedo = glm::vec3(0.0f);
+				atmosphere_parameters.ground_albedo = glm::vec4(0.0f);
 			}
 
             if (entity->HasComponent<CMesh>()) {
@@ -221,6 +226,17 @@ namespace gear {
         if (num_cameras == 0 || num_renderables == 0) {
             return false;
         }
+
+		// Atmosphere
+		if (should_render_atmosphere) {
+			if (light_info.has_direction_light) {
+				atmosphere_parameters.sun_direction = glm::vec4(light_info.sun_direction, 0.0f);
+			} else {
+				atmosphere_parameters.sun_direction = glm::vec4(glm::normalize(glm::vec3(0.0f, -1.0f, 1.0f)), 0.0f);
+			}
+
+			atmosphere_parameters.view_direction = glm::vec4(display_camera_info.view_direction, 0.0f);
+		}
 
         return true;
     }

@@ -185,9 +185,10 @@ namespace gear {
                     continue;
                 }
 
-                // unlit着色模型不需要任何光照相关的材质变体
+				// unlit着色模型可以减少很多不必要的材质变体
                 if (builder.shading_model == SHADING_MODEL_UNLIT) {
-                    if (variant.HasDirectionalLighting() || variant.HasDynamicLighting()) {
+                    if (variant.HasDirectionalLighting() || variant.HasDynamicLighting() ||
+						variant.HasIBL() || variant.HasAtmosphere()) {
                         continue;
                     }
                 }
@@ -265,6 +266,10 @@ namespace gear {
                     if (variant.HasIBL()) {
                         cg.GenerateDefine(fs, "HAS_IBL");
                     }
+
+					if (variant.HasAtmosphere()) {
+						cg.GenerateDefine(fs, "HAS_ATMOSPHERE");
+					}
 
                     cg.GenerateShaderAttributes(fs, blast::SHADER_STAGE_FRAG, attributes);
                     cg.GenerateShaderInput(fs, blast::SHADER_STAGE_FRAG);
