@@ -74,4 +74,36 @@ namespace gear {
 		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
 	}
 
+	void Renderer::RenderMultiScattTexture(gear::Scene* scene, gear::View* view) {
+		if (!scene->should_render_atmosphere) {
+			return;
+		}
+
+		blast::GfxDevice* device = gEngine.GetDevice();
+
+		blast::GfxTextureBarrier barrier[1];
+		barrier[0].texture = multi_scatt_texture;
+		barrier[0].new_state = blast::RESOURCE_STATE_UNORDERED_ACCESS;
+		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
+
+		blast::GfxShader* cs = gEngine.GetBuiltinResources()->GetAtmosphereComputeMultiScattCS();
+		if (cs != nullptr) {
+			device->BindConstantBuffer(current_cmd, atmosphere_ub, 0, atmosphere_ub->desc.size, 0);
+
+			blast::GfxSamplerDesc default_sampler = {};
+			device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);
+
+			device->BindResource(current_cmd, transmittance_lut, 0);
+
+			device->BindUAV(current_cmd, multi_scatt_texture, 0);
+
+			device->BindComputeShader(current_cmd, cs);
+
+			device->Dispatch(current_cmd, std::max(1u, (uint32_t)MULTI_SCATTERING_TEXTURE_SIZE / 16), std::max(1u, (uint32_t)MULTI_SCATTERING_TEXTURE_SIZE / 16), 1);
+		}
+
+		barrier[0].texture = multi_scatt_texture;
+		barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
+	}
 }

@@ -21,6 +21,7 @@ namespace gear {
         SAFE_DELETE(cube_buffer);
 		SAFE_DELETE(atmosphere_comon_vs);
 		SAFE_DELETE(atmosphere_compute_transmittance_fs);
+		SAFE_DELETE(atmosphere_compute_multi_scatt_cs);
         gEngine.GetDevice()->DestroyShader(pano_to_cube_shader);
         gEngine.GetDevice()->DestroyShader(compute_irradiance_map_shader);
         gEngine.GetDevice()->DestroyShader(compute_specular_map_shader);
@@ -93,6 +94,10 @@ namespace gear {
 			desc.stage = blast::SHADER_STAGE_FRAG;
 			desc.code = ATMOSPHERE_COMPUTE_TRANSMITTANCE_FS_DATA;
 			atmosphere_compute_transmittance_fs = new SimpleShader(desc);
+
+			desc.stage = blast::SHADER_STAGE_COMP;
+			desc.code = ATMOSPHERE_COMPUTE_MULTI_SCATTERING_COMP_DATA;
+			atmosphere_compute_multi_scatt_cs = new SimpleShader(desc);
 		}
     }
 
@@ -174,5 +179,9 @@ namespace gear {
 
 	blast::GfxShader* BuiltinResources::GetAtmosphereComputeTransmittanceFS(uint32_t var) {
 		return atmosphere_compute_transmittance_fs->GetShader(var);
+	}
+
+	blast::GfxShader* BuiltinResources::GetAtmosphereComputeMultiScattCS(uint32_t var) {
+		return atmosphere_compute_multi_scatt_cs->GetShader(var);
 	}
 }

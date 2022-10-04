@@ -89,6 +89,13 @@ namespace gear {
 			texture_desc.res_usage = blast::RESOURCE_USAGE_SHADER_RESOURCE | blast::RESOURCE_USAGE_RENDER_TARGET;
 			transmittance_lut = gEngine.GetDevice()->CreateTexture(texture_desc);
 
+			texture_desc.width = MULTI_SCATTERING_TEXTURE_SIZE;
+			texture_desc.height = MULTI_SCATTERING_TEXTURE_SIZE;
+			texture_desc.format = blast::FORMAT_R16G16B16A16_FLOAT;
+			texture_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
+			texture_desc.res_usage = blast::RESOURCE_USAGE_SHADER_RESOURCE | blast::RESOURCE_USAGE_RENDER_TARGET | blast::RESOURCE_USAGE_UNORDERED_ACCESS;
+			multi_scatt_texture = gEngine.GetDevice()->CreateTexture(texture_desc);
+
 			blast::GfxRenderPassDesc renderpass_desc = {};
 			renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(transmittance_lut, -1, blast::LOAD_CLEAR));
 			transmittance_rp = gEngine.GetDevice()->CreateRenderPass(renderpass_desc);
@@ -120,6 +127,7 @@ namespace gear {
 
 		// Atmoshpere
 		device->DestroyTexture(transmittance_lut);
+		device->DestroyTexture(multi_scatt_texture);
 		device->DestroyRenderPass(transmittance_rp);
 
         // debug
@@ -164,6 +172,8 @@ namespace gear {
 		device->UpdateBuffer(current_cmd, atmosphere_ub, &scene->atmosphere_parameters, sizeof(AtmosphereParameters));
 
 		RenderTransmittanceLut(scene, view);
+
+		RenderMultiScattTexture(scene, view);
 
         ShadowPass(scene, view);
 

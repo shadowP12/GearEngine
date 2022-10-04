@@ -63,6 +63,8 @@ namespace gear {
 
 		void RenderTransmittanceLut(Scene* scene, View* view);
 
+		void RenderMultiScattTexture(Scene* scene, View* view);
+
     private:
         VertexLayoutCache* vertex_layout_cache = nullptr;
         RasterizerStateCache* rasterizer_state_cache = nullptr;
@@ -95,6 +97,7 @@ namespace gear {
 		// Atmosphere
 		blast::GfxTexture* transmittance_lut = nullptr;
 		blast::GfxRenderPass* transmittance_rp = nullptr;
+		blast::GfxTexture* multi_scatt_texture = nullptr;
 
         // debug
         blast::GfxBuffer* debug_line_vb = nullptr;

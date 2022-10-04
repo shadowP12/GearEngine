@@ -4,13 +4,9 @@
 uint TRANSMITTANCE_TEXTURE_WIDTH = 64;
 uint TRANSMITTANCE_TEXTURE_HEIGHT = 16;
 
-uint SCATTERING_TEXTURE_R_SIZE = 16;
-uint SCATTERING_TEXTURE_MU_SIZE = 16;
-uint SCATTERING_TEXTURE_MU_S_SIZE = 16;
-uint SCATTERING_TEXTURE_NU_SIZE = 4;
+uint MULTI_SCATTERING_TEXTURE_SIZE = 32;
 
-uint IRRADIANCE_TEXTURE_WIDTH = 32;
-uint IRRADIANCE_TEXTURE_HEIGHT = 8;
+#define PI 3.1415926535897932384626433832795
 
 #define saturate(x)        clamp(x, 0.0, 1.0)
 
@@ -195,4 +191,20 @@ void UvToLutTransmittanceParams(AtmosphereParameters atmosphere, out float view_
     float d = d_min + x_mu * (d_max - d_min);
     view_zenith_cos_angle = d == 0.0 ? 1.0f : (H * H - rho * rho - d * d) / (2.0 * view_height * d);
     view_zenith_cos_angle = clamp(view_zenith_cos_angle, -1.0, 1.0);
+}
+
+void LutTransmittanceParamsToUv(AtmosphereParameters atmosphere, in float view_height, in float view_zenith_cos_angle, out vec2 uv)
+{
+	float H = sqrt(max(0.0, atmosphere.top_radius * atmosphere.top_radius - atmosphere.bottom_radius * atmosphere.bottom_radius));
+	float rho = sqrt(max(0.0, view_height * view_height - atmosphere.bottom_radius * atmosphere.bottom_radius));
+
+	float discriminant = view_height * view_height * (view_zenith_cos_angle * view_zenith_cos_angle - 1.0) + atmosphere.top_radius * atmosphere.top_radius;
+	float d = max(0.0, (-view_height * view_zenith_cos_angle + sqrt(discriminant)));
+
+	float d_min = atmosphere.top_radius - view_height;
+	float d_max = rho + H;
+	float x_mu = (d - d_min) / (d_max - d_min);
+	float x_r = rho / H;
+
+	uv = vec2(x_mu, x_r);
 }

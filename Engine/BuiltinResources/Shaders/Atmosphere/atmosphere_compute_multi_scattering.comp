@@ -1,0 +1,145 @@
+layout(binding = 1000) uniform texture2D transmittance_texture;
+layout(binding = 3000) uniform sampler transmittance_sampler;
+layout(binding = 2000, rgba32f) uniform image2D multi_scatt_texture;
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+struct SingleScatteringResult
+{
+	vec3 luminance;
+	vec3 multi_scat_factor;
+};
+
+SingleScatteringResult IntegrateScatteredLuminance(
+    in vec2 pix_pos, in vec3 world_pos, in vec3 world_dir, in vec3 sun_dir,
+    in AtmosphereParameters atmosphere, in float sample_count, in float t_max_max)
+{
+    SingleScatteringResult result;
+
+    vec3 planet0 = vec3(0.0, 0.0, 0.0);
+    float t_bottom = RaySphereIntersectNearest(world_pos, world_dir, planet0, atmosphere.bottom_radius);
+    float t_top = RaySphereIntersectNearest(world_pos, world_dir, planet0, atmosphere.top_radius);
+    float t_max = 0.0;
+    if (t_bottom < 0.0)
+    {
+        if (t_top < 0.0f)
+        {
+            // No intersect
+            t_max = 0.0f;
+            return result;
+        }
+        else
+        {
+            t_max = t_top;
+        }
+    }
+    else
+    {
+        if (t_top > 0.0f)
+        {
+            t_max = min(t_top, t_bottom);
+        }
+    }
+
+    t_max = min(t_max, t_max_max);
+
+    // Phase functions
+    float uniform_phase = 1.0 / (4.0 * PI);
+
+    // Placeholder
+    vec3 global_l = vec3(1.0);
+
+    // Ray march
+    vec3 luminance = vec3(0.0);
+    vec3 multi_scat_factor = vec3(0.0);
+    vec3 throughput = vec3(1.0);
+    float dt = t_max / sample_count;
+    float t = 0.0;
+    float t_prev = 0.0;
+    for (float s = 0.0f; s < sample_count; s += 1.0)
+    {
+        t = dt * s;
+        vec3 p = world_pos + t * world_dir;
+        float p_height = length(p);
+        vec3 up_vector = p / p_height;
+
+        // Sample medium
+        MediumSampleResult medium = SampleMedium(p, atmosphere);
+        vec3 sample_optical_depth = medium.extinction * dt;
+        vec3 sample_transmittance = exp(-sample_optical_depth);
+
+        // Transmittance
+        float sun_zenith_cos_angle = dot(sun_dir, up_vector);
+        vec2 uv;
+        LutTransmittanceParamsToUv(atmosphere, p_height, sun_zenith_cos_angle, uv);
+        vec3 transmittance = textureLod(sampler2D(transmittance_texture, transmittance_sampler), uv, 0.0).rgb;
+
+        // Earth shadow
+        float t_earth = RaySphereIntersectNearest(p, sun_dir, planet0 + 0.01 * up_vector, atmosphere.bottom_radius);
+        float earth_shadow = t_earth >= 0.0 ? 0.0 : 1.0;
+
+        // Todo: Sample shadowmap
+        float shadow = 1.0;
+
+        vec3 phase_times_scattering = medium.scattering * uniform_phase;
+        luminance += global_l * (earth_shadow * shadow * transmittance * phase_times_scattering) * dt;
+        multi_scat_factor += throughput * medium.scattering * 1 * dt;
+        throughput *= sample_transmittance;
+
+        t_prev = t;
+    }
+    result.luminance = luminance;
+    result.multi_scat_factor = multi_scat_factor;
+    return result;
+}
+
+void main() {
+    vec3 thread_pos = vec3(gl_GlobalInvocationID);
+	vec2 pix_pos = thread_pos.xy + 0.5;
+	vec2 uv = (pix_pos) / vec2(MULTI_SCATTERING_TEXTURE_SIZE);
+	uv = vec2(FromSubUvsToUnit(uv.x, MULTI_SCATTERING_TEXTURE_SIZE), FromSubUvsToUnit(uv.y, MULTI_SCATTERING_TEXTURE_SIZE));
+
+    AtmosphereParameters atmosphere = GetAtmosphereParameters();
+
+    float cos_sun_zenith_angle = uv.x * 2.0 - 1.0;
+    vec3 sun_dir = vec3(0.0, sqrt(saturate(1.0 - cos_sun_zenith_angle * cos_sun_zenith_angle)), cos_sun_zenith_angle);
+    float PLANET_RADIUS_OFFSET = 0.01;
+    float view_height = atmosphere.bottom_radius + saturate(uv.y + PLANET_RADIUS_OFFSET) * (atmosphere.top_radius - atmosphere.bottom_radius - PLANET_RADIUS_OFFSET);
+
+    vec3 world_pos = vec3(0.0, 0.0, view_height);
+    vec3 world_dir = vec3(0.0, 0.0, 1.0);
+    float sample_count = 20.0;
+    float t_max_max = 9000000;
+
+    vec3 in_scattered_luminance = vec3(0.0);
+    vec3 multi_scat_factor = vec3(0.0);
+    float sphere_solid_angle = 4.0 * PI;
+    float isotropic_phase = 1.0 / sphere_solid_angle;
+    float SAMPLECOUNT = 16.0;
+    float SQRTSAMPLECOUNT = 4.0;
+    for (float k = 0.0; k < SAMPLECOUNT; ++k) {
+        float i = 0.5 + float(k / SQRTSAMPLECOUNT);
+        float j = 0.5 + float(k - float((k / SQRTSAMPLECOUNT) * SQRTSAMPLECOUNT));
+        float rand_a = i / SQRTSAMPLECOUNT;
+        float rand_b = j / SQRTSAMPLECOUNT;
+        float theta = 2.0 * PI * rand_a;
+        float phi = acos(1.0 - 2.0 * rand_b);
+        float cos_phi = cos(phi);
+        float sin_phi = sin(phi);
+        float cos_theta = cos(theta);
+        float sin_theta = sin(theta);
+        world_dir.x = cos_theta * sin_phi;
+        world_dir.y = sin_theta * sin_phi;
+        world_dir.z = cos_phi;
+
+        SingleScatteringResult result = IntegrateScatteredLuminance(pix_pos, world_pos, world_dir, sun_dir, atmosphere, sample_count, t_max_max);
+        multi_scat_factor += result.multi_scat_factor * sphere_solid_angle / SAMPLECOUNT;
+        in_scattered_luminance += result.luminance * sphere_solid_angle / SAMPLECOUNT;
+    }
+
+    in_scattered_luminance *= isotropic_phase;
+    multi_scat_factor *= isotropic_phase;
+    vec3 multi_scat_factor_sqr = multi_scat_factor * multi_scat_factor;
+    vec3 luminance = in_scattered_luminance * (1.0 + multi_scat_factor + multi_scat_factor_sqr + multi_scat_factor * multi_scat_factor_sqr + multi_scat_factor_sqr * multi_scat_factor_sqr);
+    imageStore(multi_scatt_texture, ivec2(thread_pos.xy), vec4(luminance, 1.0));
+}
