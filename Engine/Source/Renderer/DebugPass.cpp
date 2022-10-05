@@ -18,14 +18,14 @@ namespace gear {
             return;
         }
 
+		view->SwapPostProcess();
+
         blast::GfxDevice* device = gEngine.GetDevice();
         device->UpdateBuffer(current_cmd, debug_line_vb, view->debug_lines.data(), view->num_debug_lines * sizeof(float) * 14);
 
         ViewUniforms vb_storage = view_storage;
         device->UpdateBuffer(current_cmd, common_view_ub, &vb_storage, sizeof(ViewUniforms));
         device->UpdateBuffer(current_cmd, renderable_ub, &identity_renderable_storage, sizeof(RenderableUniforms));
-
-        view->SwapPostProcess();
 
         blast::GfxTextureBarrier barrier[1];
         barrier[0].texture = view->GetOutPostProcessRT();
