@@ -173,9 +173,6 @@ namespace gear {
             return false;
         }
 
-		// 初始化
-		out_postprocess_idx = 0;
-
         return true;
     }
 
