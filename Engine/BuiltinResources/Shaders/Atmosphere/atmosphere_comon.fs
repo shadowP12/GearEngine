@@ -11,6 +11,8 @@ uint MULTI_SCATTERING_TEXTURE_SIZE = 32;
 #define saturate(x)        clamp(x, 0.0, 1.0)
 
 layout(std140, set = 0, binding = 0) uniform AtmosphereCB {
+    mat4 sky_inv_view_proj_mat;
+    vec4 resolution;
     vec4 rayleigh_scattering;
     vec4 mie_scattering;
     vec4 mie_extinction;
@@ -19,6 +21,7 @@ layout(std140, set = 0, binding = 0) uniform AtmosphereCB {
     vec4 ground_albedo;
     vec4 sun_direction;
     vec4 view_direction;
+    vec4 view_position;
     float bottom_radius;
     float top_radius;
     float rayleigh_density_exp_scale;
@@ -55,6 +58,10 @@ struct AtmosphereParameters {
 
     vec3 sun_direction;
     vec3 view_direction;
+    vec3 view_position;
+
+    vec2 resolution;
+    mat4 sky_inv_view_proj_mat;
 };
 
 AtmosphereParameters GetAtmosphereParameters()
@@ -83,6 +90,10 @@ AtmosphereParameters GetAtmosphereParameters()
 
     atmosphere_parameters.sun_direction = atmosphere_cb.sun_direction.xyz;
     atmosphere_parameters.view_direction = atmosphere_cb.view_direction.xyz;
+    atmosphere_parameters.view_position = atmosphere_cb.view_position.xyz;
+
+    atmosphere_parameters.resolution = atmosphere_cb.resolution.xy;
+    atmosphere_parameters.sky_inv_view_proj_mat = atmosphere_cb.sky_inv_view_proj_mat;
 
     return atmosphere_parameters;
 }
@@ -173,7 +184,19 @@ MediumSampleResult SampleMedium(in vec3 world_pos, in AtmosphereParameters atmos
     return s;
 }
 
-// 纹理采样的是纹素中心,多做一步转化可以避免边界数据丢失
+float RayleighPhase(float cos_theta)
+{
+	float factor = 3.0 / (16.0 * PI);
+	return factor * (1.0 + cos_theta * cos_theta);
+}
+
+float MiePhase(float g, float cos_theta)
+{
+	float numer = 1.0f - g * g;
+	float denom = 1.0f + g * g + 2.0f * g * cos_theta;
+	return numer / (4.0 * PI * denom * sqrt(denom));
+}
+
 float FromUnitToSubUvs(float u, float resolution) { return (u + 0.5 / resolution) * (resolution / (resolution + 1.0)); }
 float FromSubUvsToUnit(float u, float resolution) { return (u - 0.5 / resolution) * (resolution / (resolution - 1.0)); }
 
@@ -207,4 +230,18 @@ void LutTransmittanceParamsToUv(AtmosphereParameters atmosphere, in float view_h
 	float x_r = rho / H;
 
 	uv = vec2(x_mu, x_r);
+}
+
+vec3 GetSunLuminance(vec3 world_pos, vec3 world_dir, vec3 sun_dir, float planet_radius) {
+	if (dot(world_dir, sun_dir) > cos(0.5 * 0.505 * 3.14159 / 180.0))
+	{
+		float t = RaySphereIntersectNearest(world_pos, world_dir, vec3(0.0, 0.0, 0.0), planet_radius);
+		if (t < 0.0)
+		{
+		    // Todo: Blend
+			vec3 sun_luminance = vec3(1000000.0);
+			return sun_luminance;
+		}
+	}
+	return vec3(0);
 }

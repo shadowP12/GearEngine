@@ -236,6 +236,9 @@ namespace gear {
 			}
 
 			atmosphere_parameters.view_direction = glm::vec4(display_camera_info.view_direction, 0.0f);
+			atmosphere_parameters.view_position = glm::vec4(display_camera_info.position, 0.0f);
+
+			atmosphere_parameters.sky_inv_view_proj_mat = glm::inverse(display_camera_info.projection * display_camera_info.view);
 		}
 
         return true;

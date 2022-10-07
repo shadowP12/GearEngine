@@ -68,6 +68,9 @@ namespace gear {
 			device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
 		}
 
+		// Atmosphere ray marching
+		AtmosphereRayMarching(scene, view);
+
         // fxaa
         {
 			view->SwapPostProcess();

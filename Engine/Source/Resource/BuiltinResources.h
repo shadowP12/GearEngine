@@ -42,6 +42,8 @@ namespace gear {
 
 		blast::GfxShader* GetAtmosphereComputeMultiScattCS(uint32_t var = 0);
 
+		blast::GfxShader* GetAtmosphereRayMarchingFS(uint32_t var = 0);
+
     private:
         void CreateQuadBuffer();
 
@@ -61,5 +63,6 @@ namespace gear {
 		SimpleShader* atmosphere_comon_vs = nullptr;
 		SimpleShader* atmosphere_compute_transmittance_fs = nullptr;
 		SimpleShader* atmosphere_compute_multi_scatt_cs = nullptr;
+		SimpleShader* atmosphere_raymarching_fs = nullptr;
     };
 }

@@ -65,6 +65,8 @@ namespace gear {
 
 		void RenderMultiScattTexture(Scene* scene, View* view);
 
+		void AtmosphereRayMarching(Scene* scene, View* view);
+
     private:
         VertexLayoutCache* vertex_layout_cache = nullptr;
         RasterizerStateCache* rasterizer_state_cache = nullptr;

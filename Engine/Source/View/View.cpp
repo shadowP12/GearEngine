@@ -41,6 +41,14 @@ namespace gear {
         if (fxaa_renderpass1) {
             device->DestroyRenderPass(fxaa_renderpass1);
         }
+
+		if (atmosphere_raymarching_renderpass0) {
+			device->DestroyRenderPass(atmosphere_raymarching_renderpass0);
+		}
+		if (atmosphere_raymarching_renderpass1) {
+			device->DestroyRenderPass(atmosphere_raymarching_renderpass1);
+		}
+
         if (debug_renderpass0) {
             device->DestroyRenderPass(debug_renderpass0);
         }
@@ -148,6 +156,9 @@ namespace gear {
                 if (fxaa_renderpass0) {
                     device->DestroyRenderPass(fxaa_renderpass0);
                 }
+				if (debug_renderpass0) {
+					device->DestroyRenderPass(debug_renderpass0);
+				}
                 blast::GfxRenderPassDesc renderpass_desc = {};
                 renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt0, -1, blast::LOAD_CLEAR));
                 fxaa_renderpass0 = device->CreateRenderPass(renderpass_desc);
@@ -157,12 +168,31 @@ namespace gear {
                 if (fxaa_renderpass1) {
                     device->DestroyRenderPass(fxaa_renderpass1);
                 }
+				if (debug_renderpass1) {
+					device->DestroyRenderPass(debug_renderpass1);
+				}
                 blast::GfxRenderPassDesc renderpass_desc = {};
                 renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt1, -1, blast::LOAD_CLEAR));
                 fxaa_renderpass1 = device->CreateRenderPass(renderpass_desc);
                 debug_renderpass1 = device->CreateRenderPass(renderpass_desc);
             }
 
+			{
+				if (atmosphere_raymarching_renderpass0) {
+					device->DestroyRenderPass(atmosphere_raymarching_renderpass0);
+				}
+				if (atmosphere_raymarching_renderpass1) {
+					device->DestroyRenderPass(atmosphere_raymarching_renderpass1);
+				}
+
+				blast::GfxRenderPassDesc renderpass_desc = {};
+				renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt0, -1, blast::LOAD_LOAD));
+				atmosphere_raymarching_renderpass0 = device->CreateRenderPass(renderpass_desc);
+
+				renderpass_desc.attachments.clear();
+				renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt1, -1, blast::LOAD_LOAD));
+				atmosphere_raymarching_renderpass1 = device->CreateRenderPass(renderpass_desc);
+			}
         }
 
         return true;
@@ -215,6 +245,14 @@ namespace gear {
             return debug_renderpass1;
         }
     }
+
+	blast::GfxRenderPass* View::GetAtmosphereRaymarchingRenderPass() {
+		if (out_postprocess_idx == 0) {
+			return atmosphere_raymarching_renderpass0;
+		} else {
+			return atmosphere_raymarching_renderpass1;
+		}
+	}
 
     void View::AddDebugLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& c) {
         debug_lines[num_debug_lines * 14 + 0] = p0.x;

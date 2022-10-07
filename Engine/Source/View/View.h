@@ -39,6 +39,8 @@ namespace gear {
 
         blast::GfxRenderPass* GetDebugRenderPass();
 
+		blast::GfxRenderPass* GetAtmosphereRaymarchingRenderPass();
+
         void AddDebugLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& c);
 
         void DrawDebugBox(const glm::vec3* corners, const glm::vec4& c);
@@ -65,6 +67,8 @@ namespace gear {
         blast::GfxTexture* postprocess_rt1 = nullptr;
         blast::GfxRenderPass* fxaa_renderpass0 = nullptr;
         blast::GfxRenderPass* fxaa_renderpass1 = nullptr;
+		blast::GfxRenderPass* atmosphere_raymarching_renderpass0 = nullptr;
+		blast::GfxRenderPass* atmosphere_raymarching_renderpass1 = nullptr;
         blast::GfxRenderPass* debug_renderpass0 = nullptr;
         blast::GfxRenderPass* debug_renderpass1 = nullptr;
 

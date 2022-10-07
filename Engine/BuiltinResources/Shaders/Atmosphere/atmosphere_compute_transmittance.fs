@@ -69,8 +69,8 @@ void main() {
     float view_zenith_cos_angle;
     UvToLutTransmittanceParams(atmosphere, view_height, view_zenith_cos_angle, uv);
 
-    vec3 world_pos = vec3(0.0, 0.0, view_height);
-    vec3 world_dir = vec3(0.0, sqrt(1.0 - view_zenith_cos_angle * view_zenith_cos_angle), view_zenith_cos_angle);
+    vec3 world_pos = vec3(0.0, view_height, 0.0);
+    vec3 world_dir = vec3(sqrt(1.0 - view_zenith_cos_angle * view_zenith_cos_angle), view_zenith_cos_angle, 0.0);
     float sample_count = 40.0;
     float t_max_max = 9000000;
     vec3 transmittance = exp(-IntegrateScatteredLuminance(pix_pos, world_pos, world_dir, atmosphere, sample_count, t_max_max).optical_depth);

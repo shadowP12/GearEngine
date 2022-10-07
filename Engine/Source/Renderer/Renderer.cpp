@@ -169,6 +169,7 @@ namespace gear {
         view_storage.exposure = scene->main_camera_info.exposure;
         device->UpdateBuffer(current_cmd, main_view_ub, &view_storage, sizeof(ViewUniforms));
 
+		scene->atmosphere_parameters.resolution = glm::vec4(view->size, 0.0f, 0.0f);
 		device->UpdateBuffer(current_cmd, atmosphere_ub, &scene->atmosphere_parameters, sizeof(AtmosphereParameters));
 
 		RenderTransmittanceLut(scene, view);
@@ -260,7 +261,7 @@ namespace gear {
         device->BindScissorRects(current_cmd, 1, &rect);
 
         // 绘制天空盒
-        if (scene->skybox_map) {
+        if (scene->skybox_map && !scene->should_render_atmosphere) {
             device->BindConstantBuffer(current_cmd, common_view_ub, 1, common_view_ub->desc.size, 0);
             device->BindConstantBuffer(current_cmd, renderable_ub, 2, renderable_ub->desc.size, 0);
 

@@ -18,13 +18,13 @@ void SkyAtmosphereTestScene::Load() {
     {
         main_camera = gear::gEngine.GetEntityManager()->CreateEntity();
         main_camera->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-        main_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 0.0f, 4.0f));
+        main_camera->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 1.0f, 0.0f));
         main_camera->AddComponent<gear::CCamera>()->SetProjection(gear::ProjectionType::PERSPECTIVE, 0.0, 800.0, 600.0, 0.0, 0.1, 100.0);
         scene->AddEntity(main_camera);
 
         sun = gear::gEngine.GetEntityManager()->CreateEntity();
         sun->AddComponent<gear::CTransform>()->SetTransform(glm::mat4(1.0f));
-        sun->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 10.0f, 0.0f));
+        sun->GetComponent<gear::CTransform>()->SetPosition(glm::vec3(0.0f, 10000.0f, 0.0f));
         sun->GetComponent<gear::CTransform>()->SetEuler(glm::vec3(glm::radians(120.0f), 0.0f, 0.0f));
         sun->AddComponent<gear::CLight>();
         sun->GetComponent<gear::CLight>()->SetColor(glm::vec3(0.8f, 0.8f, 0.9f));
@@ -89,6 +89,12 @@ void SkyAtmosphereTestScene::Clear() {
 }
 
 void SkyAtmosphereTestScene::DrawUI() {
+	ImGui::Begin("Sun Setting");
+	glm::vec3 e = glm::degrees(sun->GetComponent<gear::CTransform>()->GetEuler());
+	ImGui::DragFloat("pitch", &e.x, 1.0f, 0.0f, 360.0f);
+	ImGui::DragFloat("yaw", &e.y, 1.0f, 0.0f, 360.0f);
+	sun->GetComponent<gear::CTransform>()->SetEuler(glm::radians(e));
+	ImGui::End();
 }
 
 gear::Scene* SkyAtmosphereTestScene::GetScene() {

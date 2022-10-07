@@ -102,12 +102,12 @@ void main() {
     AtmosphereParameters atmosphere = GetAtmosphereParameters();
 
     float cos_sun_zenith_angle = uv.x * 2.0 - 1.0;
-    vec3 sun_dir = vec3(0.0, sqrt(saturate(1.0 - cos_sun_zenith_angle * cos_sun_zenith_angle)), cos_sun_zenith_angle);
+    vec3 sun_dir = vec3(sqrt(saturate(1.0 - cos_sun_zenith_angle * cos_sun_zenith_angle)), cos_sun_zenith_angle, 0.0);
     float PLANET_RADIUS_OFFSET = 0.01;
     float view_height = atmosphere.bottom_radius + saturate(uv.y + PLANET_RADIUS_OFFSET) * (atmosphere.top_radius - atmosphere.bottom_radius - PLANET_RADIUS_OFFSET);
 
-    vec3 world_pos = vec3(0.0, 0.0, view_height);
-    vec3 world_dir = vec3(0.0, 0.0, 1.0);
+    vec3 world_pos = vec3(0.0, view_height, 0.0);
+    vec3 world_dir = vec3(0.0, 1.0, 0.0);
     float sample_count = 20.0;
     float t_max_max = 9000000;
 
@@ -128,9 +128,9 @@ void main() {
         float sin_phi = sin(phi);
         float cos_theta = cos(theta);
         float sin_theta = sin(theta);
-        world_dir.x = cos_theta * sin_phi;
-        world_dir.y = sin_theta * sin_phi;
-        world_dir.z = cos_phi;
+        world_dir.x = sin_theta * sin_phi;
+        world_dir.y = cos_phi;
+        world_dir.z = cos_theta * sin_phi;
 
         SingleScatteringResult result = IntegrateScatteredLuminance(pix_pos, world_pos, world_dir, sun_dir, atmosphere, sample_count, t_max_max);
         multi_scat_factor += result.multi_scat_factor * sphere_solid_angle / SAMPLECOUNT;

@@ -123,6 +123,8 @@ namespace gear {
     };
 
 	struct AtmosphereParameters {
+		glm::mat4 sky_inv_view_proj_mat;
+		glm::vec4 resolution;
 		glm::vec4 rayleigh_scattering;
 		glm::vec4 mie_scattering;
 		glm::vec4 mie_extinction;
@@ -131,6 +133,7 @@ namespace gear {
 		glm::vec4 ground_albedo;
 		glm::vec4 sun_direction;
 		glm::vec4 view_direction;
+		glm::vec4 view_position;
 		float bottom_radius;
 		float top_radius;
 		float rayleigh_density_exp_scale;

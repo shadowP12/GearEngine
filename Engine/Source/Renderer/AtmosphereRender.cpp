@@ -106,4 +106,75 @@ namespace gear {
 		barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
 		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
 	}
+
+	void Renderer::AtmosphereRayMarching(Scene* scene, View* view) {
+		if (!scene->should_render_atmosphere) {
+			return;
+		}
+
+		view->SwapPostProcess();
+
+		blast::GfxDevice* device = gEngine.GetDevice();
+
+		blast::GfxTextureBarrier barrier[1];
+		barrier[0].texture = view->GetOutPostProcessRT();
+		barrier[0].new_state = blast::RESOURCE_STATE_RENDERTARGET;
+		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
+
+		device->RenderPassBegin(current_cmd, view->GetAtmosphereRaymarchingRenderPass());
+
+		blast::Viewport viewport;
+		viewport.x = 0;
+		viewport.y = 0;
+		viewport.w = view->GetOutPostProcessRT()->desc.width;
+		viewport.h = view->GetOutPostProcessRT()->desc.height;
+		device->BindViewports(current_cmd, 1, &viewport);
+
+		blast::Rect rect;
+		rect.left = 0;
+		rect.top = 0;
+		rect.right = view->GetOutPostProcessRT()->desc.width;
+		rect.bottom = view->GetOutPostProcessRT()->desc.height;
+		device->BindScissorRects(current_cmd, 1, &rect);
+
+		VertexBuffer* quad_buffer = gEngine.GetBuiltinResources()->GetQuadBuffer();
+
+		blast::GfxShader* vs = gEngine.GetBuiltinResources()->GetAtmosphereCommonVS();
+		blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetAtmosphereRayMarchingFS();
+		if (vs != nullptr && fs != nullptr) {
+			device->BindConstantBuffer(current_cmd, atmosphere_ub, 0, atmosphere_ub->desc.size, 0);
+
+			blast::GfxSamplerDesc default_sampler = {};
+			device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);
+
+			device->BindResource(current_cmd, transmittance_lut, 0);
+
+			device->BindResource(current_cmd, multi_scatt_texture, 1);
+
+			device->BindResource(current_cmd, view->depth_rt, 2);
+
+			blast::GfxPipelineDesc pipeline_state = {};
+			pipeline_state.rp = view->GetAtmosphereRaymarchingRenderPass();
+			pipeline_state.vs = vs;
+			pipeline_state.fs = fs;
+			pipeline_state.il = vertex_layout_cache->GetVertexLayout(quad_buffer->GetVertexLayoutType());
+			pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+			pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+			pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+
+			device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+
+			uint64_t vertex_offsets[] = {0};
+			blast::GfxBuffer* vertex_buffers[] = {quad_buffer->GetHandle()};
+			device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+
+			device->Draw(current_cmd, 6, 0);
+		}
+
+		device->RenderPassEnd(current_cmd);
+
+		barrier[0].texture = view->GetOutPostProcessRT();
+		barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
+	}
 }
