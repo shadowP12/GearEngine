@@ -14,7 +14,7 @@ namespace gear {
 
         ComponentType GetType() override { return ComponentType::Animation; }
 
-        void SetAnimationInstance(AnimationInstance* instance) {
+        void SetAnimationInstance(std::shared_ptr<AnimationInstance> instance) {
             this->instance = instance;
         }
 
@@ -25,6 +25,6 @@ namespace gear {
         void Replay();
 
     private:
-        AnimationInstance* instance = nullptr;
+        std::shared_ptr<AnimationInstance> instance = nullptr;
     };
 }

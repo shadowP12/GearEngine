@@ -4,8 +4,8 @@
 #include "Renderer/RenderData.h"
 #include "Utility/Hash.h"
 
-#include <Blast/Gfx/GfxDefine.h>
-#include <Blast/Utility/ShaderCompiler.h>
+#include <GfxDefine.h>
+#include <GfxShaderCompiler.h>
 
 #include <string>
 #include <set>
@@ -19,9 +19,6 @@ namespace blast {
 }
 
 namespace gear {
-    class Texture;
-
-    // 材质属性
     static constexpr size_t MATERIAL_PROPERTIES_COUNT = 1;
     enum class MaterialProperty {
         BASE_COLOR,
@@ -39,7 +36,7 @@ namespace gear {
         static constexpr Key SKINNING_OR_MORPHING   = 0x08; // GPU蒙皮
         static constexpr Key DEPTH                  = 0x10; // 深度
         static constexpr Key IBL                    = 0x20; // ibl
-		static constexpr Key ATMOSPHERE             = 0x40; // 大气散射
+        static constexpr Key ATMOSPHERE             = 0x40; // 大气散射
 
         static constexpr Key VERTEX_MASK =  DIRECTIONAL_LIGHTING |
                                             DYNAMIC_LIGHTING |
@@ -52,7 +49,7 @@ namespace gear {
                                                 SHADOW_RECEIVER |
                                                 DEPTH |
                                                 IBL |
-												ATMOSPHERE;
+                                                ATMOSPHERE;
 
         static constexpr Key DEPTH_MASK =   DIRECTIONAL_LIGHTING |
                                             DYNAMIC_LIGHTING |
@@ -65,7 +62,7 @@ namespace gear {
         inline bool HasShadowReceiver() const noexcept { return key & SHADOW_RECEIVER; }
         inline bool HasDepth() noexcept { return key & DEPTH; }
         inline bool HasIBL() noexcept { return key & IBL; }
-		inline bool HasAtmosphere() noexcept { return key & ATMOSPHERE; }
+        inline bool HasAtmosphere() noexcept { return key & ATMOSPHERE; }
 
         inline void SetSkinning(bool v) noexcept { Set(v, SKINNING_OR_MORPHING); }
         inline void SetDirectionalLighting(bool v) noexcept { Set(v, DIRECTIONAL_LIGHTING); }
@@ -74,19 +71,15 @@ namespace gear {
         inline void SetIBL(bool v) noexcept { Set(v, IBL); }
 
         inline bool IsValidDepthVariant() noexcept {
-            // 深度变体只有两种情况
             return key == DEPTH || key == (DEPTH | SKINNING_OR_MORPHING);
         }
 
-        // 过滤掉不需要的顶点变体
         static Key FilterVariantVertex(Key variant);
-        // 过滤掉不需要的片段变体
+
         static Key FilterVariantFragment(Key variant);
 
-        // 通过着色模型过滤掉不需要的变体
         static Key FilterVariantShadingMode(Key variant, ShadingModel shading_model);
 
-        // 通过顶点布局模型过滤掉不需要的片段变体
         static Key FilterVariantVertexLayout(Key variant, VertexLayoutType vertex_layout_type);
 
     private:
@@ -103,7 +96,7 @@ namespace gear {
 
     class MaterialInstance;
 
-    class Material {
+class Material : public std::enable_shared_from_this<Material> {
     public:
         class Builder {
         public:
@@ -111,31 +104,34 @@ namespace gear {
 
             ~Builder() = default;
 
-            void SetShadingModel(ShadingModel shading_model);
+            Builder& SetShadingModel(ShadingModel shading_model);
 
-            void SetBlendState(BlendStateType blend_state);
+            Builder& SetBlendState(BlendStateType blend_state);
 
-            void AddVertShader(MaterialVariant::Key, VertexLayoutType, blast::GfxShader*);
+            Builder& SetTopology(blast::PrimitiveTopology topo);
 
-            void AddFragShader(MaterialVariant::Key, VertexLayoutType, blast::GfxShader*);
+            Builder& AddVertShader(MaterialVariant::Key, VertexLayoutType, blast::GfxShader*);
 
-            void AddVertShaderCode(MaterialVariant::Key, VertexLayoutType, const std::string& code);
+            Builder& AddFragShader(MaterialVariant::Key, VertexLayoutType, blast::GfxShader*);
 
-            void AddFragShaderCode(MaterialVariant::Key, VertexLayoutType, const std::string& code);
+            Builder& AddVertShaderCode(MaterialVariant::Key, VertexLayoutType, const std::string& code);
 
-            void AddUniform(const std::string& name, const blast::UniformType& type);
+            Builder& AddFragShaderCode(MaterialVariant::Key, VertexLayoutType, const std::string& code);
 
-            void AddTexture(const std::string& name, const blast::TextureDimension& dim);
+            Builder& AddUniform(const std::string& name, const blast::UniformType& type);
 
-            void AddSampler(const std::string& name);
+            Builder& AddTexture(const std::string& name, const blast::TextureDimension& dim);
 
-            Material* Build();
+            Builder& AddSampler(const std::string& name);
+
+            std::shared_ptr<Material> Build();
 
         private:
             friend class Material;
             friend class MaterialCompiler;
             ShadingModel shading_model;
             BlendStateType blend_state;
+            blast::PrimitiveTopology topo = blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_LIST;
             std::unordered_map<std::string, blast::UniformType> uniforms;
             std::unordered_map<std::string, blast::TextureDimension> textures;
             std::vector<std::string> samplers;
@@ -157,7 +153,9 @@ namespace gear {
 
         BlendStateType GetBlendState() { return blend_state; }
 
-        MaterialInstance* CreateInstance();
+        blast::PrimitiveTopology GetTopology() { return topo; }
+
+        std::shared_ptr<MaterialInstance> CreateInstance();
 
         std::unordered_map<std::string, blast::UniformType> GetUniformLayout() { return uniforms; }
 
@@ -169,8 +167,8 @@ namespace gear {
     protected:
         friend class MaterialCompiler;
         friend class MaterialInstance;
-        std::unordered_map<std::size_t, blast::GfxShader*> vert_shader_cache;
-        std::unordered_map<std::size_t, blast::GfxShader*> frag_shader_cache;
+        std::unordered_map<std::size_t, std::shared_ptr<blast::GfxShader>> vert_shader_cache;
+        std::unordered_map<std::size_t, std::shared_ptr<blast::GfxShader>> frag_shader_cache;
         std::unordered_map<std::size_t, std::string> vert_shader_code_cache;
         std::unordered_map<std::size_t, std::string> frag_shader_code_cache;
         std::unordered_map<std::size_t, bool> vert_shader_triggered_cache;
@@ -182,22 +180,22 @@ namespace gear {
         uint32_t current_material_instance_id = 0;
         ShadingModel shading_model;
         BlendStateType blend_state;
+        blast::PrimitiveTopology topo;
         std::unordered_map<std::string, blast::UniformType> uniforms;
         std::unordered_map<std::string, blast::TextureDimension> textures;
         std::vector<std::string> samplers;
     };
 
-    class UniformBuffer;
     class MaterialInstance {
     public:
         typedef uint32_t TextureSlot;
         typedef uint32_t SamplerSlot;
 
-        MaterialInstance(Material* material);
+        MaterialInstance(std::shared_ptr<Material> material);
 
         ~MaterialInstance();
 
-        Material* GetMaterial() { return material; }
+        std::shared_ptr<Material> GetMaterial() { return material; }
 
         uint32_t GetMaterialInstanceID() { return material_instance_id; }
 
@@ -207,11 +205,11 @@ namespace gear {
 
         bool IsStorageDirty() { return storage_dirty; }
 
-        UniformBuffer* GetUniformBuffer();
+        blast::GfxBuffer* GetUniformBuffer();
 
         const std::unordered_map<std::string, std::tuple<blast::UniformType, uint32_t>>& GetUniformGroup() { return uniforms; }
 
-        const std::unordered_map<TextureSlot, Texture*>& GetGfxTextureGroup() { return texture_group; }
+        const std::unordered_map<TextureSlot, std::shared_ptr<blast::GfxTexture>>& GetGfxTextureGroup() { return texture_group; }
 
         const std::unordered_map<SamplerSlot, blast::GfxSamplerDesc>& GetGfxSamplerGroup() { return sampler_group; }
 
@@ -227,7 +225,7 @@ namespace gear {
 
         void SetMat4(const std::string& name, const glm::mat4& value);
 
-        void SetTexture(const std::string& name, Texture* texture);
+        void SetTexture(const std::string& name, std::shared_ptr<blast::GfxTexture> texture);
 
         void SetSampler(const std::string& name, const blast::GfxSamplerDesc& sampler_desc);
 
@@ -237,22 +235,22 @@ namespace gear {
 
     private:
         friend Material;
-        Material* material = nullptr;
+        std::shared_ptr<Material> material = nullptr;
         uint32_t material_instance_id = 0;
 
-        // uniform
+        // Uniform
         uint8_t storage[128];
         uint32_t storage_size;
         bool storage_dirty;
-        UniformBuffer* material_ub;
+        std::shared_ptr<blast::GfxBuffer> material_ub;
         std::unordered_map<std::string, std::tuple<blast::UniformType, uint32_t>> uniforms;
 
-        // texture
+        // Texture
         std::unordered_map<std::string, blast::TextureDimension> textures;
         std::unordered_map<std::string, TextureSlot> texture_slot_map;
-        std::unordered_map<TextureSlot, Texture*> texture_group;
+        std::unordered_map<TextureSlot, std::shared_ptr<blast::GfxTexture>> texture_group;
 
-        // sampler
+        // Sampler
         std::vector<std::string> samplers;
         std::unordered_map<std::string, SamplerSlot> sampler_slot_map;
         std::unordered_map<SamplerSlot, blast::GfxSamplerDesc> sampler_group;

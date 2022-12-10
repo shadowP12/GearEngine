@@ -4,12 +4,11 @@
 #include <Utility/Log.h>
 #include <Utility/Hash.h>
 #include <Resource/Texture.h>
-#include <Resource/GpuBuffer.h>
+#include <Resource/Mesh.h>
 #include <Resource/Material.h>
 #include <Animation/Skeleton.h>
 #include <Animation/AnimationClip.h>
 #include <Entity/Entity.h>
-#include <Entity/EntityManager.h>
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
 #include <Entity/Components/CMesh.h>
@@ -64,7 +63,7 @@ bool Replace(std::string& str, const std::string& from, const std::string& to) {
     return true;
 }
 
-gear::Material* GenMaterial(GltfMaterialConfig& config) {
+std::shared_ptr<gear::Material> GenMaterial(GltfMaterialConfig& config) {
     std::string code = g_gltf_material_code;
 
     // 设置混合模式
@@ -158,21 +157,12 @@ gear::Material* GenMaterial(GltfMaterialConfig& config) {
     frag_shader_code += "}\\n";
     Replace(code, "${FRAG_SHADER}", frag_shader_code);
 
-    gear::Material* material = gear::gEngine.GetMaterialCompiler()->Compile(code, false);
-    return material;
+    return gear::gEngine.GetMaterialCompiler()->Compile(code, false);
 }
 
 GltfAsset* ImportGltfAsset(const std::string& path) {
-    // 初始化资源容器
-    std::vector<gear::Texture*> textures;
-    std::vector<gear::VertexBuffer*> vertex_buffers;
-    std::vector<gear::IndexBuffer*> index_buffers;
-    std::vector<gear::Material*> materials;
-    std::vector<gear::MaterialInstance*> material_instances;
-    std::vector<gear::Skeleton*> skeletons;
-    std::vector<gear::AnimationClip*> animation_clips;
-    std::vector<gear::Entity*> entities;
-    std::unordered_map<GltfMaterialConfig, gear::Material*, MurmurHash<GltfMaterialConfig>, GltfMaterialConfig::Eq> material_map;
+    GltfAsset* asset = new GltfAsset();
+    std::unordered_map<GltfMaterialConfig, std::shared_ptr<gear::Material>, MurmurHash<GltfMaterialConfig>, GltfMaterialConfig::Eq> material_map;
 
     cgltf_options options = {static_cast<cgltf_file_type>(0)};
     cgltf_data* data = NULL;
@@ -191,19 +181,25 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
         return nullptr;
     }
 
-    // 加载图片资源
-    std::map<cgltf_image*, gear::Texture*> image_helper;
+    // Load gltf textures
+    std::map<cgltf_image*, std::shared_ptr<blast::GfxTexture>> image_helper;
     for (int i = 0; i < data->images_count; ++i) {
         cgltf_image* cimage = &data->images[i];
         std::string dir = filesystem::path(path).parent_path().str();
         std::string image_path = dir + "/" + cimage->uri;
-        gear::Texture* texture = ImportTexture2D(image_path);
+        std::shared_ptr<blast::GfxTexture> texture = ImportTexture2D(image_path);
         image_helper[cimage] = texture;
-        textures.push_back(texture);
+        if (cimage->name) {
+            asset->textures[std::string(cimage->name)] = texture;
+        } else {
+            asset->textures[filesystem::path(path).filename()] = texture;
+        }
     }
 
-    // 加载材质
-    std::map<cgltf_material*, gear::MaterialInstance*> material_helper;
+    // Load gltf materials
+    uint32_t material_id = 0;
+    uint32_t material_instance_id = 0;
+    std::map<cgltf_material*, std::shared_ptr<gear::MaterialInstance>> material_helper;
     for (int i = 0; i < data->materials_count; ++i) {
         cgltf_material* cmaterial = &data->materials[i];
         GltfMaterialConfig config;
@@ -217,19 +213,20 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             config.has_normal_tex = true;
         }
 
-        gear::Material* material = nullptr;
+        std::shared_ptr<gear::Material> material = nullptr;
         auto iter = material_map.find(config);
         if (iter != material_map.end()) {
             material = iter->second;
         } else {
+            material_id++;
             material = GenMaterial(config);
             material_map[config] = material;
-            materials.push_back(material);
+            asset->materials["material_" + std::to_string(material_id)] = material;
         }
-
-        gear::MaterialInstance* material_instance = material->CreateInstance();
+        material_instance_id++;
+        std::shared_ptr<gear::MaterialInstance> material_instance = material->CreateInstance();
         material_helper[cmaterial] = material_instance;
-        material_instances.push_back(material_instance);
+        asset->material_instances["material_instance_" + std::to_string(material_instance_id)] = material_instance;
 
         glm::vec4 base_color_value = glm::make_vec4(cmaterial->pbr_metallic_roughness.base_color_factor);
         material_instance->SetFloat4("base_color", base_color_value);
@@ -267,8 +264,9 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
         }
     }
 
-    // 加载Entity
-    std::map<cgltf_node*, gear::Entity*> node_helper;
+    // Load gltf nodes
+    uint32_t node_id = 0;
+    std::map<cgltf_node*, std::shared_ptr<gear::Entity>> node_helper;
     for (size_t i = 0; i < data->nodes_count; ++i) {
         cgltf_node* cnode = &data->nodes[i];
         glm::vec3 translation = glm::vec3(0.0f);
@@ -299,8 +297,11 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             glm::vec4 perspective;
             glm::decompose(mat, scale, rotation, translation, skew, perspective);
         }
-        gear::Entity* entity = gear::gEngine.GetEntityManager()->CreateEntity(cnode->name);
-        entities.push_back(entity);
+        node_id++;
+        std::string node_name = "node_" + std::to_string(node_id);
+        std::shared_ptr<gear::Entity> entity = gear::Entity::Create(node_name);
+        asset->entities[node_name] = entity;
+
         glm::mat4 r, t, s;
         r = glm::toMat4(rotation);
         t = glm::translate(glm::mat4(1.0), translation);
@@ -312,13 +313,15 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
     for (size_t i = 0; i < data->nodes_count; ++i) {
         cgltf_node* cnode = &data->nodes[i];
         if(cnode->parent != nullptr) {
-            gear::Entity* child = node_helper[cnode];
-            gear::Entity* parent = node_helper[cnode->parent];
+            std::shared_ptr<gear::Entity> child = node_helper[cnode];
+            std::shared_ptr<gear::Entity> parent = node_helper[cnode->parent];
             child->GetComponent<gear::CTransform>()->SetParent(parent);
         }
     }
 
-    // 加载Skeleton
+    // Load gltf skeletons
+    uint32_t skeleton_id = 0;
+    std::map<cgltf_skin*, std::shared_ptr<gear::Skeleton>> skin_helper;
     for (uint32_t i = 0; i < data->skins_count; ++i) {
         cgltf_skin* cskin = &data->skins[i];
 
@@ -349,12 +352,13 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
                 }
             }
         }
-
-        gear::Skeleton* skeleton = new gear::Skeleton(joints);
-        skeletons.push_back(skeleton);
+        skeleton_id++;
+        std::shared_ptr<gear::Skeleton> skeleton = std::make_shared<gear::Skeleton>(joints);
+        skin_helper[cskin] = skeleton;
+        asset->skeletons["skeleton_" + std::to_string(skeleton_id)] = skeleton;
     }
 
-    // 加载AnimationClip
+    // Load animation clip
     for (uint32_t i = 0; i < data->animations_count; ++i) {
         cgltf_animation* canimation = &data->animations[i];
 
@@ -392,24 +396,29 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             }
         }
 
-        gear::AnimationClip* animation_clip = new gear::AnimationClip(tracks);
-        animation_clips.push_back(animation_clip);
+        asset->animation_clips[canimation->name] = std::make_shared<gear::AnimationClip>(tracks);
     }
 
-    // 加载网格
+    // Load gltf meshs
     for (size_t i = 0; i < data->nodes_count; ++i) {
         cgltf_node* cnode = &data->nodes[i];
         cgltf_mesh* cmesh = cnode->mesh;
+        cgltf_skin* cskin = cnode->skin;
 
         if(!cmesh) {
             continue;
         }
 
         gear::CMesh* mesh_component = node_helper[cnode]->AddComponent<gear::CMesh>();
-
+        gear::BBox mesh_bbox;
+        std::vector<std::shared_ptr<gear::SubMeshData>> sub_mesh_datas;
+        std::vector<std::shared_ptr<gear::MaterialInstance>> mesh_materials;
         for (int i = 0; i < cmesh->primitives_count; i++) {
             cgltf_primitive* cprimitive = &cmesh->primitives[i];
             cgltf_material* cmaterial = cprimitive->material;
+            if (cmaterial) {
+                mesh_materials.push_back(material_helper[cmaterial]);
+            }
 
             gear::VertexLayoutType vertex_layout = gear::VLT_STATIC_MESH;
             if(HasGltfAttribute(cprimitive, cgltf_attribute_type_joints)) {
@@ -502,7 +511,7 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             uint8_t* jointData = nullptr;
             uint8_t* weightData = nullptr;
 
-            gear::BBox bbox;
+            gear::BBox primitive_bbox;
             if (positionOffset != -1) {
                 cgltf_attribute* positionAttribute = GetGltfAttribute(cprimitive, cgltf_attribute_type_position);
                 cgltf_accessor* posAccessor = positionAttribute->data;
@@ -511,8 +520,8 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
 
                 const float* minp = &posAccessor->min[0];
                 const float* maxp = &posAccessor->max[0];
-                bbox.Grow(glm::vec3(minp[0], minp[1], minp[2]));
-                bbox.Grow(glm::vec3(maxp[0], maxp[1], maxp[2]));
+                primitive_bbox.Grow(glm::vec3(minp[0], minp[1], minp[2]));
+                primitive_bbox.Grow(glm::vec3(maxp[0], maxp[1], maxp[2]));
             }
 
             if (GetGltfAttribute(cprimitive, cgltf_attribute_type_texcoord)) {
@@ -622,13 +631,37 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
                 CombindVertexData(vertexData, weightData, vertex_count, weightAttributeSize, weightOffset, vertex_stride, weightDataSize);
             }
 
-            gear::VertexBuffer::Builder vertex_buffer_builder = {};
-            vertex_buffer_builder.SetVertexCount(vertex_count);
-            vertex_buffer_builder.SetVertexLayoutType(vertex_layout);
-            gear::VertexBuffer* vertex_buffer = vertex_buffer_builder.Build();
-            vertex_buffer->UpdateData(vertexData, vertex_buffer_size);
+            // Indices
+            cgltf_accessor* cIndexAccessor = cprimitive->indices;
+            cgltf_buffer_view* cIndexBufferView = cIndexAccessor->buffer_view;
+            cgltf_buffer* cIndexBuffer = cIndexBufferView->buffer;
 
-            // 释放临时内存
+            uint8_t* indexData = (uint8_t*)cIndexBuffer->data + cIndexAccessor->offset + cIndexBufferView->offset;
+            uint32_t index_count = cIndexAccessor->count;
+            uint32_t index_data_size = 0;
+            blast::IndexType index_type;
+            if (cIndexAccessor->component_type == cgltf_component_type_r_16u) {
+                index_type = blast::INDEX_TYPE_UINT16;
+                index_data_size = index_count * sizeof(uint16_t);
+            } else if (cIndexAccessor->component_type == cgltf_component_type_r_32u) {
+                index_type = blast::INDEX_TYPE_UINT32;
+                index_data_size = index_count * sizeof(uint32_t);
+            } else {
+                LOGE("Index component type not supported!\n");
+            }
+
+            std::shared_ptr<gear::SubMeshData> sub_mesh_data = gear::SubMeshData::Builder()
+                    .SetVertexCount(vertex_count)
+                    .SetVertexLayout(vertex_layout)
+                    .SetVertexData(vertexData, vertex_buffer_size)
+                    .SetIndexCount(index_count)
+                    .SetIndexType(index_type)
+                    .SetIndexData(indexData, index_data_size)
+                    .Build();
+            sub_mesh_datas.push_back(sub_mesh_data);
+            mesh_bbox.Grow(primitive_bbox);
+
+            // Release temp memory
             if (uv_data_empty) {
                 SAFE_DELETE(uvData);
             }
@@ -638,95 +671,27 @@ GltfAsset* ImportGltfAsset(const std::string& path) {
             }
             SAFE_DELETE(bitangentData);
             SAFE_DELETE(vertexData);
-
-            // Indices
-            cgltf_accessor* cIndexAccessor = cprimitive->indices;
-            cgltf_buffer_view* cIndexBufferView = cIndexAccessor->buffer_view;
-            cgltf_buffer* cIndexBuffer = cIndexBufferView->buffer;
-
-            gear::IndexBuffer::Builder indexBufferBuild;
-            uint32_t indexCount = cIndexAccessor->count;
-            indexBufferBuild.SetIndexCount(indexCount);
-            if (cIndexAccessor->component_type == cgltf_component_type_r_16u) {
-                indexBufferBuild.SetIndexType(blast::INDEX_TYPE_UINT16);
-            } else if (cIndexAccessor->component_type == cgltf_component_type_r_32u) {
-                indexBufferBuild.SetIndexType(blast::INDEX_TYPE_UINT32);
-            } else {
-                LOGE("Index component type not supported!\n");
-            }
-            gear::IndexBuffer* indexBuffer = indexBufferBuild.Build();
-            uint8_t* indexData = (uint8_t*)cIndexBuffer->data + cIndexAccessor->offset + cIndexBufferView->offset;
-            indexBuffer->UpdateData(indexData, indexBuffer->GetSize());
-
-            vertex_buffers.push_back(vertex_buffer);
-            index_buffers.push_back(indexBuffer);
-
-            gear::SubMesh primitive;
-            primitive.count = indexCount;
-            primitive.offset = 0;
-            primitive.bbox = bbox;
-            primitive.topo = blast::PRIMITIVE_TOPO_TRI_LIST;
-            primitive.mi = material_helper[cmaterial];
-            primitive.vb = vertex_buffer;
-            primitive.ib = indexBuffer;
-            mesh_component->AddSubMesh(primitive);
         }
+
+        gear::MeshData::Builder mesh_data_builder;
+        for (auto sub_mesh_data : sub_mesh_datas) {
+            mesh_data_builder.AddSubMeshData(sub_mesh_data);
+        }
+        std::shared_ptr<gear::Mesh> mesh = mesh_data_builder.Build()->LoadMesh();
+        mesh_component->SetMesh(mesh);
+        mesh_component->SetMaterials(mesh_materials);
+        mesh_component->SetBoundBox(mesh_bbox);
+        if (cskin) {
+            mesh_component->SetSkeleton(skin_helper[cskin]);
+        }
+        asset->meshs[cmesh->name] = mesh;
     }
 
     cgltf_free(data);
-    GltfAsset* asset = new GltfAsset();
-    asset->textures = std::move(textures);
-    asset->vertex_buffers = std::move(vertex_buffers);
-    asset->index_buffers = std::move(index_buffers);
-    asset->materials = std::move(materials);
-    asset->material_instances = std::move(material_instances);
-    asset->skeletons = std::move(skeletons);
-    asset->animation_clips = std::move(animation_clips);
-    asset->entities = std::move(entities);
     return asset;
 }
 
 void DestroyGltfAsset(GltfAsset* asset) {
-    for (int i = 0; i < asset->textures.size(); ++i) {
-        SAFE_DELETE(asset->textures[i]);
-    }
-
-    for (int i = 0; i < asset->material_instances.size(); ++i) {
-        SAFE_DELETE(asset->material_instances[i]);
-    }
-
-    for (int i = 0; i < asset->materials.size(); ++i) {
-        SAFE_DELETE(asset->materials[i]);
-    }
-
-    for (int i = 0; i < asset->vertex_buffers.size(); ++i) {
-        SAFE_DELETE(asset->vertex_buffers[i]);
-    }
-
-    for (int i = 0; i < asset->index_buffers.size(); ++i) {
-        SAFE_DELETE(asset->index_buffers[i]);
-    }
-
-    for (int i = 0; i < asset->skeletons.size(); ++i) {
-        SAFE_DELETE(asset->skeletons[i]);
-    }
-
-    for (int i = 0; i < asset->animation_clips.size(); ++i) {
-        SAFE_DELETE(asset->animation_clips[i]);
-    }
-
-    for (int i = 0; i < asset->entities.size(); ++i) {
-        gear::gEngine.GetEntityManager()->DestroyEntity(asset->entities[i]);
-    }
-
-    asset->textures.clear();
-    asset->material_instances.clear();
-    asset->materials.clear();
-    asset->vertex_buffers.clear();
-    asset->index_buffers.clear();
-    asset->skeletons.clear();
-    asset->animation_clips.clear();
-    asset->entities.clear();
     SAFE_DELETE(asset);
 }
 

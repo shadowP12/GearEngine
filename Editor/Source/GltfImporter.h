@@ -2,14 +2,14 @@
 
 #include <vector>
 #include <string>
+#include <memory>
+#include <unordered_map>
 
 #include <Renderer/RenderData.h>
 
 namespace gear {
-    class Texture;
-    class VertexBuffer;
-    class IndexBuffer;
     class Entity;
+    class Mesh;
     class Material;
     class MaterialInstance;
     class Skeleton;
@@ -17,14 +17,13 @@ namespace gear {
 }
 
 struct GltfAsset {
-    std::vector<gear::Texture*> textures;
-    std::vector<gear::VertexBuffer*> vertex_buffers;
-    std::vector<gear::IndexBuffer*> index_buffers;
-    std::vector<gear::Material*> materials;
-    std::vector<gear::MaterialInstance*> material_instances;
-    std::vector<gear::Entity*> entities;
-    std::vector<gear::Skeleton*> skeletons;
-    std::vector<gear::AnimationClip*> animation_clips;
+    std::unordered_map<std::string, std::shared_ptr<blast::GfxTexture>> textures;
+    std::unordered_map<std::string, std::shared_ptr<gear::Mesh>> meshs;
+    std::unordered_map<std::string, std::shared_ptr<gear::Material>> materials;
+    std::unordered_map<std::string, std::shared_ptr<gear::MaterialInstance>> material_instances;
+    std::unordered_map<std::string, std::shared_ptr<gear::Skeleton>> skeletons;
+    std::unordered_map<std::string, std::shared_ptr<gear::AnimationClip>> animation_clips;
+    std::unordered_map<std::string, std::shared_ptr<gear::Entity>> entities;
 };
 
 struct alignas(4) GltfMaterialConfig {

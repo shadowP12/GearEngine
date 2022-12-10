@@ -1,6 +1,7 @@
 #pragma once
 #include "Component.h"
 #include "Math/Math.h"
+#include <GfxDefine.h>
 
 namespace gear {
     class Entity;
@@ -35,25 +36,25 @@ namespace gear {
 
         glm::vec3 GetColor() { return color; }
 
-        void SetIrradianceMap(Texture* irradiance_map) { this->irradiance_map = irradiance_map; }
+        void SetIrradianceMap(std::shared_ptr<blast::GfxTexture> irradiance_map) { this->irradiance_map = irradiance_map; }
 
-        Texture* GetIrradianceMap() { return irradiance_map; }
+        std::shared_ptr<blast::GfxTexture> GetIrradianceMap() { return irradiance_map; }
 
-        void SetPrefilteredMap(Texture* prefiltered_map) { this->prefiltered_map = prefiltered_map; }
+        void SetPrefilteredMap(std::shared_ptr<blast::GfxTexture> prefiltered_map) { this->prefiltered_map = prefiltered_map; }
 
-        Texture* GetPrefilteredMap() { return prefiltered_map; }
+        std::shared_ptr<blast::GfxTexture> GetPrefilteredMap() { return prefiltered_map; }
 
-        void SetBRDFLut(Texture* lut) { brdf_lut = lut; }
+        void SetBRDFLut(std::shared_ptr<blast::GfxTexture> lut) { brdf_lut = lut; }
 
-        Texture* GetBRDFLut() { return brdf_lut; }
+        std::shared_ptr<blast::GfxTexture> GetBRDFLut() { return brdf_lut; }
 
     private:
         LightType type = LightType::DIRECTION;
-        Texture* irradiance_map = nullptr;
-        Texture* prefiltered_map = nullptr;
-        Texture* brdf_lut = nullptr;
+        std::shared_ptr<blast::GfxTexture> irradiance_map = nullptr;
+        std::shared_ptr<blast::GfxTexture> prefiltered_map = nullptr;
+        std::shared_ptr<blast::GfxTexture> brdf_lut = nullptr;
         /*
-         * DIRECTION : lux
+         * Direction : lux
         */
         float intensity = 0.0f;
         glm::vec3 color = glm::vec3(0.0f);

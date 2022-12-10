@@ -1,6 +1,6 @@
 #pragma once
 #include "Renderer/RenderData.h"
-#include <Blast/Gfx/GfxDefine.h>
+#include <GfxDefine.h>
 #include <iosfwd>
 #include <string>
 #include <sstream>

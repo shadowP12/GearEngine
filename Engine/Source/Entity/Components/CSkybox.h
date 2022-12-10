@@ -1,10 +1,10 @@
 #pragma once
 #include "Component.h"
 #include "Math/Math.h"
+#include <GfxDefine.h>
 
 namespace gear {
     class Entity;
-    class Texture;
     class CSkybox : public Component {
     public:
         CSkybox(Entity* entity);
@@ -15,11 +15,11 @@ namespace gear {
 
         ComponentType GetType() override { return ComponentType::Skybox; }
 
-        void SetCubeMap(Texture* cube_map) { _cube_map = cube_map; }
+        void SetCubeMap(std::shared_ptr<blast::GfxTexture> in_cube_map) { cube_map = in_cube_map; }
 
-        Texture* GetCubeMap() { return _cube_map; }
+        std::shared_ptr<blast::GfxTexture> GetCubeMap() { return cube_map; }
 
     private:
-        Texture* _cube_map;
+        std::shared_ptr<blast::GfxTexture> cube_map;
     };
 }

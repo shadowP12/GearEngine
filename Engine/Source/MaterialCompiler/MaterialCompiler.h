@@ -1,6 +1,6 @@
 #pragma once
 #include "Resource/Material.h"
-#include <Blast/Gfx/GfxDefine.h>
+#include <GfxDefine.h>
 #include <string>
 
 namespace gear {
@@ -10,7 +10,7 @@ namespace gear {
 
         ~MaterialCompiler();
 
-        Material* Compile(const std::string& str, bool is_file);
+        std::shared_ptr<Material> Compile(const std::string& str, bool is_file);
 
     private:
         static void ProcessShadingModel(Material::Builder&, const std::string&);

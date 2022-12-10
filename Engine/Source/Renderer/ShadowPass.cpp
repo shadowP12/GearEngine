@@ -5,12 +5,11 @@
 #include "Window/BaseWindow.h"
 #include "Entity/Scene.h"
 #include "UI/Canvas.h"
-#include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
 #include "Resource/Material.h"
 #include "Resource/BuiltinResources.h"
 
-#include <Blast/Gfx/GfxDevice.h>
+#include <GfxDevice.h>
 
 namespace gear {
     // 线段与三角形相交
@@ -298,8 +297,7 @@ namespace gear {
                 uint32_t material_variant = 0;
                 material_variant |= MaterialVariant::DEPTH;
 
-                if (rb->bone_ub &&
-                    rp->vb->GetVertexLayoutType() == VLT_SKIN_MESH) {
+                if (rb->bone_ub && rp->vertex_layout == VLT_SKIN_MESH) {
                     material_variant |= MaterialVariant::SKINNING_OR_MORPHING;
                 }
 
@@ -315,40 +313,27 @@ namespace gear {
 
         std::sort(&dc_list[dc_head], &dc_list[dc_head] + dc_count);
 
-        blast::GfxDevice* device = gEngine.GetDevice();
-
-        // image layout to rp
+        // Modify image layout to rp
         {
-            blast::GfxTextureBarrier barrier[1];
-            barrier[0].texture = cascade_shadow_map;
+            blast::GfxResourceBarrier barrier[1];
+            barrier[0].resource = cascade_shadow_map;
             barrier[0].new_state = blast::RESOURCE_STATE_DEPTH_WRITE;
-            device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
+            device->SetBarrier(current_cmd, 1, barrier);
         }
 
         for (uint32_t i = 0; i < SHADOW_CASCADE_COUNT; i++) {
-            // 设置light view ub
             ViewUniforms vb_storage;
             vb_storage.view_matrix = cascade_shadow_map_infos[i].light_view_matrix;
             vb_storage.proj_matrix = cascade_shadow_map_infos[i].light_projection_matrix;
-            device->UpdateBuffer(current_cmd, common_view_ub, &vb_storage, sizeof(ViewUniforms));
+            UpdateUniformBuffer(current_cmd, common_view_ub, &vb_storage, sizeof(ViewUniforms));
 
             blast::GfxPipelineDesc pipeline_state = {};
             pipeline_state.rp = cascade_shadow_passes[i];
             device->RenderPassBegin(current_cmd, cascade_shadow_passes[i]);
 
-            blast::Viewport viewport;
-            viewport.x = 0;
-            viewport.y = 0;
-            viewport.w = cascade_shadow_map->desc.width;
-            viewport.h = cascade_shadow_map->desc.height;
-            device->BindViewports(current_cmd, 1, &viewport);
+            device->BindViewport(current_cmd, 0, 0, cascade_shadow_map->width, cascade_shadow_map->height);
 
-            blast::Rect rect;
-            rect.left = 0;
-            rect.top = 0;
-            rect.right = cascade_shadow_map->desc.width;
-            rect.bottom = cascade_shadow_map->desc.height;
-            device->BindScissorRects(current_cmd, 1, &rect);
+            device->BindScissor(current_cmd, 0, 0, cascade_shadow_map->width, cascade_shadow_map->height);
 
             for (uint32_t i = dc_head; i < dc_count; ++i) {
                 uint32_t material_variant = dc_list[i].material_variant;
@@ -357,17 +342,17 @@ namespace gear {
                 Renderable& renderable = scene->renderables[randerable_id];
                 RenderPrimitive& primitive = renderable.primitives[primitive_id];
 
-                device->BindConstantBuffer(current_cmd, common_view_ub, 1, common_view_ub->desc.size, 0);
+                device->BindConstantBuffer(current_cmd, common_view_ub, 1, common_view_ub->size, 0);
                 device->BindConstantBuffer(current_cmd, renderable.renderable_ub, 2, renderable.renderable_ub_size, renderable.renderable_ub_offset);
 
                 // 骨骼矩阵
                 if (material_variant & MaterialVariant::SKINNING_OR_MORPHING) {
-                    device->BindConstantBuffer(current_cmd, renderable.bone_ub, 3, renderable.bone_ub->desc.size, 0);
+                    device->BindConstantBuffer(current_cmd, renderable.bone_ub, 3, renderable.bone_ub->size, 0);
                 }
 
                 // 材质参数
                 if (primitive.material_ub != nullptr) {
-                    device->BindConstantBuffer(current_cmd, primitive.material_ub->GetHandle(), 0, primitive.material_ub->GetSize(), 0);
+                    device->BindConstantBuffer(current_cmd, primitive.material_ub, 0, primitive.material_ub->size, 0);
                 }
 
                 for (auto& sampler_item : primitive.mi->GetGfxSamplerGroup()) {
@@ -375,15 +360,15 @@ namespace gear {
                 }
 
                 for (auto& texture_item : primitive.mi->GetGfxTextureGroup()) {
-                    device->BindResource(current_cmd, texture_item.second->GetTexture(), texture_item.first);
+                    device->BindResource(current_cmd, texture_item.second.get(), texture_item.first);
                 }
 
-                blast::GfxShader* vs = primitive.mi->GetMaterial()->GetVertShader(material_variant, primitive.vb->GetVertexLayoutType());
-                blast::GfxShader* fs = primitive.mi->GetMaterial()->GetFragShader(material_variant, primitive.vb->GetVertexLayoutType());
+                blast::GfxShader* vs = primitive.mi->GetMaterial()->GetVertShader(material_variant, primitive.vertex_layout);
+                blast::GfxShader* fs = primitive.mi->GetMaterial()->GetFragShader(material_variant, primitive.vertex_layout);
                 if (vs != nullptr && fs != nullptr) {
                     pipeline_state.vs = vs;
                     pipeline_state.fs = fs;
-                    pipeline_state.il = vertex_layout_cache->GetVertexLayout(primitive.vb->GetVertexLayoutType());
+                    pipeline_state.il = vertex_layout_cache->GetVertexLayout(primitive.vertex_layout);
                     pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_BACK);
                     pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
                     pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_SHADOW);
@@ -391,23 +376,23 @@ namespace gear {
                     device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 
                     uint64_t vertex_offsets[] = {0};
-                    blast::GfxBuffer* vertex_buffers[] = {primitive.vb->GetHandle()};
+                    blast::GfxBuffer* vertex_buffers[] = {primitive.vb};
                     device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
 
-                    device->BindIndexBuffer(current_cmd, primitive.ib->GetHandle(), primitive.ib->GetIndexType(), 0);
+                    device->BindIndexBuffer(current_cmd, primitive.ib, primitive.index_type, 0);
 
-                    device->DrawIndexed(current_cmd, primitive.count, primitive.offset, 0);
+                    device->DrawIndexed(current_cmd, primitive.index_count, 0, 0);
                 }
             }
             device->RenderPassEnd(current_cmd);
         }
 
-        // image layout to shader
+        // Modify image layout to shader
         {
-            blast::GfxTextureBarrier barrier[1];
-            barrier[0].texture = cascade_shadow_map;
+            blast::GfxResourceBarrier barrier[1];
+            barrier[0].resource = cascade_shadow_map;
             barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
-            device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
+            device->SetBarrier(current_cmd, 1, barrier);
         }
 
         // 更新view_ub的灯光矩阵参数

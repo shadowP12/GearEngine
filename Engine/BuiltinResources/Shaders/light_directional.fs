@@ -21,7 +21,7 @@ float SampleCascadeShadowMapWithPCF() {
 
     float bias = 0.01;
 #if defined(HAS_ATTRIBUTE_NORMAL)
-    bias = max(0.06 * (1.0 - dot(normalize(vertex_normal), normalize(frame_uniforms.sun_direction.xyz))), 0.01);
+    bias = max(0.06 * (1.0 - dot(normalize(vertex_normal), normalize(-frame_uniforms.sun_direction.xyz))), 0.01);
 #endif
 
     float sum = 0.0;

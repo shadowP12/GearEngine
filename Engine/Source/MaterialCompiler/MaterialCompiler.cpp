@@ -5,9 +5,9 @@
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
 
-#include <Blast/Gfx/GfxDefine.h>
-#include <Blast/Gfx/GfxDevice.h>
-#include <Blast/Utility/ShaderCompiler.h>
+#include <GfxDefine.h>
+#include <GfxDevice.h>
+#include <GfxShaderCompiler.h>
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/document.h>
 
@@ -18,9 +18,9 @@ namespace gear {
     MaterialCompiler::~MaterialCompiler() {
     }
 
-    Material* MaterialCompiler::Compile(const std::string& str, bool is_file) {
-        blast::GfxDevice* device = gEngine.GetDevice();
-        blast::ShaderCompiler* shader_compiler = gEngine.GetShaderCompiler();
+    std::shared_ptr<Material> MaterialCompiler::Compile(const std::string& str, bool is_file) {
+        blast::GfxDevice* device = gEngine.GetRenderer()->GetDevice();
+        blast::GfxShaderCompiler* shader_compiler = gEngine.GetRenderer()->GetShaderCompiler();
         std::string code;
         if (is_file) {
             code = ReadFileData(str);
@@ -185,10 +185,10 @@ namespace gear {
                     continue;
                 }
 
-				// unlit着色模型可以减少很多不必要的材质变体
+                // unlit着色模型可以减少很多不必要的材质变体
                 if (builder.shading_model == SHADING_MODEL_UNLIT) {
                     if (variant.HasDirectionalLighting() || variant.HasDynamicLighting() ||
-						variant.HasIBL() || variant.HasAtmosphere()) {
+                        variant.HasIBL() || variant.HasAtmosphere()) {
                         continue;
                     }
                 }
@@ -267,9 +267,9 @@ namespace gear {
                         cg.GenerateDefine(fs, "HAS_IBL");
                     }
 
-					if (variant.HasAtmosphere()) {
-						cg.GenerateDefine(fs, "HAS_ATMOSPHERE");
-					}
+                    if (variant.HasAtmosphere()) {
+                        cg.GenerateDefine(fs, "HAS_ATMOSPHERE");
+                    }
 
                     cg.GenerateShaderAttributes(fs, blast::SHADER_STAGE_FRAG, attributes);
                     cg.GenerateShaderInput(fs, blast::SHADER_STAGE_FRAG);

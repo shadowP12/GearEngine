@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 namespace gear {
     class AnimationInstance;
@@ -11,13 +12,13 @@ namespace gear {
 
         ~AnimationSystem();
 
-        void RegisterInstance(AnimationInstance* instance);
+        void RegisterInstance(std::shared_ptr<AnimationInstance> instance);
 
-        void UnregisterInstance(AnimationInstance* instance);
+        void UnregisterInstance(std::shared_ptr<AnimationInstance> instance);
 
         void Tick(float dt);
 
     private:
-        std::vector<AnimationInstance*> instances;
+        std::vector<std::shared_ptr<AnimationInstance>> instances;
     };
 }

@@ -2,7 +2,7 @@
 #include "Skeleton.h"
 
 namespace gear {
-    void AnimationClip::Sample(float time, Skeleton* skeleton) {
+    void AnimationClip::Sample(float time, std::shared_ptr<Skeleton> skeleton) {
         glm::clamp(time, 0.0f, length);
 
         for (uint32_t i = 0; i < tracks.size(); ++i) {

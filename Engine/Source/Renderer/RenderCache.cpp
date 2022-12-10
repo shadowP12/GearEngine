@@ -2,11 +2,10 @@
 #include "Renderer.h"
 #include "GearEngine.h"
 
-#include <Blast/Gfx/GfxDevice.h>
-
 namespace gear {
 
-    VertexLayoutCache::VertexLayoutCache() {
+    VertexLayoutCache::VertexLayoutCache(blast::GfxDevice* in_device) {
+        device = in_device;
         {
             blast::GfxInputLayout* layout = new blast::GfxInputLayout();
             uint32_t offset = 0;
@@ -27,7 +26,7 @@ namespace gear {
             layout->elements.push_back(element);\
             offset += element.size;
 
-            input_layouts[VLT_P_T0] = layout;
+            input_layouts[VLT_P_T0] = std::shared_ptr<blast::GfxInputLayout>(layout);
         }
 
         {
@@ -42,7 +41,7 @@ namespace gear {
             layout->elements.push_back(element);
             offset += element.size;
 
-            input_layouts[VLT_P] = layout;
+            input_layouts[VLT_P] = std::shared_ptr<blast::GfxInputLayout>(layout);
         }
 
         {
@@ -65,7 +64,7 @@ namespace gear {
             layout->elements.push_back(element);
             offset += element.size;
 
-            input_layouts[VLT_DEBUG] = layout;
+            input_layouts[VLT_DEBUG] = std::shared_ptr<blast::GfxInputLayout>(layout);
         }
 
         {
@@ -96,7 +95,7 @@ namespace gear {
             layout->elements.push_back(element);
             offset += element.size;
 
-            input_layouts[VLT_UI] = layout;
+            input_layouts[VLT_UI] = std::shared_ptr<blast::GfxInputLayout>(layout);
         }
 
         {
@@ -143,7 +142,7 @@ namespace gear {
             layout->elements.push_back(element);
             offset += element.size;
 
-            input_layouts[VLT_STATIC_MESH] = layout;
+            input_layouts[VLT_STATIC_MESH] = std::shared_ptr<blast::GfxInputLayout>(layout);
         }
 
         {
@@ -206,64 +205,60 @@ namespace gear {
             layout->elements.push_back(element);
             offset += element.size;
 
-            input_layouts[VLT_SKIN_MESH] = layout;
+            input_layouts[VLT_SKIN_MESH] = std::shared_ptr<blast::GfxInputLayout>(layout);
         }
     }
 
     VertexLayoutCache::~VertexLayoutCache() {
-        for (auto iter = input_layouts.begin(); iter != input_layouts.end(); ++iter) {
-            SAFE_DELETE(iter->second);
-        }
         input_layouts.clear();
     }
 
     blast::GfxInputLayout * VertexLayoutCache::GetVertexLayout(VertexLayoutType type) {
-        return input_layouts[type];
+        return input_layouts[type].get();
     }
 
-    RasterizerStateCache::RasterizerStateCache() {
+    RasterizerStateCache::RasterizerStateCache(blast::GfxDevice* in_device) {
+        device = in_device;
         {
             blast::GfxRasterizerState* rs = new blast::GfxRasterizerState();
             rs->cull_mode = blast::CULL_BACK;
-            rasterizer_states[RST_FRONT] = rs;
+            rasterizer_states[RST_FRONT] = std::shared_ptr<blast::GfxRasterizerState>(rs);
         }
         {
             blast::GfxRasterizerState* rs = new blast::GfxRasterizerState();
             rs->cull_mode = blast::CULL_FRONT;
-            rasterizer_states[RST_BACK] = rs;
+            rasterizer_states[RST_BACK] = std::shared_ptr<blast::GfxRasterizerState>(rs);
         }
         {
             blast::GfxRasterizerState* rs = new blast::GfxRasterizerState();
             rs->cull_mode = blast::CULL_NONE;
-            rasterizer_states[RST_DOUBLESIDED] = rs;
+            rasterizer_states[RST_DOUBLESIDED] = std::shared_ptr<blast::GfxRasterizerState>(rs);
         }
     }
 
     RasterizerStateCache::~RasterizerStateCache() {
-        for (auto iter = rasterizer_states.begin(); iter != rasterizer_states.end(); ++iter) {
-            SAFE_DELETE(iter->second);
-        }
         rasterizer_states.clear();
     }
 
     blast::GfxRasterizerState * RasterizerStateCache::GetRasterizerState(RasterizerStateType type) {
-        return rasterizer_states[type];
+        return rasterizer_states[type].get();
     }
 
-    DepthStencilStateCache::DepthStencilStateCache() {
+    DepthStencilStateCache::DepthStencilStateCache(blast::GfxDevice* in_device) {
+        device = in_device;
         {
             blast::GfxDepthStencilState* dds = new blast::GfxDepthStencilState();
             dds->depth_test = true;
             dds->depth_write = true;
             dds->stencil_test = true;
-            depth_stencil_states[DSST_DEFAULT] = dds;
+            depth_stencil_states[DSST_DEFAULT] = std::shared_ptr<blast::GfxDepthStencilState>(dds);
         }
         {
             blast::GfxDepthStencilState* dds = new blast::GfxDepthStencilState();
             dds->depth_test = true;
             dds->depth_write = true;
             dds->stencil_test = false;
-            depth_stencil_states[DSST_SHADOW] = dds;
+            depth_stencil_states[DSST_SHADOW] = std::shared_ptr<blast::GfxDepthStencilState>(dds);
         }
 
         {
@@ -271,22 +266,20 @@ namespace gear {
             dds->depth_test = false;
             dds->depth_write = true;
             dds->stencil_test = false;
-            depth_stencil_states[DSST_UI] = dds;
+            depth_stencil_states[DSST_UI] = std::shared_ptr<blast::GfxDepthStencilState>(dds);
         }
     }
 
     DepthStencilStateCache::~DepthStencilStateCache() {
-        for (auto iter = depth_stencil_states.begin(); iter != depth_stencil_states.end(); ++iter) {
-            SAFE_DELETE(iter->second);
-        }
         depth_stencil_states.clear();
     }
 
     blast::GfxDepthStencilState * DepthStencilStateCache::GetDepthStencilState(DepthStencilStateType type) {
-        return depth_stencil_states[type];
+        return depth_stencil_states[type].get();
     }
 
-    BlendStateCache::BlendStateCache() {
+    BlendStateCache::BlendStateCache(blast::GfxDevice* in_device) {
+        device = in_device;
         {
             blast::GfxBlendState* bs = new blast::GfxBlendState();
             bs->rt[0].blend_enable = false;
@@ -295,7 +288,7 @@ namespace gear {
             bs->rt[0].src_factor_alpha = blast::BLEND_ONE;
             bs->rt[0].dst_factor_alpha = blast::BLEND_ZERO;
             bs->rt[0].render_target_write_mask = blast::COLOR_COMPONENT_ALL;
-            blend_states[BST_OPAQUE] = bs;
+            blend_states[BST_OPAQUE] = std::shared_ptr<blast::GfxBlendState>(bs);
         }
         {
             // 预乘
@@ -306,19 +299,16 @@ namespace gear {
             bs->rt[0].src_factor_alpha = blast::BLEND_ONE;
             bs->rt[0].dst_factor_alpha = blast::BLEND_ONE_MINUS_SRC_ALPHA;
             bs->rt[0].render_target_write_mask = blast::COLOR_COMPONENT_ALL;
-            blend_states[BST_TRANSPARENT] = bs;
+            blend_states[BST_TRANSPARENT] = std::shared_ptr<blast::GfxBlendState>(bs);
         }
     }
 
     BlendStateCache::~BlendStateCache() {
-        for (auto iter = blend_states.begin(); iter != blend_states.end(); ++iter) {
-            SAFE_DELETE(iter->second);
-        }
         blend_states.clear();
     }
 
     blast::GfxBlendState * BlendStateCache::GetDepthStencilState(BlendStateType type) {
-        return blend_states[type];
+        return blend_states[type].get();
     }
 
     bool SamplerCache::SamplerCacheEq::operator()(const blast::GfxSamplerDesc& desc1, const blast::GfxSamplerDesc& desc2) const {
@@ -331,24 +321,22 @@ namespace gear {
         return true;
     }
 
-    SamplerCache::SamplerCache() {
+    SamplerCache::SamplerCache(blast::GfxDevice* in_device) {
+        device = in_device;
     }
 
     SamplerCache::~SamplerCache() {
-        for (auto iter = samplers.begin(); iter != samplers.end(); ++iter) {
-            gEngine.GetDevice()->DestroySampler(iter->second);
-        }
         samplers.clear();
     }
 
     blast::GfxSampler* SamplerCache::GetSampler(const blast::GfxSamplerDesc& desc) {
         auto iter = samplers.find(desc);
         if (iter != samplers.end()) {
-            return iter->second;
+            return iter->second.get();
         }
 
-        blast::GfxSampler* sampler = gEngine.GetDevice()->CreateSampler(desc);
-        samplers[desc] = sampler;
+        blast::GfxSampler* sampler = device->CreateSampler(desc);
+        samplers[desc] = std::shared_ptr<blast::GfxSampler>(sampler);
         return sampler;
     }
 
@@ -364,24 +352,22 @@ namespace gear {
         return true;
     }
 
-    RenderPassCache::RenderPassCache() {
+    RenderPassCache::RenderPassCache(blast::GfxDevice* in_device) {
+        device = in_device;
     }
 
     RenderPassCache::~RenderPassCache() {
-        for (auto iter = renderpasses.begin(); iter != renderpasses.end(); ++iter) {
-            gEngine.GetDevice()->DestroyRenderPass(iter->second);
-        }
         renderpasses.clear();
     }
 
     blast::GfxRenderPass* RenderPassCache::GetRenderPass(const blast::GfxRenderPassDesc& desc) {
         auto iter = renderpasses.find(desc);
         if (iter != renderpasses.end()) {
-            return iter->second;
+            return iter->second.get();
         }
 
-        blast::GfxRenderPass* renderpass = gEngine.GetDevice()->CreateRenderPass(desc);
-        renderpasses[desc] = renderpass;
+        blast::GfxRenderPass* renderpass = device->CreateRenderPass(desc);
+        renderpasses[desc] = std::shared_ptr<blast::GfxRenderPass>(renderpass);
         return renderpass;
     }
 
@@ -403,24 +389,22 @@ namespace gear {
         return true;
     }
 
-    PipelineCache::PipelineCache() {
+    PipelineCache::PipelineCache(blast::GfxDevice* in_device) {
+        device = in_device;
     }
 
     PipelineCache::~PipelineCache() {
-        for (auto iter = pipelines.begin(); iter != pipelines.end(); ++iter) {
-            gEngine.GetDevice()->DestroyPipeline(iter->second);
-        }
         pipelines.clear();
     }
 
     blast::GfxPipeline* PipelineCache::GetPipeline(const blast::GfxPipelineDesc& desc) {
         auto iter = pipelines.find(desc);
         if (iter != pipelines.end()) {
-            return iter->second;
+            return iter->second.get();
         }
 
-        blast::GfxPipeline* pipeline = gEngine.GetDevice()->CreatePipeline(desc);
-        pipelines[desc] = pipeline;
+        blast::GfxPipeline* pipeline = device->CreatePipeline(desc);
+        pipelines[desc] = std::shared_ptr<blast::GfxPipeline>(pipeline);
         return pipeline;
     }
 }

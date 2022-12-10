@@ -10,14 +10,12 @@
 #include <View/View.h>
 #include <Entity/Scene.h>
 #include <Entity/Entity.h>
-#include <Entity/EntityManager.h>
 #include <Entity/Components/CLight.h>
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
 #include <Entity/Components/CMesh.h>
 #include <Entity/Components/CSkybox.h>
 #include <Entity/Components/CAnimation.h>
-#include <Resource/GpuBuffer.h>
 #include <Resource/Texture.h>
 #include <Resource/Material.h>
 #include <Resource/BuiltinResources.h>
@@ -156,12 +154,13 @@ public:
         int tex_width, tex_height;
         unsigned char* pixels = nullptr;
         io.Fonts->GetTexDataAsRGBA32(&pixels, &tex_width, &tex_height);
-        gear::Texture::Builder tex_builder;
-        tex_builder.SetWidth(tex_width);
-        tex_builder.SetHeight(tex_height);
-        tex_builder.SetFormat(blast::FORMAT_R8G8B8A8_UNORM);
-        font_texture = tex_builder.Build();
-        font_texture->UpdateData(pixels);
+        auto font_tex_data = gear::TextureData::Builder()
+            .SetWidth(tex_width)
+            .SetHeight(tex_height)
+            .SetFormat(blast::FORMAT_R8G8B8A8_UNORM)
+            .SetData(pixels, tex_width * tex_height * 4)
+            .Build();
+        font_texture = font_tex_data->LoadTexture();
 
         filesystem::path imgui_material_path = root_path / "../BuiltinResources/Materials/ui.mat";
         imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile(imgui_material_path.str(filesystem::path::path_type::posix_path), true);
@@ -174,20 +173,13 @@ public:
         scene_view = new gear::View();
         canvas = new gear::Canvas();
 
-        test_scene = new SkyAtmosphereTestScene();
+        test_scene = new ShadowTestScene();
         test_scene->Load();
     }
 
     void Exit() override {
         test_scene->Clear();
         SAFE_DELETE(test_scene);
-
-        SAFE_DELETE(font_texture);
-        for (int i = 0; i < imgui_mis.size(); ++i) {
-            SAFE_DELETE(imgui_mis[i]);
-        }
-        imgui_mis.clear();
-        SAFE_DELETE(imgui_ma);
         SAFE_DELETE(main_window);
         SAFE_DELETE(scene_view);
         SAFE_DELETE(canvas);
@@ -262,9 +254,9 @@ protected:
                     pcmd.UserCallback(cmds, &pcmd);
                 } else {
                     gear::Canvas::Element canvas_element;
-                    gear::MaterialInstance* imgui_mi = imgui_mis[prim_index];
+                    std::shared_ptr<gear::MaterialInstance> imgui_mi = imgui_mis[prim_index];
                     imgui_mi->SetScissor( pcmd.ClipRect.x, pcmd.ClipRect.y, pcmd.ClipRect.z, pcmd.ClipRect.w);
-                    canvas_element.mi = imgui_mi;
+                    canvas_element.mi = imgui_mi.get();
                     canvas_element.count = pcmd.ElemCount;
                     canvas_element.offset = index_offset;
                     canvas_batch.elements.push_back(canvas_element);
@@ -279,7 +271,7 @@ protected:
         // 绘制场景
         scene_view->SetSize(main_window->GetWidth(), main_window->GetHeight());
         scene_view->SetViewport(0, 0, main_window->GetWidth(), main_window->GetHeight());
-        gear::gEngine.GetRenderer()->RenderScene(test_scene->GetScene(), scene_view);
+        gear::gEngine.GetRenderer()->RenderScene(test_scene->GetScene().get(), scene_view);
 
         // 绘制到window上
         gear::View* views[] = { scene_view };
@@ -312,9 +304,9 @@ private:
     Window* main_window = nullptr;
     gear::Canvas* canvas = nullptr;
     gear::View* scene_view = nullptr;
-    gear::Material* imgui_ma = nullptr;
-    std::vector<gear::MaterialInstance*> imgui_mis;
-    gear::Texture* font_texture = nullptr;
+    std::shared_ptr<gear::Material> imgui_ma;
+    std::vector<std::shared_ptr<gear::MaterialInstance>> imgui_mis;
+    std::shared_ptr<blast::GfxTexture> font_texture;
     TestScene* test_scene = nullptr;
     EventHandle mouse_position_cb_handle;
     EventHandle mouse_button_cb_handle;

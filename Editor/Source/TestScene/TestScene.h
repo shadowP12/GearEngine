@@ -6,7 +6,7 @@ class TestScene {
 public:
     TestScene() = default;
 
-    ~TestScene() = default;
+    virtual ~TestScene() = default;
 
     virtual void Load() = 0;
 
@@ -14,5 +14,5 @@ public:
 
     virtual void DrawUI() = 0;
 
-    virtual gear::Scene* GetScene() = 0;
+    virtual std::shared_ptr<gear::Scene> GetScene() = 0;
 };

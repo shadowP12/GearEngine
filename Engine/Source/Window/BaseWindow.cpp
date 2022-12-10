@@ -1,8 +1,9 @@
 #include "BaseWindow.h"
 #include "GearEngine.h"
+#include "Renderer/Renderer.h"
 
-#include <Blast/Gfx/GfxDefine.h>
-#include <Blast/Gfx/GfxDevice.h>
+#include <GfxDefine.h>
+#include <GfxDevice.h>
 
 namespace gear {
     BaseWindow::BaseWindow() {
@@ -10,7 +11,7 @@ namespace gear {
 
     BaseWindow::~BaseWindow() {
         if (swapchain) {
-            gEngine.GetDevice()->DestroySwapChain(swapchain);
+            SAFE_DELETE(swapchain);
         }
     }
 
@@ -34,7 +35,7 @@ namespace gear {
             swapchain_desc.window = window_ptr;
             swapchain_desc.width = width;
             swapchain_desc.height = height;
-            swapchain = gEngine.GetDevice()->CreateSwapChain(swapchain_desc, swapchain);
+            swapchain = gEngine.GetRenderer()->GetDevice()->CreateSwapChain(swapchain_desc, swapchain);
         }
 
         return swapchain;

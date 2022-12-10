@@ -8,7 +8,7 @@ namespace gear {
     AnimationSystem::~AnimationSystem() {
     }
 
-    void AnimationSystem::RegisterInstance(AnimationInstance* instance) {
+    void AnimationSystem::RegisterInstance(std::shared_ptr<AnimationInstance> instance) {
         for (auto iter = instances.begin(); iter != instances.end(); iter++) {
             if (*iter == instance) {
                 return;
@@ -18,7 +18,7 @@ namespace gear {
         instances.push_back(instance);
     }
 
-    void AnimationSystem::UnregisterInstance(AnimationInstance* instance) {
+    void AnimationSystem::UnregisterInstance(std::shared_ptr<AnimationInstance> instance) {
         for (auto iter = instances.begin(); iter != instances.end(); iter++) {
             if (*iter == instance) {
                 instances.erase(iter);

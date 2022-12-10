@@ -1,29 +1,24 @@
 #include "Resource/Material.h"
-#include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
 #include "JobSystem/JobSystem.h"
 #include <Utility/Log.h>
 #include "GearEngine.h"
-
-#include <Blast/Gfx/GfxDefine.h>
-#include <Blast/Gfx/GfxDevice.h>
-
+#include "Renderer/Renderer.h"
+#include <GfxDefine.h>
+#include <GfxDevice.h>
 #include <functional>
 
 namespace gear {
     uint32_t Material::global_material_id = 0;
 
-    // 过滤掉不需要的顶点变体
     MaterialVariant::Key MaterialVariant::FilterVariantVertex(Key variant) {
         return variant & VERTEX_MASK;
     }
 
-    // 过滤掉不需要的片段变体
     MaterialVariant::Key MaterialVariant::FilterVariantFragment(Key variant) {
         return variant & FRAGMENT_MASK;
     }
 
-    // 通过着色模型过滤掉不需要的变体
     MaterialVariant::Key MaterialVariant::FilterVariantShadingMode(Key variant, ShadingModel shading_model) {
         if (shading_model == SHADING_MODEL_UNLIT) {
             Set(variant, false, DYNAMIC_LIGHTING);
@@ -32,7 +27,6 @@ namespace gear {
         return variant;
     }
 
-    // 通过顶点布局模型过滤掉不需要的片段变体
     MaterialVariant::Key MaterialVariant::FilterVariantVertexLayout(Key variant, VertexLayoutType vertex_layout_type) {
         if (vertex_layout_type == VLT_P || vertex_layout_type == VLT_P_T0 || vertex_layout_type == VLT_DEBUG || vertex_layout_type == VLT_UI) {
             Set(variant, false, DYNAMIC_LIGHTING);
@@ -90,61 +84,76 @@ namespace gear {
         }
     }
 
-    void Material::Builder::SetShadingModel(ShadingModel shading_model) {
+    Material::Builder& Material::Builder::SetShadingModel(ShadingModel shading_model) {
         this->shading_model = shading_model;
+        return *this;
     }
 
-    void Material::Builder::SetBlendState(BlendStateType blend_state) {
+    Material::Builder& Material::Builder::SetBlendState(BlendStateType blend_state) {
         this->blend_state = blend_state;
+        return *this;
     }
 
-    void Material::Builder::AddVertShader(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, blast::GfxShader* shader) {
+    Material::Builder& Material::Builder::SetTopology(blast::PrimitiveTopology topo) {
+        this->topo = topo;
+        return *this;
+    }
+
+    Material::Builder& Material::Builder::AddVertShader(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, blast::GfxShader* shader) {
         std::size_t shader_hash = 0;
         HashCombine(shader_hash, key);
         HashCombine(shader_hash, vertex_layout_type);
         vert_shader_cache[shader_hash] = shader;
+        return *this;
     }
 
-    void Material::Builder::AddFragShader(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, blast::GfxShader* shader) {
+    Material::Builder& Material::Builder::AddFragShader(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, blast::GfxShader* shader) {
         std::size_t shader_hash = 0;
         HashCombine(shader_hash, key);
         HashCombine(shader_hash, vertex_layout_type);
         frag_shader_cache[shader_hash] = shader;
+        return *this;
     }
 
-    void Material::Builder::AddVertShaderCode(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, const std::string& code) {
+    Material::Builder& Material::Builder::AddVertShaderCode(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, const std::string& code) {
         std::size_t shader_hash = 0;
         HashCombine(shader_hash, key);
         HashCombine(shader_hash, vertex_layout_type);
         vert_shader_code_cache[shader_hash] = code;
+        return *this;
     }
 
-    void Material::Builder::AddFragShaderCode(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, const std::string& code) {
+    Material::Builder& Material::Builder::AddFragShaderCode(MaterialVariant::Key key, VertexLayoutType vertex_layout_type, const std::string& code) {
         std::size_t shader_hash = 0;
         HashCombine(shader_hash, key);
         HashCombine(shader_hash, vertex_layout_type);
         frag_shader_code_cache[shader_hash] = code;
+        return *this;
     }
 
-    void Material::Builder::AddUniform(const std::string& name, const blast::UniformType& type) {
+    Material::Builder& Material::Builder::AddUniform(const std::string& name, const blast::UniformType& type) {
         uniforms[name] = type;
+        return *this;
     }
 
-    void Material::Builder::AddTexture(const std::string& name, const blast::TextureDimension& dim) {
+    Material::Builder& Material::Builder::AddTexture(const std::string& name, const blast::TextureDimension& dim) {
         textures[name] = dim;
+        return *this;
     }
 
-    void Material::Builder::AddSampler(const std::string& name) {
+    Material::Builder& Material::Builder::AddSampler(const std::string& name) {
         samplers.push_back(name);
+        return *this;
     }
 
-    Material * Material::Builder::Build() {
-        return new Material(this);
+    std::shared_ptr<Material> Material::Builder::Build() {
+        return std::shared_ptr<Material>(new Material(this));
     }
 
     Material::Material(Builder* builder) {
         shading_model = builder->shading_model;
         blend_state = builder->blend_state;
+        topo = builder->topo;
         uniforms = builder->uniforms;
         textures = builder->textures;
         samplers = builder->samplers;
@@ -155,14 +164,8 @@ namespace gear {
     }
 
     Material::~Material() {
-        blast::GfxDevice* device = gEngine.GetDevice();
-        for (auto& vs : vert_shader_cache) {
-            device->DestroyShader(vs.second);
-        }
-
-        for (auto& fs : frag_shader_cache) {
-            device->DestroyShader(fs.second);
-        }
+        vert_shader_cache.clear();
+        frag_shader_cache.clear();
     }
 
     blast::GfxShader* Material::GetVertShader(MaterialVariant::Key variant, VertexLayoutType vertex_layout_type) {
@@ -178,7 +181,7 @@ namespace gear {
         vs_cache_mutex.lock();
         auto shader_iter = vert_shader_cache.find(shader_hash);
         if (shader_iter != vert_shader_cache.end()) {
-            shader = shader_iter->second;
+            shader = shader_iter->second.get();
         }
         vs_cache_mutex.unlock();
 
@@ -195,17 +198,17 @@ namespace gear {
                         blast::ShaderCompileDesc compile_desc;
                         compile_desc.code = code_iter->second;
                         compile_desc.stage = blast::SHADER_STAGE_VERT;
-                        blast::ShaderCompileResult compile_result = gEngine.GetShaderCompiler()->Compile(compile_desc);
+                        blast::ShaderCompileResult compile_result = gEngine.GetRenderer()->GetShaderCompiler()->Compile(compile_desc);
                         if (compile_result.success) {
                             blast::GfxShaderDesc shader_desc;
                             shader_desc.stage = blast::SHADER_STAGE_VERT;
                             shader_desc.bytecode = compile_result.bytes.data();
                             shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
-                            blast::GfxShader* vert_shader = gEngine.GetDevice()->CreateShader(shader_desc);
+                            blast::GfxShader* vert_shader = gEngine.GetRenderer()->GetDevice()->CreateShader(shader_desc);
 
-                            // 将编译好的shader放进cache
+                            // Compiled shader into cache
                             this->vs_cache_mutex.lock();
-                            this->vert_shader_cache[shader_hash] = vert_shader;
+                            this->vert_shader_cache[shader_hash] = std::shared_ptr<blast::GfxShader>(vert_shader);
                             this->vs_cache_mutex.unlock();
                         } else {
                             LOGE("\n %s \n", code_iter->second.c_str());
@@ -231,7 +234,7 @@ namespace gear {
         fs_cache_mutex.lock();
         auto shader_iter = frag_shader_cache.find(shader_hash);
         if (shader_iter != frag_shader_cache.end()) {
-            shader = shader_iter->second;
+            shader = shader_iter->second.get();
         }
         fs_cache_mutex.unlock();
 
@@ -248,17 +251,17 @@ namespace gear {
                         blast::ShaderCompileDesc compile_desc;
                         compile_desc.code = code_iter->second;
                         compile_desc.stage = blast::SHADER_STAGE_FRAG;
-                        blast::ShaderCompileResult compile_result = gEngine.GetShaderCompiler()->Compile(compile_desc);
+                        blast::ShaderCompileResult compile_result = gEngine.GetRenderer()->GetShaderCompiler()->Compile(compile_desc);
                         if (compile_result.success) {
                             blast::GfxShaderDesc shader_desc;
                             shader_desc.stage = blast::SHADER_STAGE_FRAG;
                             shader_desc.bytecode = compile_result.bytes.data();
                             shader_desc.bytecode_length = compile_result.bytes.size() * sizeof(uint32_t);
-                            blast::GfxShader* frag_shader = gEngine.GetDevice()->CreateShader(shader_desc);
+                            blast::GfxShader* frag_shader = gEngine.GetRenderer()->GetDevice()->CreateShader(shader_desc);
 
-                            // 将编译好的shader放进cache
+                            // Compiled shader into cache
                             this->fs_cache_mutex.lock();
-                            this->frag_shader_cache[shader_hash] = frag_shader;
+                            this->frag_shader_cache[shader_hash] = std::shared_ptr<blast::GfxShader>(frag_shader);
                             this->fs_cache_mutex.unlock();
                         } else {
                             LOGE("\n %s \n", code_iter->second.c_str());
@@ -271,17 +274,17 @@ namespace gear {
         return shader;
     }
 
-    MaterialInstance* Material::CreateInstance() {
-        MaterialInstance* mi = new MaterialInstance(this);
+    std::shared_ptr<MaterialInstance> Material::CreateInstance() {
+        MaterialInstance* mi = new MaterialInstance(shared_from_this());
         mi->material_instance_id = current_material_instance_id;
         current_material_instance_id++;
-        return mi;
+        return std::shared_ptr<MaterialInstance>(mi);
     }
 
-    MaterialInstance::MaterialInstance(Material* material) {
+    MaterialInstance::MaterialInstance(std::shared_ptr<Material> material) {
         this->material = material;
 
-        // uniform
+        // Uniform
         uint32_t offset = 0;
         for (auto& uniform : material->uniforms) {
             std::tuple<blast::UniformType, uint32_t> variable = {};
@@ -301,12 +304,16 @@ namespace gear {
         storage_size = offset * sizeof(uint32_t);
         storage_dirty = true;
         if (storage_size > 0) {
-            material_ub = new UniformBuffer(storage_size);
+            blast::GfxBufferDesc buffer_desc{};
+            buffer_desc.size = storage_size;
+            buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
+            buffer_desc.res_usage = blast::RESOURCE_USAGE_UNIFORM_BUFFER;
+            material_ub = std::shared_ptr<blast::GfxBuffer>(gEngine.GetRenderer()->GetDevice()->CreateBuffer(buffer_desc));
         } else {
             material_ub = nullptr;
         }
 
-        // texture
+        // Texture
         textures = material->textures;
         TextureSlot texture_slot = 0;
         for (auto& texture : textures) {
@@ -327,15 +334,15 @@ namespace gear {
     }
 
     MaterialInstance::~MaterialInstance() {
-        SAFE_DELETE(material_ub);
+        int m = 2;
     }
 
-    UniformBuffer* MaterialInstance::GetUniformBuffer() {
+    blast::GfxBuffer* MaterialInstance::GetUniformBuffer() {
         if (!material_ub) {
             return nullptr;
         }
 
-        return material_ub;
+        return material_ub.get();
     }
 
     void MaterialInstance::SetBool(const std::string& name, const bool& value) {
@@ -387,7 +394,7 @@ namespace gear {
         }
     }
 
-    void MaterialInstance::SetTexture(const std::string& name, Texture* texture) {
+    void MaterialInstance::SetTexture(const std::string& name, std::shared_ptr<blast::GfxTexture> texture) {
         auto iter = texture_slot_map.find(name);
         if (iter != texture_slot_map.end()) {
             texture_group[iter->second] = texture;

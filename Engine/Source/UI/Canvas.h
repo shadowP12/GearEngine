@@ -1,9 +1,8 @@
 #pragma once
 #include "Renderer/RenderData.h"
-
-#include <Blast/Gfx/GfxDefine.h>
-
+#include <GfxDefine.h>
 #include <vector>
+#include <memory>
 
 namespace gear {
     class VertexBuffer;
@@ -44,8 +43,8 @@ namespace gear {
     private:
         friend class Renderer;
         std::vector<Batch> batchs;
-        std::vector<VertexBuffer*> vbs;
-        std::vector<IndexBuffer*> ibs;
+        std::vector<std::shared_ptr<blast::GfxBuffer>> vertex_bufs;
+        std::vector<std::shared_ptr<blast::GfxBuffer>> index_bufs;
         std::vector<UIDrawElement> draw_elements;
     };
 }

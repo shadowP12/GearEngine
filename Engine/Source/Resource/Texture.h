@@ -1,14 +1,11 @@
 #pragma once
 #include "Core/GearDefine.h"
-#include <Blast/Gfx/GfxDefine.h>
+#include <GfxDefine.h>
 #include <vector>
-
-namespace blast {
-    class GfxTexture;
-}
+#include <memory>
 
 namespace gear {
-    class Texture {
+    class TextureData {
     public:
         class Builder {
         public:
@@ -16,24 +13,26 @@ namespace gear {
 
             ~Builder() = default;
 
-            void SetWidth(uint32_t width);
+            Builder& SetWidth(uint32_t width);
 
-            void SetHeight(uint32_t height);
+            Builder& SetHeight(uint32_t height);
 
-            void SetDepth(uint32_t depth);
+            Builder& SetDepth(uint32_t depth);
 
-            void SetLayer(uint32_t layer);
+            Builder& SetLayer(uint32_t layer);
 
-            void SetLevel(uint32_t level);
+            Builder& SetLevel(uint32_t level);
 
-            void SetFormat(blast::Format format);
+            Builder& SetFormat(blast::Format format);
 
-            void SetCube(bool is_cube);
+            Builder& SetCube(bool is_cube);
 
-            Texture* Build();
+            Builder& SetData(uint8_t* data, uint32_t data_size);
+
+            std::shared_ptr<TextureData> Build();
 
         private:
-            friend class Texture;
+            friend class TextureData;
             uint32_t width = 1;
             uint32_t height = 1;
             uint32_t depth = 1;
@@ -41,24 +40,26 @@ namespace gear {
             uint32_t level = 1;
             bool is_cube = false;
             blast::Format format;
+            uint32_t data_size;
+            uint8_t* data = nullptr;
         };
 
-        ~Texture();
+        ~TextureData();
 
-        void UpdateData(void* data, uint32_t layer = 0, uint32_t level = 0);
-
-        uint8_t* GetData() { return data; }
-
-        blast::GfxTexture* GetTexture() { return texture; }
+        std::shared_ptr<blast::GfxTexture> LoadTexture();
 
     private:
-        Texture(Builder* builder);
+        TextureData(Builder* builder);
 
-    private:
-        friend class MaterialInstance;
+    public:
+        uint32_t width = 1;
+        uint32_t height = 1;
+        uint32_t depth = 1;
+        uint32_t layer = 1;
+        uint32_t level = 1;
+        bool is_cube = false;
+        blast::Format format;
+        uint32_t data_size;
         uint8_t* data = nullptr;
-        uint32_t data_size = 0;
-        blast::GfxTexture* texture = nullptr;
     };
-
 }

@@ -5,8 +5,6 @@
 #include "Input/InputSystem.h"
 #include "Animation/AnimationSystem.h"
 
-#include <Blast/Gfx/GfxDevice.h>
-
 namespace gear {
     BaseApplication::BaseApplication() {
     }
@@ -19,8 +17,7 @@ namespace gear {
 
         gEngine.GetAnimationSystem()->Tick(dt);
 
-        gEngine.GetDevice()->SubmitAllCommandBuffer();
-        gEngine.GetRenderer()->RefreshCommandBuffer();
+        gEngine.GetRenderer()->Tick(dt);
 
         gear::gEngine.GetInputSystem()->Reset();
     }

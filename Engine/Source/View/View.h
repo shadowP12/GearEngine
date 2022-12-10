@@ -2,9 +2,7 @@
 #include "Core/GearDefine.h"
 #include "Renderer/RenderData.h"
 #include "Math/Math.h"
-
-#include <Blast/Gfx/GfxDefine.h>
-
+#include <GfxDefine.h>
 #include <vector>
 
 namespace gear {
@@ -39,7 +37,7 @@ namespace gear {
 
         blast::GfxRenderPass* GetDebugRenderPass();
 
-		blast::GfxRenderPass* GetAtmosphereRaymarchingRenderPass();
+        blast::GfxRenderPass* GetAtmosphereRaymarchingRenderPass();
 
         void AddDebugLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& c);
 
@@ -67,12 +65,12 @@ namespace gear {
         blast::GfxTexture* postprocess_rt1 = nullptr;
         blast::GfxRenderPass* fxaa_renderpass0 = nullptr;
         blast::GfxRenderPass* fxaa_renderpass1 = nullptr;
-		blast::GfxRenderPass* atmosphere_raymarching_renderpass0 = nullptr;
-		blast::GfxRenderPass* atmosphere_raymarching_renderpass1 = nullptr;
+        blast::GfxRenderPass* atmosphere_raymarching_renderpass0 = nullptr;
+        blast::GfxRenderPass* atmosphere_raymarching_renderpass1 = nullptr;
         blast::GfxRenderPass* debug_renderpass0 = nullptr;
         blast::GfxRenderPass* debug_renderpass1 = nullptr;
 
-        // debug
+        // Debug
         uint32_t num_debug_lines = 0;
         std::vector<float> debug_lines;
     };

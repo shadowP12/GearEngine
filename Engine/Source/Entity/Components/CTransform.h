@@ -15,11 +15,11 @@ namespace gear {
 
         ComponentType GetType() override { return ComponentType::Transform; }
 
-        void SetParent(Entity* new_parent);
+        void SetParent(std::shared_ptr<Entity> new_parent);
 
-        Entity* GetParent();
+        std::shared_ptr<Entity> GetParent();
 
-        const std::vector<Entity*>& GetChildren();
+        const std::vector<std::shared_ptr<Entity>> GetChildren();
 
         void SetPosition(const glm::vec3& pos);
 

@@ -2,16 +2,11 @@
 #include "Core/GearDefine.h"
 #include "Math/Math.h"
 #include "Math/Geometry.h"
-
-#include <Blast/Gfx/GfxDefine.h>
-
+#include <GfxDefine.h>
 #include <map>
 #include <vector>
 
 namespace gear {
-    class VertexBuffer;
-    class IndexBuffer;
-    class UniformBuffer;
     class MaterialInstance;
 
     enum ShaderDomain {
@@ -19,14 +14,12 @@ namespace gear {
         SHADER_SURFACE = 1
     };
 
-    // 着色模型
     enum ShadingModel {
         SHADING_MODEL_GLOBAL,
         SHADING_MODEL_UNLIT,
         SHADING_MODEL_LIT,
     };
 
-    // P表示位置,T0表示纹理坐标
     enum VertexLayoutType {
         VLT_P = 0,
         VLT_P_T0,
@@ -103,7 +96,7 @@ namespace gear {
         float ev100;
         float exposure;
         glm::vec3 position;
-		glm::vec3 view_direction;
+        glm::vec3 view_direction;
         glm::mat4 model;
         glm::mat4 view;
         glm::mat4 projection;
@@ -122,54 +115,59 @@ namespace gear {
         uint32_t shadow_dimension = 0;
     };
 
-	struct AtmosphereParameters {
-		glm::mat4 sky_inv_view_proj_mat;
-		glm::vec4 resolution;
-		glm::vec4 rayleigh_scattering;
-		glm::vec4 mie_scattering;
-		glm::vec4 mie_extinction;
-		glm::vec4 mie_absorption;
-		glm::vec4 absorption_extinction;
-		glm::vec4 ground_albedo;
-		glm::vec4 sun_direction;
-		glm::vec4 view_direction;
-		glm::vec4 view_position;
-		float bottom_radius;
-		float top_radius;
-		float rayleigh_density_exp_scale;
-		float mie_density_exp_scale;
-		float mie_phase_g;
-		float absorption_density0_layer_width;
-		float absorption_density0_constant_term;
-		float absorption_density0_linear_term;
-		float absorption_density1_constant_term;
-		float absorption_density1_linear_term;
-	};
-
-    enum RenderableType {
-        RENDERABLE_COMMON = 0,
-        RENDERABLE_UI = 1
+    struct AtmosphereParameters {
+        glm::mat4 sky_inv_view_proj_mat;
+        glm::vec4 resolution;
+        glm::vec4 rayleigh_scattering;
+        glm::vec4 mie_scattering;
+        glm::vec4 mie_extinction;
+        glm::vec4 mie_absorption;
+        glm::vec4 absorption_extinction;
+        glm::vec4 ground_albedo;
+        glm::vec4 sun_direction;
+        glm::vec4 view_direction;
+        glm::vec4 view_position;
+        float bottom_radius;
+        float top_radius;
+        float rayleigh_density_exp_scale;
+        float mie_density_exp_scale;
+        float mie_phase_g;
+        float absorption_density0_layer_width;
+        float absorption_density0_constant_term;
+        float absorption_density0_linear_term;
+        float absorption_density1_constant_term;
+        float absorption_density1_linear_term;
     };
 
     struct UIDrawElement {
-        uint32_t count = 0;
-        uint32_t offset = 0;
+        uint32_t index_count = 0;
+        uint32_t index_offset = 0;
+        blast::IndexType index_type;
+        blast::GfxBuffer* vb = nullptr;
+        blast::GfxBuffer* ib = nullptr;
         MaterialInstance* mi = nullptr;
-        VertexBuffer* vb = nullptr;
-        IndexBuffer* ib = nullptr;
     };
 
     struct RenderPrimitive {
+        // Relevance
         bool cast_shadow = false;
         bool receive_shadow = true;
-        uint32_t count = 0;
-        uint32_t offset = 0;
-        BBox bbox;
+
+        // Mesh
+        uint32_t vertex_count = 0;
+        VertexLayoutType vertex_layout;
+        uint32_t index_count = 0;
+        blast::IndexType index_type;
+        blast::GfxBuffer* vb = nullptr;
+        blast::GfxBuffer* ib = nullptr;
+
+        // Material
         MaterialInstance* mi = nullptr;
-        VertexBuffer* vb = nullptr;;
-        IndexBuffer* ib = nullptr;;
-        UniformBuffer* material_ub = nullptr;
+        blast::GfxBuffer* material_ub = nullptr;
         blast::PrimitiveTopology topo = blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_LIST;
+
+        // Scene
+        BBox bbox;
     };
 
     struct Renderable {

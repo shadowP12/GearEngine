@@ -4,7 +4,6 @@
 #include <Utility/Log.h>
 #include <Entity/Scene.h>
 #include <Entity/Entity.h>
-#include <Entity/EntityManager.h>
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
 #include <Entity/Components/CMesh.h>

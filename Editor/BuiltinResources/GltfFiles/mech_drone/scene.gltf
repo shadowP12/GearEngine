@@ -4761,19 +4761,19 @@
       "uri": "textures/Robot_specularGlossiness.png"
     },
     {
-      "uri": "textures/Robot_emissive.jpeg"
+      "uri": "textures/Robot_emissive.png"
     },
     {
-      "uri": "textures/Robot_diffuse.jpeg"
+      "uri": "textures/Robot_diffuse.png"
     },
     {
       "uri": "textures/Robot_occlusion.png"
     },
     {
-      "uri": "textures/Robot_normal.jpeg"
+      "uri": "textures/Robot_normal.png"
     },
     {
-      "uri": "textures/Fire_emissive.jpeg"
+      "uri": "textures/Fire_emissive.png"
     },
     {
       "uri": "textures/Fire_diffuse.png"

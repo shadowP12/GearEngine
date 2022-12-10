@@ -62,11 +62,11 @@ namespace gear {
 
         ~SimpleAnimationInstance();
 
-        void SetSkeleton(Skeleton* skeleton) {
+        void SetSkeleton(std::shared_ptr<Skeleton> skeleton) {
             this->skeleton = skeleton;
         }
 
-        void SetAnimationClip(AnimationClip* animation_clip) {
+        void SetAnimationClip(std::shared_ptr<AnimationClip> animation_clip) {
             this->animation_clip = animation_clip;
         }
 
@@ -75,7 +75,7 @@ namespace gear {
         void Tick(float dt) override;
 
     private:
-        Skeleton* skeleton = nullptr;
-        AnimationClip* animation_clip = nullptr;
+        std::shared_ptr<Skeleton> skeleton = nullptr;
+        std::shared_ptr<AnimationClip> animation_clip = nullptr;
     };
 }

@@ -5,176 +5,151 @@
 #include "Window/BaseWindow.h"
 #include "Entity/Scene.h"
 #include "UI/Canvas.h"
-#include "Resource/GpuBuffer.h"
 #include "Resource/Texture.h"
 #include "Resource/Material.h"
 #include "Resource/BuiltinResources.h"
 
-#include <Blast/Gfx/GfxDevice.h>
-
 namespace gear {
 
-	void Renderer::RenderTransmittanceLut(gear::Scene* scene, gear::View* view) {
-		if (!scene->should_render_atmosphere) {
-			return;
-		}
+    void Renderer::RenderTransmittanceLut(gear::Scene* scene, gear::View* view) {
+        if (!scene->should_render_atmosphere) {
+            return;
+        }
 
-		blast::GfxDevice* device = gEngine.GetDevice();
+        blast::GfxResourceBarrier barrier[1];
+        barrier[0].resource = transmittance_lut;
+        barrier[0].new_state = blast::RESOURCE_STATE_RENDERTARGET;
+        device->SetBarrier(current_cmd, 1, barrier);
 
-		blast::GfxTextureBarrier barrier[1];
-		barrier[0].texture = transmittance_lut;
-		barrier[0].new_state = blast::RESOURCE_STATE_RENDERTARGET;
-		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
+        device->RenderPassBegin(current_cmd, transmittance_rp);
 
-		device->RenderPassBegin(current_cmd, transmittance_rp);
+        device->BindViewport(current_cmd, 0.0f, 0.0f, TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
 
-		blast::Viewport viewport;
-		viewport.x = 0;
-		viewport.y = 0;
-		viewport.w = TRANSMITTANCE_TEXTURE_WIDTH;
-		viewport.h = TRANSMITTANCE_TEXTURE_HEIGHT;
-		device->BindViewports(current_cmd, 1, &viewport);
+        device->BindScissor(current_cmd, 0, 0, TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
 
-		blast::Rect rect;
-		rect.left = 0;
-		rect.top = 0;
-		rect.right = TRANSMITTANCE_TEXTURE_WIDTH;
-		rect.bottom = TRANSMITTANCE_TEXTURE_HEIGHT;
-		device->BindScissorRects(current_cmd, 1, &rect);
+        device->BindConstantBuffer(current_cmd, atmosphere_ub, 0, atmosphere_ub->size, 0);
 
-		device->BindConstantBuffer(current_cmd, atmosphere_ub, 0, atmosphere_ub->desc.size, 0);
+        blast::GfxBuffer* quad_buffer = gEngine.GetBuiltinResources()->GetQuadBuffer().get();
+        blast::GfxShader* vs = gEngine.GetBuiltinResources()->GetAtmosphereCommonVS().get();
+        blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetAtmosphereComputeTransmittanceFS().get();
+        if (vs != nullptr && fs != nullptr) {
+            blast::GfxPipelineDesc pipeline_state = {};
+            pipeline_state.rp = transmittance_rp;
+            pipeline_state.vs = vs;
+            pipeline_state.fs = fs;
+            pipeline_state.il = vertex_layout_cache->GetVertexLayout(VertexLayoutType::VLT_P_T0);
+            pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+            pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+            pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
 
-		VertexBuffer* quad_buffer = gEngine.GetBuiltinResources()->GetQuadBuffer();
+            device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 
-		blast::GfxShader* vs = gEngine.GetBuiltinResources()->GetAtmosphereCommonVS();
-		blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetAtmosphereComputeTransmittanceFS();
-		if (vs != nullptr && fs != nullptr) {
-			blast::GfxPipelineDesc pipeline_state = {};
-			pipeline_state.rp = transmittance_rp;
-			pipeline_state.vs = vs;
-			pipeline_state.fs = fs;
-			pipeline_state.il = vertex_layout_cache->GetVertexLayout(quad_buffer->GetVertexLayoutType());
-			pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-			pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
-			pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+            uint64_t vertex_offsets[] = {0};
+            blast::GfxBuffer* vertex_buffers[] = {quad_buffer};
+            device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
 
-			device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
+            device->Draw(current_cmd, 6, 0);
+        }
 
-			uint64_t vertex_offsets[] = {0};
-			blast::GfxBuffer* vertex_buffers[] = {quad_buffer->GetHandle()};
-			device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
+        device->RenderPassEnd(current_cmd);
 
-			device->Draw(current_cmd, 6, 0);
-		}
+        barrier[0].resource = transmittance_lut;
+        barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+        device->SetBarrier(current_cmd, 1, barrier);
+    }
 
-		device->RenderPassEnd(current_cmd);
+    void Renderer::RenderMultiScattTexture(gear::Scene* scene, gear::View* view) {
+        if (!scene->should_render_atmosphere) {
+            return;
+        }
 
-		barrier[0].texture = transmittance_lut;
-		barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
-		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
-	}
+        blast::GfxResourceBarrier barrier[1];
+        barrier[0].resource = multi_scatt_texture;
+        barrier[0].new_state = blast::RESOURCE_STATE_UNORDERED_ACCESS;
+        device->SetBarrier(current_cmd, 1, barrier);
 
-	void Renderer::RenderMultiScattTexture(gear::Scene* scene, gear::View* view) {
-		if (!scene->should_render_atmosphere) {
-			return;
-		}
+        blast::GfxShader* cs = gEngine.GetBuiltinResources()->GetAtmosphereComputeMultiScattCS().get();
+        if (cs != nullptr) {
+            device->BindConstantBuffer(current_cmd, atmosphere_ub, 0, atmosphere_ub->size, 0);
 
-		blast::GfxDevice* device = gEngine.GetDevice();
+            blast::GfxSamplerDesc default_sampler = {};
+            device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);
 
-		blast::GfxTextureBarrier barrier[1];
-		barrier[0].texture = multi_scatt_texture;
-		barrier[0].new_state = blast::RESOURCE_STATE_UNORDERED_ACCESS;
-		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
+            device->BindResource(current_cmd, transmittance_lut, 0);
 
-		blast::GfxShader* cs = gEngine.GetBuiltinResources()->GetAtmosphereComputeMultiScattCS();
-		if (cs != nullptr) {
-			device->BindConstantBuffer(current_cmd, atmosphere_ub, 0, atmosphere_ub->desc.size, 0);
+            device->BindUAV(current_cmd, multi_scatt_texture, 0);
 
-			blast::GfxSamplerDesc default_sampler = {};
-			device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);
+            device->BindComputeShader(current_cmd, cs);
 
-			device->BindResource(current_cmd, transmittance_lut, 0);
+            device->Dispatch(current_cmd, std::max(1u, (uint32_t)MULTI_SCATTERING_TEXTURE_SIZE / 16), std::max(1u, (uint32_t)MULTI_SCATTERING_TEXTURE_SIZE / 16), 1);
+        }
 
-			device->BindUAV(current_cmd, multi_scatt_texture, 0);
+        barrier[0].resource = multi_scatt_texture;
+        barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+        device->SetBarrier(current_cmd, 1, barrier);
+    }
 
-			device->BindComputeShader(current_cmd, cs);
+    void Renderer::AtmosphereRayMarching(Scene* scene, View* view) {
+        if (!scene->should_render_atmosphere) {
+            return;
+        }
 
-			device->Dispatch(current_cmd, std::max(1u, (uint32_t)MULTI_SCATTERING_TEXTURE_SIZE / 16), std::max(1u, (uint32_t)MULTI_SCATTERING_TEXTURE_SIZE / 16), 1);
-		}
+        view->SwapPostProcess();
 
-		barrier[0].texture = multi_scatt_texture;
-		barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
-		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
-	}
+        blast::GfxResourceBarrier barrier[4];
+        barrier[0].resource = view->GetOutPostProcessRT();
+        barrier[0].new_state = blast::RESOURCE_STATE_RENDERTARGET;
+        barrier[1].resource = view->depth_rt;
+        barrier[1].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+        barrier[2].resource = transmittance_lut;
+        barrier[2].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+        barrier[3].resource = multi_scatt_texture;
+        barrier[3].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+        device->SetBarrier(current_cmd, 4, barrier);
 
-	void Renderer::AtmosphereRayMarching(Scene* scene, View* view) {
-		if (!scene->should_render_atmosphere) {
-			return;
-		}
+        device->RenderPassBegin(current_cmd, view->GetAtmosphereRaymarchingRenderPass());
 
-		view->SwapPostProcess();
+        device->BindViewport(current_cmd, 0.0f, 0.0f, view->GetOutPostProcessRT()->width, view->GetOutPostProcessRT()->height);
 
-		blast::GfxDevice* device = gEngine.GetDevice();
+        device->BindScissor(current_cmd, 0, 0, view->GetOutPostProcessRT()->width, view->GetOutPostProcessRT()->height);
 
-		blast::GfxTextureBarrier barrier[1];
-		barrier[0].texture = view->GetOutPostProcessRT();
-		barrier[0].new_state = blast::RESOURCE_STATE_RENDERTARGET;
-		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
+        blast::GfxBuffer* quad_buffer = gEngine.GetBuiltinResources()->GetQuadBuffer().get();
+        blast::GfxShader* vs = gEngine.GetBuiltinResources()->GetAtmosphereCommonVS().get();
+        blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetAtmosphereRayMarchingFS().get();
+        if (vs != nullptr && fs != nullptr) {
+            device->BindConstantBuffer(current_cmd, atmosphere_ub, 0, atmosphere_ub->size, 0);
 
-		device->RenderPassBegin(current_cmd, view->GetAtmosphereRaymarchingRenderPass());
+            blast::GfxSamplerDesc default_sampler = {};
+            device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);
 
-		blast::Viewport viewport;
-		viewport.x = 0;
-		viewport.y = 0;
-		viewport.w = view->GetOutPostProcessRT()->desc.width;
-		viewport.h = view->GetOutPostProcessRT()->desc.height;
-		device->BindViewports(current_cmd, 1, &viewport);
+            device->BindResource(current_cmd, transmittance_lut, 0);
 
-		blast::Rect rect;
-		rect.left = 0;
-		rect.top = 0;
-		rect.right = view->GetOutPostProcessRT()->desc.width;
-		rect.bottom = view->GetOutPostProcessRT()->desc.height;
-		device->BindScissorRects(current_cmd, 1, &rect);
+            device->BindResource(current_cmd, multi_scatt_texture, 1);
 
-		VertexBuffer* quad_buffer = gEngine.GetBuiltinResources()->GetQuadBuffer();
+            device->BindResource(current_cmd, view->depth_rt, 2);
 
-		blast::GfxShader* vs = gEngine.GetBuiltinResources()->GetAtmosphereCommonVS();
-		blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetAtmosphereRayMarchingFS();
-		if (vs != nullptr && fs != nullptr) {
-			device->BindConstantBuffer(current_cmd, atmosphere_ub, 0, atmosphere_ub->desc.size, 0);
+            blast::GfxPipelineDesc pipeline_state = {};
+            pipeline_state.rp = view->GetAtmosphereRaymarchingRenderPass();
+            pipeline_state.vs = vs;
+            pipeline_state.fs = fs;
+            pipeline_state.il = vertex_layout_cache->GetVertexLayout(VertexLayoutType::VLT_P_T0);
+            pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
+            pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+            pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
 
-			blast::GfxSamplerDesc default_sampler = {};
-			device->BindSampler(current_cmd, sampler_cache->GetSampler(default_sampler), 0);
+            device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 
-			device->BindResource(current_cmd, transmittance_lut, 0);
+            uint64_t vertex_offsets[] = {0};
+            blast::GfxBuffer* vertex_buffers[] = {quad_buffer};
+            device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
 
-			device->BindResource(current_cmd, multi_scatt_texture, 1);
+            device->Draw(current_cmd, 6, 0);
+        }
 
-			device->BindResource(current_cmd, view->depth_rt, 2);
+        device->RenderPassEnd(current_cmd);
 
-			blast::GfxPipelineDesc pipeline_state = {};
-			pipeline_state.rp = view->GetAtmosphereRaymarchingRenderPass();
-			pipeline_state.vs = vs;
-			pipeline_state.fs = fs;
-			pipeline_state.il = vertex_layout_cache->GetVertexLayout(quad_buffer->GetVertexLayoutType());
-			pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-			pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
-			pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
-
-			device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
-
-			uint64_t vertex_offsets[] = {0};
-			blast::GfxBuffer* vertex_buffers[] = {quad_buffer->GetHandle()};
-			device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
-
-			device->Draw(current_cmd, 6, 0);
-		}
-
-		device->RenderPassEnd(current_cmd);
-
-		barrier[0].texture = view->GetOutPostProcessRT();
-		barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
-		device->SetBarrier(current_cmd, 0, nullptr, 1, barrier);
-	}
+        barrier[0].resource = view->GetOutPostProcessRT();
+        barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+        device->SetBarrier(current_cmd, 1, barrier);
+    }
 }

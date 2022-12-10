@@ -5,11 +5,15 @@
 
 namespace gear {
     class Component;
-    class Entity {
+    class Entity : public std::enable_shared_from_this<Entity> {
     public:
         Entity(const std::string& name);
         
         ~Entity();
+
+        static std::shared_ptr<Entity> Create(const std::string& name);
+
+        std::string GetName();
 
         template<class T, class... Args>
         T* AddComponent(Args &&... args) {

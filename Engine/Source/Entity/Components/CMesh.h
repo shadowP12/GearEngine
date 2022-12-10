@@ -3,29 +3,17 @@
 #include "Math/Math.h"
 #include "Math/Geometry.h"
 #include "Renderer/RenderData.h"
-
-#include <Blast/Gfx/GfxDefine.h>
-
+#include <GfxDefine.h>
 #include <vector>
 
 namespace gear {
     class Entity;
-    class VertexBuffer;
-    class IndexBuffer;
-    class UniformBuffer;
+    class Mesh;
     class MaterialInstance;
     class Skeleton;
 
     struct SubMesh {
-        bool cast_shadow = false;
-        bool receive_shadow = true;
-        uint32_t count = 0;
-        uint32_t offset = 0;
-        BBox bbox;
-        MaterialInstance* mi = nullptr;
-        VertexBuffer* vb = nullptr;
-        IndexBuffer* ib = nullptr;
-        blast::PrimitiveTopology topo = blast::PrimitiveTopology::PRIMITIVE_TOPO_TRI_LIST;
+
     };
 
     class CMesh : public Component {
@@ -38,30 +26,39 @@ namespace gear {
 
         ComponentType GetType() override { return ComponentType::Mesh; }
 
-        void ResetSubMeshs();
+        void SetMesh(std::shared_ptr<Mesh> mesh);
 
-        void AddSubMesh(const SubMesh& sub_mesh);
+        void SetMaterial(uint32_t idx, std::shared_ptr<MaterialInstance> material);
 
-        std::vector<SubMesh>& GetSubMeshs() {
-            return _sub_meshs;
+        std::shared_ptr<MaterialInstance> GetMaterial(uint32_t idx);
+
+        void SetMaterials(std::vector<std::shared_ptr<MaterialInstance>> materials);
+
+        std::vector<std::shared_ptr<MaterialInstance>> GetMaterials();
+
+        void SetSkeleton(std::shared_ptr<Skeleton> skeleton) {
+            this->skeleton = skeleton;
         }
 
-        void SetSkeleton(Skeleton* skeleton) {
-            this->skeleton = skeleton;
+        std::shared_ptr<Skeleton> GetSkeleton() {
+            return this->skeleton;
         }
 
         void SetCastShadow(bool castShadow);
 
         void SetReceiveShadow(bool receiveShadow);
 
-        RenderableType GetRenderableType() { return _renderable_type; }
+        void SetBoundBox(BBox bbox);
 
-        void SetRenderableType(RenderableType type) { _renderable_type = type; }
+        BBox GetBoundBox();
 
     private:
         friend class Scene;
-        RenderableType _renderable_type = RENDERABLE_COMMON;
-        std::vector<SubMesh> _sub_meshs;
-        Skeleton* skeleton = nullptr;
+        bool cast_shadow = false;
+        bool receive_shadow = true;
+        BBox bbox;
+        std::shared_ptr<Mesh> mesh = nullptr;
+        std::vector<std::shared_ptr<MaterialInstance>> material_list;
+        std::shared_ptr<Skeleton> skeleton = nullptr;
     };
 }

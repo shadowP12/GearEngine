@@ -2,11 +2,12 @@
 
 #include "Math/Math.h"
 
-#include <Blast/Gfx/GfxDefine.h>
+#include <GfxDefine.h>
 
 #include <map>
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace gear {
     struct Joint {
@@ -31,8 +32,8 @@ namespace gear {
 
         bool Prepare(blast::GfxCommandBuffer* cmd);
 
-        blast::GfxBuffer* GetUniformBuffer() {
-            return bone_ub;
+        blast::GfxBuffer* GetBoneMatrixBuffer() {
+            return bone_matrix_ub.get();
         }
 
     private:
@@ -41,6 +42,6 @@ namespace gear {
         std::vector<Joint> joints;
         std::map<std::string, uint32_t> joint_indices;
         std::vector<glm::mat4> storage;
-        blast::GfxBuffer* bone_ub = nullptr;
+        std::shared_ptr<blast::GfxBuffer> bone_matrix_ub = nullptr;
     };
 }

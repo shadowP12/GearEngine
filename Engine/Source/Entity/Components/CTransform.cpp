@@ -16,41 +16,45 @@ namespace gear {
         _children.clear();
     }
 
-    void CTransform::SetParent(Entity* new_parent) {
+    void CTransform::SetParent(std::shared_ptr<Entity> new_parent) {
         Entity* old_parent = _parent;
 
-        if (old_parent == new_parent)
+        if (old_parent == new_parent.get())
             return;
 
         if (old_parent) {
             CTransform* old_parent_transform = old_parent->GetComponent<CTransform>();
-            for (auto iter = old_parent_transform->_children.begin(); iter != old_parent_transform->_children.end();) {
+            for (auto iter = old_parent_transform->_children.begin(); iter != old_parent_transform->_children.end(); iter++) {
                 if (iter == old_parent_transform->_children.end()) {
                     break;
                 }
 
-                if (*iter == this->_entity) {
+                if ((*iter) == this->_entity) {
                     old_parent_transform->_children.erase(iter);
                     break;
                 }
             }
         }
 
-        _parent = new_parent;
-        if (new_parent) {
-            CTransform* new_parent_transform = new_parent->GetComponent<CTransform>();
+        _parent = new_parent.get();
+        if (_parent) {
+            CTransform* new_parent_transform = _parent->GetComponent<CTransform>();
             new_parent_transform->_children.push_back(this->_entity);
         }
 
         UpdateTransform();
     }
 
-    Entity* CTransform::GetParent() {
-        return _parent;
+    std::shared_ptr<Entity> CTransform::GetParent() {
+        return _parent->shared_from_this();
     }
 
-    const std::vector<Entity*>& CTransform::GetChildren() {
-        return _children;
+    const std::vector<std::shared_ptr<Entity>> CTransform::GetChildren() {
+        std::vector<std::shared_ptr<Entity>> temp_childrens;
+        for (auto children : _children) {
+            temp_childrens.push_back(children->shared_from_this());
+        }
+        return temp_childrens;
     }
 
     void CTransform::SetPosition(const glm::vec3& pos) {

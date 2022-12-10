@@ -1,6 +1,5 @@
 #pragma once
 #include "Core/GearDefine.h"
-
 #include <vector>
 
 namespace blast {

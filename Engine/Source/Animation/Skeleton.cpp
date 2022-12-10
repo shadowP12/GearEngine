@@ -1,7 +1,8 @@
 #include "Skeleton.h"
 #include "GearEngine.h"
+#include "Renderer/Renderer.h"
 
-#include <Blast/Gfx/GfxDevice.h>
+#include <GfxDevice.h>
 
 namespace gear {
     Skeleton::Skeleton(const std::vector<Joint>& joints) {
@@ -17,11 +18,10 @@ namespace gear {
         buffer_desc.size = sizeof(glm::mat4) * joints.size();
         buffer_desc.mem_usage = blast::MEMORY_USAGE_GPU_ONLY;
         buffer_desc.res_usage = blast::RESOURCE_USAGE_UNIFORM_BUFFER;
-        bone_ub = gEngine.GetDevice()->CreateBuffer(buffer_desc);
+        bone_matrix_ub = std::shared_ptr<blast::GfxBuffer>(gEngine.GetRenderer()->GetDevice()->CreateBuffer(buffer_desc));
     }
 
     Skeleton::~Skeleton() {
-        gEngine.GetDevice()->DestroyBuffer(bone_ub);
     }
 
     Joint* Skeleton::GetJoint(const std::string& name) {
@@ -46,7 +46,7 @@ namespace gear {
     }
 
     bool Skeleton::Prepare(blast::GfxCommandBuffer* cmd) {
-        if (!bone_ub) {
+        if (!bone_matrix_ub) {
             return false;
         }
 
@@ -54,7 +54,7 @@ namespace gear {
             storage[i] = GetPoseMatrix(i) * joints[i].bind_pose;
         }
 
-        gEngine.GetDevice()->UpdateBuffer(cmd, bone_ub, storage.data(), storage.size() * sizeof(glm::mat4));
+        gEngine.GetRenderer()->UpdateUniformBuffer(cmd, bone_matrix_ub.get(), storage.data(), storage.size() * sizeof(glm::mat4));
         return true;
     }
 }

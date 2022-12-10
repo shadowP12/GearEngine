@@ -2,7 +2,7 @@
 #include "Utility/Event.h"
 #include "Renderer/RenderData.h"
 
-#include <Blast/Gfx/GfxDefine.h>
+#include <GfxDefine.h>
 
 #include <vector>
 
@@ -10,24 +10,26 @@ namespace gear {
     class Entity;
     class Scene {
     public:
-        Scene();
+        Scene(const std::string& name);
 
         ~Scene();
 
-        void AddEntity(Entity*);
+        void AddEntity(std::shared_ptr<Entity>);
 
-        void RemoveEntity(Entity*);
+        void RemoveEntity(std::shared_ptr<Entity>);
+
+        static std::shared_ptr<Scene> Create(const std::string& name);
 
     private:
         bool Prepare(blast::GfxCommandBuffer* cmd);
 
     private:
         friend class Renderer;
-        std::vector<Entity*> entities;
-        uint32_t num_mesh_entitys = 0;
+        std::string name;
+        std::vector<std::shared_ptr<Entity>> entities;
 
-        uint32_t num_ui_renderables = 0;
-        std::vector<uint32_t> ui_renderables;
+        // Render
+        uint32_t num_mesh_entitys = 0;
         uint32_t num_mesh_renderables = 0;
         std::vector<uint32_t> mesh_renderables;
         std::vector<Renderable> renderables;
@@ -37,8 +39,8 @@ namespace gear {
         CameraInfo main_camera_info;
         LightInfo light_info;
 
-		bool should_render_atmosphere = false;
-		AtmosphereParameters atmosphere_parameters;
+        bool should_render_atmosphere = false;
+        AtmosphereParameters atmosphere_parameters;
 
         blast::GfxBuffer* renderables_ub = nullptr;
 

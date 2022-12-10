@@ -4,17 +4,14 @@
 #include "../GltfImporter.h"
 #include "../TextureImporter.h"
 #include "../CameraController.h"
-
 #include <Entity/Scene.h>
 #include <Entity/Entity.h>
-#include <Entity/EntityManager.h>
 #include <Entity/Components/CLight.h>
 #include <Entity/Components/CCamera.h>
 #include <Entity/Components/CTransform.h>
 #include <Entity/Components/CMesh.h>
 #include <Entity/Components/CSkybox.h>
 #include <Entity/Components/CAnimation.h>
-#include <Resource/GpuBuffer.h>
 #include <Resource/Texture.h>
 #include <Resource/Material.h>
 #include <Resource/BuiltinResources.h>
@@ -24,7 +21,7 @@ class TransparencyTestScene : public TestScene {
 public:
     TransparencyTestScene();
 
-    ~TransparencyTestScene();
+    virtual ~TransparencyTestScene();
 
     void Load() override;
 
@@ -32,19 +29,19 @@ public:
 
     void DrawUI() override;
 
-    gear::Scene* GetScene() override;
+    std::shared_ptr<gear::Scene> GetScene() override;
 
 protected:
-    gear::Scene* scene = nullptr;
-    gear::Entity* main_camera = nullptr;
-    gear::Entity* sun = nullptr;
-    gear::Entity* ibl = nullptr;
-    gear::Texture* skybox_map = nullptr;
-    gear::Texture* irradiance_map = nullptr;
-    gear::Texture* prefiltered_map = nullptr;
-    gear::Texture* brdf_lut = nullptr;
-    gear::Material* transparency_test_ma = nullptr;
-    std::vector<gear::MaterialInstance*> transparency_test_mis;
+    std::shared_ptr<gear::Scene> scene = nullptr;
+    std::shared_ptr<gear::Entity> main_camera = nullptr;
+    std::shared_ptr<gear::Entity> sun = nullptr;
+    std::shared_ptr<gear::Entity> ibl = nullptr;
+    std::shared_ptr<blast::GfxTexture> skybox_map = nullptr;
+    std::shared_ptr<blast::GfxTexture> irradiance_map = nullptr;
+    std::shared_ptr<blast::GfxTexture> prefiltered_map = nullptr;
+    std::shared_ptr<blast::GfxTexture> brdf_lut = nullptr;
+    std::shared_ptr<gear::Material> transparency_test_ma = nullptr;
+    std::vector<std::shared_ptr<gear::MaterialInstance>> transparency_test_mis;
     GltfAsset* gltf_asset = nullptr;
     CameraController* camera_controller = nullptr;
 };

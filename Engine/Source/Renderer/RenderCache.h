@@ -3,67 +3,69 @@
 #include "Utility/Hash.h"
 #include "RenderData.h"
 
-#include <Blast/Gfx/GfxDefine.h>
+#include <GfxDefine.h>
+#include <GfxDevice.h>
 
 #include <unordered_map>
 
 namespace gear {
     class Renderer;
 
-    // TODO:定期清理缓存
-    // TODO:支持多线程
-
     class VertexLayoutCache {
     public:
-        VertexLayoutCache();
+        VertexLayoutCache(blast::GfxDevice* in_device);
 
         ~VertexLayoutCache();
 
         blast::GfxInputLayout* GetVertexLayout(VertexLayoutType type);
 
     private:
-        std::unordered_map<VertexLayoutType, blast::GfxInputLayout*> input_layouts;
+        blast::GfxDevice* device = nullptr;
+        std::unordered_map<VertexLayoutType, std::shared_ptr<blast::GfxInputLayout>> input_layouts;
     };
 
     class RasterizerStateCache {
     public:
-        RasterizerStateCache();
+        RasterizerStateCache(blast::GfxDevice* in_device);
 
         ~RasterizerStateCache();
 
         blast::GfxRasterizerState* GetRasterizerState(RasterizerStateType type);
 
     private:
-        std::unordered_map<RasterizerStateType, blast::GfxRasterizerState*> rasterizer_states;
+        blast::GfxDevice* device;
+        std::unordered_map<RasterizerStateType, std::shared_ptr<blast::GfxRasterizerState>> rasterizer_states;
     };
 
     class DepthStencilStateCache {
     public:
-        DepthStencilStateCache();
+        DepthStencilStateCache(blast::GfxDevice* in_device);
 
         ~DepthStencilStateCache();
 
         blast::GfxDepthStencilState* GetDepthStencilState(DepthStencilStateType type);
 
     private:
-        std::unordered_map<DepthStencilStateType, blast::GfxDepthStencilState*> depth_stencil_states;
+        blast::GfxDevice* device = nullptr;
+        std::unordered_map<DepthStencilStateType, std::shared_ptr<blast::GfxDepthStencilState>> depth_stencil_states;
     };
 
     class BlendStateCache {
     public:
-        BlendStateCache();
+        BlendStateCache(blast::GfxDevice* in_device);
 
         ~BlendStateCache();
 
         blast::GfxBlendState* GetDepthStencilState(BlendStateType type);
 
     private:
-        std::unordered_map<BlendStateType, blast::GfxBlendState*> blend_states;
+        blast::GfxDevice* device = nullptr;
+        std::unordered_map<BlendStateType, std::shared_ptr<blast::GfxBlendState>> blend_states;
     };
 
     class SamplerCache {
     public:
-        SamplerCache();
+        SamplerCache(blast::GfxDevice* in_device);
 
         ~SamplerCache();
 
@@ -74,12 +76,13 @@ namespace gear {
             bool operator()(const blast::GfxSamplerDesc& desc1, const blast::GfxSamplerDesc& desc2) const;
         };
 
-        std::unordered_map<blast::GfxSamplerDesc, blast::GfxSampler*, MurmurHash<blast::GfxSamplerDesc>, SamplerCacheEq> samplers;
+        blast::GfxDevice* device = nullptr;
+        std::unordered_map<blast::GfxSamplerDesc, std::shared_ptr<blast::GfxSampler>, MurmurHash<blast::GfxSamplerDesc>, SamplerCacheEq> samplers;
     };
 
     class RenderPassCache {
     public:
-        RenderPassCache();
+        RenderPassCache(blast::GfxDevice* in_device);
 
         ~RenderPassCache();
 
@@ -90,12 +93,13 @@ namespace gear {
             bool operator()(const blast::GfxRenderPassDesc& desc1, const blast::GfxRenderPassDesc& desc2) const;
         };
 
-        std::unordered_map<blast::GfxRenderPassDesc, blast::GfxRenderPass*, MurmurHash<blast::GfxRenderPassDesc>, RenderPassEq> renderpasses;
+        blast::GfxDevice* device = nullptr;
+        std::unordered_map<blast::GfxRenderPassDesc, std::shared_ptr<blast::GfxRenderPass>, MurmurHash<blast::GfxRenderPassDesc>, RenderPassEq> renderpasses;
     };
 
     class PipelineCache {
     public:
-        PipelineCache();
+        PipelineCache(blast::GfxDevice* in_device);
 
         ~PipelineCache();
 
@@ -106,6 +110,7 @@ namespace gear {
             bool operator()(const blast::GfxPipelineDesc& desc1, const blast::GfxPipelineDesc& desc2) const;
         };
 
-        std::unordered_map<blast::GfxPipelineDesc, blast::GfxPipeline*, MurmurHash<blast::GfxPipelineDesc>, PipelineEq> pipelines;
+        blast::GfxDevice* device = nullptr;
+        std::unordered_map<blast::GfxPipelineDesc, std::shared_ptr<blast::GfxPipeline>, MurmurHash<blast::GfxPipelineDesc>, PipelineEq> pipelines;
     };
 }

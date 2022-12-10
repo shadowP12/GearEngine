@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Math/Math.h"
-
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace gear {
 
@@ -44,7 +44,7 @@ namespace gear {
 
         float GetAnimationLength() { return length; }
 
-        void Sample(float time, Skeleton* skeleton);
+        void Sample(float time, std::shared_ptr<Skeleton> skeleton);
 
     private:
         friend class AnimationInstance;

@@ -1,11 +1,10 @@
 #include "View.h"
 #include "GearEngine.h"
-#include "Resource/GpuBuffer.h"
+#include "Renderer/Renderer.h"
 #include "Resource/Texture.h"
 #include "Resource/Material.h"
 #include "Window/BaseWindow.h"
-
-#include <Blast/Gfx/GfxDevice.h>
+#include <GfxDevice.h>
 
 namespace gear {
     View::View() {
@@ -13,48 +12,20 @@ namespace gear {
     }
 
     View::~View() {
-        blast::GfxDevice* device = gEngine.GetDevice();
-        if (renderpass) {
-            device->DestroyRenderPass(renderpass);
-        }
-        if (main_rt) {
-            device->DestroyTexture(main_rt);
-        }
-        if (main_resolve_rt) {
-            device->DestroyTexture(main_resolve_rt);
-        }
-        if (depth_rt) {
-            device->DestroyTexture(depth_rt);
-        }
-        if (depth_resolve_rt) {
-            device->DestroyTexture(depth_resolve_rt);
-        }
-        if (postprocess_rt0) {
-            device->DestroyTexture(postprocess_rt0);
-        }
-        if (postprocess_rt1) {
-            device->DestroyTexture(postprocess_rt1);
-        }
-        if (fxaa_renderpass0) {
-            device->DestroyRenderPass(fxaa_renderpass0);
-        }
-        if (fxaa_renderpass1) {
-            device->DestroyRenderPass(fxaa_renderpass1);
-        }
-
-		if (atmosphere_raymarching_renderpass0) {
-			device->DestroyRenderPass(atmosphere_raymarching_renderpass0);
-		}
-		if (atmosphere_raymarching_renderpass1) {
-			device->DestroyRenderPass(atmosphere_raymarching_renderpass1);
-		}
-
-        if (debug_renderpass0) {
-            device->DestroyRenderPass(debug_renderpass0);
-        }
-        if (debug_renderpass1) {
-            device->DestroyRenderPass(debug_renderpass1);
-        }
+        blast::GfxDevice* device = gEngine.GetRenderer()->GetDevice();
+        SAFE_DELETE(renderpass);
+        SAFE_DELETE(main_rt);
+        SAFE_DELETE(main_resolve_rt);
+        SAFE_DELETE(depth_rt);
+        SAFE_DELETE(depth_resolve_rt);
+        SAFE_DELETE(postprocess_rt0);
+        SAFE_DELETE(postprocess_rt1);
+        SAFE_DELETE(fxaa_renderpass0);
+        SAFE_DELETE(fxaa_renderpass1);
+        SAFE_DELETE(atmosphere_raymarching_renderpass0);
+        SAFE_DELETE(atmosphere_raymarching_renderpass1);
+        SAFE_DELETE(debug_renderpass0);
+        SAFE_DELETE(debug_renderpass1);
     }
 
     void View::SetSize(float w, float h) {
@@ -90,7 +61,8 @@ namespace gear {
             should_resize = true;
         }
 
-        blast::GfxDevice* device = gEngine.GetDevice();
+        Renderer* renderer = gEngine.GetRenderer();
+        blast::GfxDevice* device = renderer->GetDevice();
         if (should_resize) {
             blast::GfxTextureDesc texture_desc = {};
             texture_desc.width = size.x;
@@ -139,10 +111,10 @@ namespace gear {
 
             {
                 if (postprocess_rt0) {
-                    device->DestroyTexture(postprocess_rt0);
+                    SAFE_DELETE(postprocess_rt0);
                 }
                 if (postprocess_rt1) {
-                    device->DestroyTexture(postprocess_rt1);
+                    SAFE_DELETE(postprocess_rt1);
                 }
                 texture_desc.sample_count = blast::SAMPLE_COUNT_1;
                 texture_desc.format = blast::FORMAT_R8G8B8A8_UNORM;
@@ -150,15 +122,24 @@ namespace gear {
                 texture_desc.res_usage = blast::RESOURCE_USAGE_SHADER_RESOURCE | blast::RESOURCE_USAGE_RENDER_TARGET;
                 postprocess_rt0 = device->CreateTexture(texture_desc);
                 postprocess_rt1 = device->CreateTexture(texture_desc);
+
+                // Modify texture layout
+                blast::GfxCommandBuffer* cmd = renderer->GetCurrentCommandBuffer();
+                blast::GfxResourceBarrier barrier[2];
+                barrier[0].resource = postprocess_rt0;
+                barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+                barrier[1].resource = postprocess_rt1;
+                barrier[1].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
+                device->SetBarrier(cmd, 2, barrier);
             }
 
             {
                 if (fxaa_renderpass0) {
-                    device->DestroyRenderPass(fxaa_renderpass0);
+                    SAFE_DELETE(fxaa_renderpass0);
                 }
-				if (debug_renderpass0) {
-					device->DestroyRenderPass(debug_renderpass0);
-				}
+                if (debug_renderpass0) {
+                    SAFE_DELETE(debug_renderpass0);
+                }
                 blast::GfxRenderPassDesc renderpass_desc = {};
                 renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt0, -1, blast::LOAD_CLEAR));
                 fxaa_renderpass0 = device->CreateRenderPass(renderpass_desc);
@@ -166,33 +147,33 @@ namespace gear {
             }
             {
                 if (fxaa_renderpass1) {
-                    device->DestroyRenderPass(fxaa_renderpass1);
+                    SAFE_DELETE(fxaa_renderpass1);
                 }
-				if (debug_renderpass1) {
-					device->DestroyRenderPass(debug_renderpass1);
-				}
+                if (debug_renderpass1) {
+                    SAFE_DELETE(debug_renderpass1);
+                }
                 blast::GfxRenderPassDesc renderpass_desc = {};
                 renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt1, -1, blast::LOAD_CLEAR));
                 fxaa_renderpass1 = device->CreateRenderPass(renderpass_desc);
                 debug_renderpass1 = device->CreateRenderPass(renderpass_desc);
             }
 
-			{
-				if (atmosphere_raymarching_renderpass0) {
-					device->DestroyRenderPass(atmosphere_raymarching_renderpass0);
-				}
-				if (atmosphere_raymarching_renderpass1) {
-					device->DestroyRenderPass(atmosphere_raymarching_renderpass1);
-				}
+            {
+                if (atmosphere_raymarching_renderpass0) {
+                    SAFE_DELETE(atmosphere_raymarching_renderpass0);
+                }
+                if (atmosphere_raymarching_renderpass1) {
+                    SAFE_DELETE(atmosphere_raymarching_renderpass1);
+                }
 
-				blast::GfxRenderPassDesc renderpass_desc = {};
-				renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt0, -1, blast::LOAD_LOAD));
-				atmosphere_raymarching_renderpass0 = device->CreateRenderPass(renderpass_desc);
+                blast::GfxRenderPassDesc renderpass_desc = {};
+                renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt0, -1, blast::LOAD_LOAD));
+                atmosphere_raymarching_renderpass0 = device->CreateRenderPass(renderpass_desc);
 
-				renderpass_desc.attachments.clear();
-				renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt1, -1, blast::LOAD_LOAD));
-				atmosphere_raymarching_renderpass1 = device->CreateRenderPass(renderpass_desc);
-			}
+                renderpass_desc.attachments.clear();
+                renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt1, -1, blast::LOAD_LOAD));
+                atmosphere_raymarching_renderpass1 = device->CreateRenderPass(renderpass_desc);
+            }
         }
 
         return true;
@@ -246,13 +227,13 @@ namespace gear {
         }
     }
 
-	blast::GfxRenderPass* View::GetAtmosphereRaymarchingRenderPass() {
-		if (out_postprocess_idx == 0) {
-			return atmosphere_raymarching_renderpass0;
-		} else {
-			return atmosphere_raymarching_renderpass1;
-		}
-	}
+    blast::GfxRenderPass* View::GetAtmosphereRaymarchingRenderPass() {
+        if (out_postprocess_idx == 0) {
+            return atmosphere_raymarching_renderpass0;
+        } else {
+            return atmosphere_raymarching_renderpass1;
+        }
+    }
 
     void View::AddDebugLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& c) {
         debug_lines[num_debug_lines * 14 + 0] = p0.x;
