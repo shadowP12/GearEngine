@@ -33,8 +33,6 @@ namespace gear {
 
         blast::GfxTexture* GetOutPostProcessRT();
 
-        blast::GfxRenderPass* GetFXAARenderPass();
-
         blast::GfxRenderPass* GetDebugRenderPass();
 
         blast::GfxRenderPass* GetAtmosphereRaymarchingRenderPass();
@@ -63,8 +61,7 @@ namespace gear {
         uint32_t out_postprocess_idx = 0;
         blast::GfxTexture* postprocess_rt0 = nullptr;
         blast::GfxTexture* postprocess_rt1 = nullptr;
-        blast::GfxRenderPass* fxaa_renderpass0 = nullptr;
-        blast::GfxRenderPass* fxaa_renderpass1 = nullptr;
+
         blast::GfxRenderPass* atmosphere_raymarching_renderpass0 = nullptr;
         blast::GfxRenderPass* atmosphere_raymarching_renderpass1 = nullptr;
         blast::GfxRenderPass* debug_renderpass0 = nullptr;

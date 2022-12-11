@@ -25,7 +25,10 @@ namespace gear {
             barrier[1].new_state = blast::RESOURCE_STATE_RENDERTARGET;
             device->SetBarrier(current_cmd, 2, barrier);
 
-            device->RenderPassBegin(current_cmd, view->GetFXAARenderPass());
+            blast::GfxRenderPassDesc renderpass_desc = {};
+            renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(view->GetOutPostProcessRT(), -1, blast::LOAD_CLEAR));
+            blast::GfxRenderPass* renderpass = renderpass_cache->GetRenderPass(renderpass_desc);
+            device->RenderPassBegin(current_cmd, renderpass);
 
             device->BindConstantBuffer(current_cmd, common_view_ub, 1, common_view_ub->size, 0);
             device->BindConstantBuffer(current_cmd, renderable_ub, 2, renderable_ub->size, 0);
@@ -40,7 +43,7 @@ namespace gear {
             blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetBlitMaterial()->GetFragShader(0, VertexLayoutType::VLT_P_T0);
             if (vs != nullptr && fs != nullptr) {
                 blast::GfxPipelineDesc pipeline_state = {};
-                pipeline_state.rp = view->GetFXAARenderPass();
+                pipeline_state.rp = renderpass;
                 pipeline_state.vs = vs;
                 pipeline_state.fs = fs;
                 pipeline_state.il = vertex_layout_cache->GetVertexLayout(VertexLayoutType::VLT_P_T0);
@@ -81,7 +84,10 @@ namespace gear {
             barrier[0].new_state = blast::RESOURCE_STATE_RENDERTARGET;
             device->SetBarrier(current_cmd, 1, barrier);
 
-            device->RenderPassBegin(current_cmd, view->GetFXAARenderPass());
+            blast::GfxRenderPassDesc renderpass_desc = {};
+            renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(view->GetOutPostProcessRT(), -1, blast::LOAD_CLEAR));
+            blast::GfxRenderPass* renderpass = renderpass_cache->GetRenderPass(renderpass_desc);
+            device->RenderPassBegin(current_cmd, renderpass);
 
             device->BindConstantBuffer(current_cmd, common_view_ub, 1, common_view_ub->size, 0);
             device->BindConstantBuffer(current_cmd, renderable_ub, 2, renderable_ub->size, 0);
@@ -96,7 +102,7 @@ namespace gear {
             blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetFXAAMaterial()->GetFragShader(0, VertexLayoutType::VLT_P_T0);
             if (vs != nullptr && fs != nullptr) {
                 blast::GfxPipelineDesc pipeline_state = {};
-                pipeline_state.rp = view->GetFXAARenderPass();
+                pipeline_state.rp = renderpass;
                 pipeline_state.vs = vs;
                 pipeline_state.fs = fs;
                 pipeline_state.il = vertex_layout_cache->GetVertexLayout(VertexLayoutType::VLT_P_T0);

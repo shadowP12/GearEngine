@@ -20,8 +20,6 @@ namespace gear {
         SAFE_DELETE(depth_resolve_rt);
         SAFE_DELETE(postprocess_rt0);
         SAFE_DELETE(postprocess_rt1);
-        SAFE_DELETE(fxaa_renderpass0);
-        SAFE_DELETE(fxaa_renderpass1);
         SAFE_DELETE(atmosphere_raymarching_renderpass0);
         SAFE_DELETE(atmosphere_raymarching_renderpass1);
         SAFE_DELETE(debug_renderpass0);
@@ -134,27 +132,19 @@ namespace gear {
             }
 
             {
-                if (fxaa_renderpass0) {
-                    SAFE_DELETE(fxaa_renderpass0);
-                }
                 if (debug_renderpass0) {
                     SAFE_DELETE(debug_renderpass0);
                 }
                 blast::GfxRenderPassDesc renderpass_desc = {};
                 renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt0, -1, blast::LOAD_CLEAR));
-                fxaa_renderpass0 = device->CreateRenderPass(renderpass_desc);
                 debug_renderpass0 = device->CreateRenderPass(renderpass_desc);
             }
             {
-                if (fxaa_renderpass1) {
-                    SAFE_DELETE(fxaa_renderpass1);
-                }
                 if (debug_renderpass1) {
                     SAFE_DELETE(debug_renderpass1);
                 }
                 blast::GfxRenderPassDesc renderpass_desc = {};
                 renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(postprocess_rt1, -1, blast::LOAD_CLEAR));
-                fxaa_renderpass1 = device->CreateRenderPass(renderpass_desc);
                 debug_renderpass1 = device->CreateRenderPass(renderpass_desc);
             }
 
@@ -208,14 +198,6 @@ namespace gear {
             return postprocess_rt0;
         } else {
             return postprocess_rt1;
-        }
-    }
-
-    blast::GfxRenderPass* View::GetFXAARenderPass() {
-        if (out_postprocess_idx == 0) {
-            return fxaa_renderpass0;
-        } else {
-            return fxaa_renderpass1;
         }
     }
 
