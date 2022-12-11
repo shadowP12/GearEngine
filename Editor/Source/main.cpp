@@ -173,7 +173,7 @@ public:
         scene_view = new gear::View();
         canvas = new gear::Canvas();
 
-        test_scene = new ShadowTestScene();
+        test_scene = new SkyAtmosphereTestScene();
         test_scene->Load();
     }
 

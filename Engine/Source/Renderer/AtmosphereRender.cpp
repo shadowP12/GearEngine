@@ -107,7 +107,10 @@ namespace gear {
         barrier[3].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
         device->SetBarrier(current_cmd, 4, barrier);
 
-        device->RenderPassBegin(current_cmd, view->GetAtmosphereRaymarchingRenderPass());
+        blast::GfxRenderPassDesc renderpass_desc = {};
+        renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(view->GetOutPostProcessRT(), -1, blast::LOAD_LOAD));
+        blast::GfxRenderPass* renderpass = renderpass_cache->GetRenderPass(renderpass_desc);
+        device->RenderPassBegin(current_cmd, renderpass);
 
         device->BindViewport(current_cmd, 0.0f, 0.0f, view->GetOutPostProcessRT()->width, view->GetOutPostProcessRT()->height);
 
@@ -129,7 +132,7 @@ namespace gear {
             device->BindResource(current_cmd, view->depth_rt, 2);
 
             blast::GfxPipelineDesc pipeline_state = {};
-            pipeline_state.rp = view->GetAtmosphereRaymarchingRenderPass();
+            pipeline_state.rp = renderpass;
             pipeline_state.vs = vs;
             pipeline_state.fs = fs;
             pipeline_state.il = vertex_layout_cache->GetVertexLayout(VertexLayoutType::VLT_P_T0);

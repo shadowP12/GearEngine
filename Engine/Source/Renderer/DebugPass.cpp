@@ -31,8 +31,11 @@ namespace gear {
         device->SetBarrier(current_cmd, 1, barrier);
 
         blast::GfxPipelineDesc pipeline_state = {};
-        pipeline_state.rp = view->GetDebugRenderPass();
-        device->RenderPassBegin(current_cmd, view->GetDebugRenderPass());
+        blast::GfxRenderPassDesc renderpass_desc = {};
+        renderpass_desc.attachments.push_back(blast::RenderPassAttachment::RenderTarget(view->GetOutPostProcessRT(), -1, blast::LOAD_CLEAR));
+        blast::GfxRenderPass* renderpass = renderpass_cache->GetRenderPass(renderpass_desc);
+        pipeline_state.rp = renderpass;
+        device->RenderPassBegin(current_cmd, renderpass);
 
         device->BindViewport(current_cmd, 0, 0, view->main_rt->width, view->main_rt->height);
 
