@@ -6,7 +6,6 @@
 
 namespace gear {
     View::View() {
-        debug_lines.resize(MAX_DEBUG_LINES * 14);
     }
 
     View::~View() {
@@ -159,40 +158,4 @@ namespace gear {
             return postprocess_rt1;
         }
     }
-
-    void View::AddDebugLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& c) {
-        debug_lines[num_debug_lines * 14 + 0] = p0.x;
-        debug_lines[num_debug_lines * 14 + 1] = p0.y;
-        debug_lines[num_debug_lines * 14 + 2] = p0.z;
-        debug_lines[num_debug_lines * 14 + 3] = c.x;
-        debug_lines[num_debug_lines * 14 + 4] = c.y;
-        debug_lines[num_debug_lines * 14 + 5] = c.z;
-        debug_lines[num_debug_lines * 14 + 6] = c.w;
-        debug_lines[num_debug_lines * 14 + 7] = p1.x;
-        debug_lines[num_debug_lines * 14 + 8] = p1.y;
-        debug_lines[num_debug_lines * 14 + 9] = p1.z;
-        debug_lines[num_debug_lines * 14 + 10] = c.x;
-        debug_lines[num_debug_lines * 14 + 11] = c.y;
-        debug_lines[num_debug_lines * 14 + 12] = c.z;
-        debug_lines[num_debug_lines * 14 + 13] = c.w;
-        num_debug_lines++;
-    }
-
-    void View::DrawDebugBox(const glm::vec3* corners, const glm::vec4& c) {
-        AddDebugLine(corners[0], corners[1], c);
-        AddDebugLine(corners[1], corners[3], c);
-        AddDebugLine(corners[3], corners[2], c);
-        AddDebugLine(corners[2], corners[0], c);
-
-        AddDebugLine(corners[4], corners[5], c);
-        AddDebugLine(corners[5], corners[7], c);
-        AddDebugLine(corners[7], corners[6], c);
-        AddDebugLine(corners[6], corners[4], c);
-
-        AddDebugLine(corners[0], corners[4], c);
-        AddDebugLine(corners[1], corners[5], c);
-        AddDebugLine(corners[2], corners[6], c);
-        AddDebugLine(corners[3], corners[7], c);
-    }
-
 }

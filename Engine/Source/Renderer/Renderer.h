@@ -61,6 +61,10 @@ namespace gear {
 
         void UpdateIndexBuffer(blast::GfxCommandBuffer* cmd, blast::GfxBuffer* buffer, const void* data, uint64_t size = 0, uint64_t offset = 0);
 
+        void DrawDebugLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& c);
+
+        void DrawDebugBox(const glm::vec3* corners, const glm::vec4& c);
+
     private:
         void BasePass(Scene* scene, View* view);
 
@@ -102,6 +106,8 @@ namespace gear {
         blast::GfxTexture* multi_scatt_texture = nullptr;
 
         // Debug
+        uint32_t num_debug_lines = 0;
+        std::vector<float> debug_lines;
         blast::GfxBuffer* debug_line_vb = nullptr;
 
         DrawCall dc_list[10240];

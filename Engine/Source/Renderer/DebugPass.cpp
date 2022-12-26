@@ -13,13 +13,13 @@
 
 namespace gear {
     void Renderer::DebugPass(Scene* scene, View* view) {
-        if (view->num_debug_lines == 0) {
+        if (num_debug_lines == 0) {
             return;
         }
 
         view->SwapPostProcess();
 
-        UpdateUniformBuffer(current_cmd, debug_line_vb, view->debug_lines.data(), view->num_debug_lines * sizeof(float) * 14);
+        UpdateUniformBuffer(current_cmd, debug_line_vb, debug_lines.data(), num_debug_lines * sizeof(float) * 14);
 
         ViewUniforms vb_storage = view_storage;
         UpdateUniformBuffer(current_cmd, common_view_ub, &vb_storage, sizeof(ViewUniforms));
@@ -92,7 +92,7 @@ namespace gear {
                 blast::GfxBuffer* vertex_buffers[] = {debug_line_vb};
                 device->BindVertexBuffers(current_cmd, vertex_buffers, 0, 1, vertex_offsets);
 
-                device->Draw(current_cmd, view->num_debug_lines * 2, 0);
+                device->Draw(current_cmd, num_debug_lines * 2, 0);
             }
         }
 
@@ -102,6 +102,6 @@ namespace gear {
         barrier[0].new_state = blast::RESOURCE_STATE_SHADER_RESOURCE;
         device->SetBarrier(current_cmd, 1, barrier);
 
-        view->num_debug_lines = 0;
+        num_debug_lines = 0;
     }
 }

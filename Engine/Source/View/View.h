@@ -33,10 +33,6 @@ namespace gear {
 
         blast::GfxTexture* GetOutPostProcessRT();
 
-        void AddDebugLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& c);
-
-        void DrawDebugBox(const glm::vec3* corners, const glm::vec4& c);
-
     private:
         friend class Renderer;
         BaseWindow* window = nullptr;
@@ -57,9 +53,5 @@ namespace gear {
         uint32_t out_postprocess_idx = 0;
         blast::GfxTexture* postprocess_rt0 = nullptr;
         blast::GfxTexture* postprocess_rt1 = nullptr;
-
-        // Debug
-        uint32_t num_debug_lines = 0;
-        std::vector<float> debug_lines;
     };
 }
