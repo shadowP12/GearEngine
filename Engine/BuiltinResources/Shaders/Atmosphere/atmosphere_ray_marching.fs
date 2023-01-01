@@ -23,7 +23,7 @@ vec3 GetMultipleScattering(AtmosphereParameters atmosphere, vec3 world_pos, floa
 
 struct SingleScatteringResult
 {
-	vec3 luminance;
+    vec3 luminance;
 };
 
 SingleScatteringResult IntegrateScatteredLuminance(
@@ -60,11 +60,11 @@ SingleScatteringResult IntegrateScatteredLuminance(
     t_max = min(t_max, t_max_max);
 
     // Phase functions
-	vec3 wi = sun_dir;
-	vec3 wo = world_dir;
-	float cos_theta = dot(wi, wo);
-	float mie_phase_value = MiePhase(atmosphere.mie_phase_g, -cos_theta);
-	float rayleigh_phase_value = RayleighPhase(cos_theta);
+    vec3 wi = sun_dir;
+    vec3 wo = world_dir;
+    float cos_theta = dot(wi, wo);
+    float mie_phase_value = MiePhase(atmosphere.mie_phase_g, -cos_theta);
+    float rayleigh_phase_value = RayleighPhase(cos_theta);
 
     // Placeholder
     vec3 global_l = vec3(1.0);
@@ -95,7 +95,8 @@ SingleScatteringResult IntegrateScatteredLuminance(
         vec3 multi_scattered_luminance = GetMultipleScattering(atmosphere, p, sun_zenith_cos_angle);
 
         // Earth shadow
-        float t_earth = RaySphereIntersectNearest(p, sun_dir, planet0 + 0.01 * up_vector, atmosphere.bottom_radius);
+        // PLANET_RADIUS_OFFSET = 0.15
+        float t_earth = RaySphereIntersectNearest(p, sun_dir, planet0 + 0.15 * up_vector, atmosphere.bottom_radius);
         float earth_shadow = t_earth >= 0.0 ? 0.0 : 1.0;
 
         // Todo: Sample shadowmap
@@ -117,13 +118,13 @@ void main() {
 
     vec2 pix_pos = gl_FragCoord.xy;
     vec2 uv = pix_pos / atmosphere.resolution;
-	vec3 ndc = vec3((pix_pos / atmosphere.resolution) * vec2(2.0, 2.0) - vec2(1.0, 1.0), 1.0);
-	vec4 target_pos = atmosphere.sky_inv_view_proj_mat * vec4(ndc, 1.0);
+    vec3 ndc = vec3((pix_pos / atmosphere.resolution) * vec2(2.0, 2.0) - vec2(1.0, 1.0), 1.0);
+    vec4 target_pos = atmosphere.sky_inv_view_proj_mat * vec4(ndc, 1.0);
     target_pos = target_pos / target_pos.w;
 
     vec3 sun_dir = -atmosphere.sun_direction;
-	vec3 world_dir = normalize(target_pos.xyz - atmosphere.view_position);
-	vec3 world_pos = atmosphere.view_position + vec3(0.0, atmosphere.bottom_radius, 0.0);
+    vec3 world_dir = normalize(target_pos.xyz - atmosphere.view_position);
+    vec3 world_pos = atmosphere.view_position + vec3(0.0, atmosphere.bottom_radius, 0.0);
     float view_height = length(world_pos);
 
     vec3 luminance = vec3(0.0);
@@ -134,13 +135,13 @@ void main() {
     }
 
     float sample_count = 30.0;
-    float t_max_max = 9000000;
+    float t_max_max = 9000000.0;
     SingleScatteringResult result = IntegrateScatteredLuminance(pix_pos, world_pos, world_dir, sun_dir, atmosphere, sample_count, t_max_max);
     luminance += result.luminance;
 
-	vec3 white_point = vec3(1.08241, 0.96756, 0.95003);
-	float exposure = 10.0;
-	luminance = pow(vec3(1.0) - exp(-luminance / white_point * exposure), vec3(1.0 / 2.2));
+    vec3 white_point = vec3(1.08241, 0.96756, 0.95003);
+    float exposure = 10.0;
+    luminance = pow(vec3(1.0) - exp(-luminance / white_point * exposure), vec3(1.0 / 2.2));
 
     out_color = vec4(luminance, 1.0);
 }
