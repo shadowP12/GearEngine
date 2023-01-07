@@ -2,6 +2,7 @@
 #include <GearEngine.h>
 #include <Renderer/Renderer.h>
 #include <imgui.h>
+#include "../EditorMisc.h"
 
 ShadowTestScene::ShadowTestScene() {
 }
@@ -39,7 +40,7 @@ void ShadowTestScene::Load() {
     camera_controller = new CameraController();
     camera_controller->SetCamera(main_camera.get());
 
-    gltf_asset = ImportGltfAsset("../BuiltinResources/GltfFiles/test.gltf");
+    gltf_asset = ImportGltfAsset(EditorMisc::GetEditorResourcesDir() + "/GltfFiles/test.gltf");
     for (auto iter : gltf_asset->entities) {
         auto entity = iter.second;
         if (entity->HasComponent<gear::CMesh>()) {
@@ -50,7 +51,7 @@ void ShadowTestScene::Load() {
     }
 
     // Skybox and ibl
-    std::shared_ptr<blast::GfxTexture> equirectangular_map = ImportTexture2DWithFloat("../BuiltinResources/Textures/Ridgecrest_Road_Ref.hdr");
+    std::shared_ptr<blast::GfxTexture> equirectangular_map = ImportTexture2DWithFloat(EditorMisc::GetEditorResourcesDir() + "/Textures/Ridgecrest_Road_Ref.hdr");
     skybox_map = gear::gEngine.GetRenderer()->EquirectangularMapToCubemap(equirectangular_map, 512);
     irradiance_map = gear::gEngine.GetRenderer()->ComputeIrradianceMap(skybox_map);
     prefiltered_map = gear::gEngine.GetRenderer()->ComputePrefilteredMap(skybox_map);

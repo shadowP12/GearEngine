@@ -2,6 +2,7 @@
 #include <GearEngine.h>
 #include <Renderer/Renderer.h>
 #include <imgui.h>
+#include "../EditorMisc.h"
 
 AnimationTestScene::AnimationTestScene() {
 }
@@ -31,7 +32,7 @@ void AnimationTestScene::Load() {
     camera_controller = new CameraController();
     camera_controller->SetCamera(camera.get());
 
-    gltf_asset = ImportGltfAsset("../BuiltinResources/GltfFiles/mech_drone/scene.gltf");
+    gltf_asset = ImportGltfAsset(EditorMisc::GetEditorResourcesDir() + "/GltfFiles/mech_drone/scene.gltf");
     std::shared_ptr<gear::Skeleton> skeleton = nullptr;
     std::shared_ptr<gear::AnimationClip> animation_clip = nullptr;
     for (auto iter : gltf_asset->skeletons) {

@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <imgui.h>
-
 #include <Window/BaseWindow.h>
 #include <Application/BaseApplication.h>
 #include <GearEngine.h>
@@ -26,9 +25,7 @@
 #include <Input/InputSystem.h>
 #include <UI/Canvas.h>
 #include <filesystem/path.h>
-
 #include <map>
-
 #include "CameraController.h"
 #include "TestScene/TestScene.h"
 #include "TestScene/AnimationTestScene.h"
@@ -36,6 +33,7 @@
 #include "TestScene/MaterialTestScene.h"
 #include "TestScene/TransparencyTestScene.h"
 #include "TestScene/SkyAtmosphereTestScene.h"
+#include "EditorMisc.h"
 
 class Window;
 static std::map<GLFWwindow*, Window*> glfw_window_table;
@@ -112,10 +110,7 @@ public:
     }
 
     void Init() override {
-        filesystem::path root_path = filesystem::path::getcwd();
-
-        filesystem::path engine_resource_path = root_path / "../../Engine/BuiltinResources";
-        gear::gEngine.GetBuiltinResources()->Initialize(engine_resource_path.str(filesystem::path::path_type::posix_path));
+        gear::gEngine.GetBuiltinResources()->Initialize(EditorMisc::GetEngineResourcesDir());
 
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -148,8 +143,8 @@ public:
         io.KeyMap[ImGuiKey_X] = GLFW_KEY_X;
         io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
         io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
-        filesystem::path imgui_font_path = root_path / "../BuiltinResources/Fonts/Roboto-Medium.ttf";
-        io.Fonts->AddFontFromFileTTF(imgui_font_path.str(filesystem::path::path_type::posix_path).c_str(), 16.0f);
+        std::string imgui_font_path = EditorMisc::GetEditorResourcesDir() + "/Fonts/Roboto-Medium.ttf";
+        io.Fonts->AddFontFromFileTTF(imgui_font_path.c_str(), 16.0f);
 
         int tex_width, tex_height;
         unsigned char* pixels = nullptr;
@@ -162,14 +157,14 @@ public:
             .Build();
         font_texture = font_tex_data->LoadTexture();
 
-        filesystem::path imgui_material_path = root_path / "../BuiltinResources/Materials/ui.mat";
-        imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile(imgui_material_path.str(filesystem::path::path_type::posix_path), true);
+        std::string imgui_material_path = EditorMisc::GetEditorResourcesDir() + "/Materials/ui.mat";
+        imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile(imgui_material_path, true);
 
         mouse_position_cb_handle = gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Bind(ImGuiMousePositionCB, 100);
         mouse_button_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseButtonEvent().Bind(ImGuiMouseButtonCB, 100);
         mouse_scroll_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseScrollEvent().Bind(ImGuiMouseScrollCB, 100);
 
-        main_window = new Window(800, 600);
+        main_window = new Window(1440, 810);
         scene_view = new gear::View();
         canvas = new gear::Canvas();
 
@@ -199,7 +194,7 @@ protected:
     void Tick(float dt) override {
         glfwPollEvents();
 
-        // 构建ImGui
+        // Build gui
         ImGuiIO& io = ImGui::GetIO();
         io.DeltaTime = dt;
         io.DisplaySize = ImVec2((float)main_window->GetWidth(), (float)main_window->GetHeight());
@@ -210,13 +205,23 @@ protected:
         for (int i = 0; i < 3; i++) {
             io.MouseDown[i] = gear::gEngine.GetInputSystem()->GetMouseButtonDown(i) || gear::gEngine.GetInputSystem()->GetMouseButtonHeld(i);
         }
-
         ImGui::NewFrame();
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+                                 ImGuiWindowFlags_NoDocking;
+        ImGui::SetNextWindowSize(ImVec2((float)main_window->GetWidth(), (float)main_window->GetHeight()));
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+        ImGui::Begin("MainWindow", nullptr, flags);
+        // Main menu bar
+        if (ImGui::BeginMainMenuBar()) {
+            ImGui::EndMainMenuBar();
+        }
 
-        test_scene->DrawUI();
+        ImGui::End();
 
+        // Prepare gui draw datas
         ImGui::Render();
-
         canvas->Begin();
         ImDrawData* commands = ImGui::GetDrawData();
         uint32_t num_prims = 0;
@@ -268,12 +273,12 @@ protected:
         }
         canvas->End();
 
-        // 绘制场景
+        // Draw scene
         scene_view->SetSize(main_window->GetWidth(), main_window->GetHeight());
         scene_view->SetViewport(0, 0, main_window->GetWidth(), main_window->GetHeight());
-        gear::gEngine.GetRenderer()->RenderScene(test_scene->GetScene().get(), scene_view);
+        //gear::gEngine.GetRenderer()->RenderScene(test_scene->GetScene().get(), scene_view);
 
-        // 绘制到window上
+        // Draw to window
         gear::View* views[] = { scene_view };
         gear::Canvas* canvases[] = { canvas };
         gear::gEngine.GetRenderer()->RenderWindow(main_window, 1, views, 1, canvases);

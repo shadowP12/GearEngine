@@ -4,6 +4,7 @@
 #include <Resource/Material.h>
 #include <Entity/Components/CAtmosphere.h>
 #include <imgui.h>
+#include "../EditorMisc.h"
 
 SkyAtmosphereTestScene::SkyAtmosphereTestScene() {
 }
@@ -34,7 +35,7 @@ void SkyAtmosphereTestScene::Load() {
     camera_controller = new CameraController();
     camera_controller->SetCamera(main_camera.get());
 
-    gltf_asset = ImportGltfAsset("../BuiltinResources/GltfFiles/test.gltf");
+    gltf_asset = ImportGltfAsset(EditorMisc::GetEditorResourcesDir() + "/GltfFiles/test.gltf");
     for (auto iter : gltf_asset->entities) {
         auto entity = iter.second;
         if (entity->HasComponent<gear::CMesh>()) {

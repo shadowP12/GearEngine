@@ -1,5 +1,14 @@
-﻿add_executable (GearEditor
+﻿# Settings
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable (GearEditor
         Source/main.cpp
+        Source/EditorMisc.cpp
         Source/CameraController.cpp
         Source/TextureImporter.cpp
         Source/GltfImporter.cpp
@@ -29,4 +38,5 @@ target_include_directories(GearEditor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/Externa
 target_link_libraries(GearEditor PRIVATE imgui)
 
 # builtin resources
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/BuiltinResources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/BuiltinResources/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/EditorResources)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Engine/BuiltinResources/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/EngineResources)

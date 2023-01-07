@@ -3,6 +3,7 @@
 #include <Renderer/Renderer.h>
 #include <Resource/Material.h>
 #include <imgui.h>
+#include "../EditorMisc.h"
 
 TransparencyTestScene::TransparencyTestScene() {
 }
@@ -30,8 +31,8 @@ void TransparencyTestScene::Load() {
     camera_controller = new CameraController();
     camera_controller->SetCamera(main_camera.get());
 
-    transparency_test_ma = gear::gEngine.GetMaterialCompiler()->Compile("../BuiltinResources/Materials/transparency_test.mat", true);
-    gltf_asset = ImportGltfAsset("../BuiltinResources/GltfFiles/transparency_test/transparency_test.gltf");
+    transparency_test_ma = gear::gEngine.GetMaterialCompiler()->Compile(EditorMisc::GetEditorResourcesDir() + "/Materials/transparency_test.mat", true);
+    gltf_asset = ImportGltfAsset(EditorMisc::GetEditorResourcesDir() + "/GltfFiles/transparency_test/transparency_test.gltf");
     for (auto iter : gltf_asset->entities) {
         auto entity = iter.second;
         if (entity->HasComponent<gear::CMesh>()) {
@@ -45,7 +46,7 @@ void TransparencyTestScene::Load() {
     }
 
     // Skybox and ibl
-    std::shared_ptr<blast::GfxTexture> equirectangular_map = ImportTexture2DWithFloat("../BuiltinResources/Textures/Ridgecrest_Road_Ref.hdr");
+    std::shared_ptr<blast::GfxTexture> equirectangular_map = ImportTexture2DWithFloat(EditorMisc::GetEditorResourcesDir() + "/Textures/Ridgecrest_Road_Ref.hdr");
     skybox_map = gear::gEngine.GetRenderer()->EquirectangularMapToCubemap(equirectangular_map, 512);
     irradiance_map = gear::gEngine.GetRenderer()->ComputeIrradianceMap(skybox_map);
     prefiltered_map = gear::gEngine.GetRenderer()->ComputePrefilteredMap(skybox_map);
