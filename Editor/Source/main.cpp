@@ -34,6 +34,9 @@
 #include "TestScene/TransparencyTestScene.h"
 #include "TestScene/SkyAtmosphereTestScene.h"
 #include "EditorMisc.h"
+#include "EditorWindow.h"
+#include "ContentWindow.h"
+#include "SceneWindow.h"
 
 class Window;
 static std::map<GLFWwindow*, Window*> glfw_window_table;
@@ -115,7 +118,7 @@ public:
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        // 初始化ImGui
+        // Editor settings
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
@@ -163,22 +166,24 @@ public:
         mouse_position_cb_handle = gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Bind(ImGuiMousePositionCB, 100);
         mouse_button_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseButtonEvent().Bind(ImGuiMouseButtonCB, 100);
         mouse_scroll_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseScrollEvent().Bind(ImGuiMouseScrollCB, 100);
-
         main_window = new Window(1440, 810);
         scene_view = new gear::View();
         canvas = new gear::Canvas();
 
-        test_scene = new SkyAtmosphereTestScene();
-        test_scene->Load();
+        all_editor_windows.push_back(std::make_shared<ContentWindow>());
+        all_editor_windows.push_back(std::make_shared<SceneWindow>());
+
+        for (auto editor_window : all_editor_windows) {
+            display_editor_windows.push_back(editor_window);
+        }
     }
 
     void Exit() override {
-        test_scene->Clear();
-        SAFE_DELETE(test_scene);
+        display_editor_windows.clear();
+        all_editor_windows.clear();
         SAFE_DELETE(main_window);
         SAFE_DELETE(scene_view);
         SAFE_DELETE(canvas);
-
         ImGui::DestroyContext();
         glfwTerminate();
     };
@@ -218,7 +223,14 @@ protected:
             ImGui::EndMainMenuBar();
         }
 
+        // Dockspace
+        ImGui::DockSpace(ImGui::GetID("MainWindow"), ImVec2(0, 0));
         ImGui::End();
+
+        // Windows
+        for (auto display_editor_window : display_editor_windows) {
+            display_editor_window->Draw();
+        }
 
         // Prepare gui draw datas
         ImGui::Render();
@@ -276,7 +288,6 @@ protected:
         // Draw scene
         scene_view->SetSize(main_window->GetWidth(), main_window->GetHeight());
         scene_view->SetViewport(0, 0, main_window->GetWidth(), main_window->GetHeight());
-        //gear::gEngine.GetRenderer()->RenderScene(test_scene->GetScene().get(), scene_view);
 
         // Draw to window
         gear::View* views[] = { scene_view };
@@ -312,7 +323,8 @@ private:
     std::shared_ptr<gear::Material> imgui_ma;
     std::vector<std::shared_ptr<gear::MaterialInstance>> imgui_mis;
     std::shared_ptr<blast::GfxTexture> font_texture;
-    TestScene* test_scene = nullptr;
+    std::vector<std::shared_ptr<EditorWindow>> all_editor_windows;
+    std::vector<std::shared_ptr<EditorWindow>> display_editor_windows;
     EventHandle mouse_position_cb_handle;
     EventHandle mouse_button_cb_handle;
     EventHandle mouse_scroll_cb_handle;
