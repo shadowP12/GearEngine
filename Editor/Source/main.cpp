@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <Window/BaseWindow.h>
 #include <Application/BaseApplication.h>
 #include <GearEngine.h>
@@ -121,6 +122,10 @@ public:
         // Editor settings
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
+        //io.IniFilename = nullptr;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
         io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
         io.BackendPlatformName = "glfw";
@@ -211,23 +216,26 @@ protected:
             io.MouseDown[i] = gear::gEngine.GetInputSystem()->GetMouseButtonDown(i) || gear::gEngine.GetInputSystem()->GetMouseButtonHeld(i);
         }
         ImGui::NewFrame();
-        ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                                 ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
-                                 ImGuiWindowFlags_NoDocking;
-        ImGui::SetNextWindowSize(ImVec2((float)main_window->GetWidth(), (float)main_window->GetHeight()));
-        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-        ImGui::Begin("MainWindow", nullptr, flags);
         // Main menu bar
         if (ImGui::BeginMainMenuBar()) {
             ImGui::EndMainMenuBar();
         }
 
-        // Dockspace
-        ImGui::DockSpace(ImGui::GetID("MainWindow"), ImVec2(0, 0));
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+                                 ImGuiWindowFlags_NoDocking;
+        ImGui::SetNextWindowPos(viewport->WorkPos);
+        ImGui::SetNextWindowSize(viewport->WorkSize);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::Begin("MainWindow", nullptr, flags);
+        ImGui::PopStyleVar();
+        ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton;
+        ImGui::DockSpace(ImGui::GetID("MainWindow"), ImVec2(0, 0), dockspace_flags);
         ImGui::End();
 
-        // Windows
+        // Window tab bar
         for (auto display_editor_window : display_editor_windows) {
             display_editor_window->Draw();
         }
