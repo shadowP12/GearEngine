@@ -4,11 +4,18 @@
 
 class EditorWindow {
 public:
-    EditorWindow() = default;
+    EditorWindow(const std::string& id = "Default") {
+        this->id = id;
+    }
 
     ~EditorWindow() = default;
 
-    virtual std::string GetID() { return "EditorWindow"; }
+    std::string GetID() { return id; }
+
+    virtual std::string GetType() { return "EditorWindow"; }
 
     virtual void Draw() = 0;
+
+protected:
+    std::string id;
 };

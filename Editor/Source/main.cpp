@@ -36,8 +36,7 @@
 #include "TestScene/SkyAtmosphereTestScene.h"
 #include "EditorMisc.h"
 #include "EditorWindow.h"
-#include "ContentWindow.h"
-#include "SceneWindow.h"
+#include "LevelEditor.h"
 
 class Window;
 static std::map<GLFWwindow*, Window*> glfw_window_table;
@@ -168,24 +167,15 @@ public:
         std::string imgui_material_path = EditorMisc::GetEditorResourcesDir() + "/Materials/ui.mat";
         imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile(imgui_material_path, true);
 
-        mouse_position_cb_handle = gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Bind(ImGuiMousePositionCB, 100);
-        mouse_button_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseButtonEvent().Bind(ImGuiMouseButtonCB, 100);
-        mouse_scroll_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseScrollEvent().Bind(ImGuiMouseScrollCB, 100);
-        main_window = new Window(1440, 810);
+        main_window = new Window(1500, 900);
         scene_view = new gear::View();
         canvas = new gear::Canvas();
 
-        all_editor_windows.push_back(std::make_shared<ContentWindow>());
-        all_editor_windows.push_back(std::make_shared<SceneWindow>());
-
-        for (auto editor_window : all_editor_windows) {
-            display_editor_windows.push_back(editor_window);
-        }
+        editor_windows.push_back(std::make_shared<LevelEditor>());
     }
 
     void Exit() override {
-        display_editor_windows.clear();
-        all_editor_windows.clear();
+        editor_windows.clear();
         SAFE_DELETE(main_window);
         SAFE_DELETE(scene_view);
         SAFE_DELETE(canvas);
@@ -236,8 +226,8 @@ protected:
         ImGui::End();
 
         // Window tab bar
-        for (auto display_editor_window : display_editor_windows) {
-            display_editor_window->Draw();
+        for (auto editor_window : editor_windows) {
+            editor_window->Draw();
         }
 
         // Prepare gui draw datas
@@ -303,27 +293,6 @@ protected:
         gear::gEngine.GetRenderer()->RenderWindow(main_window, 1, views, 1, canvases);
     };
 
-    static void ImGuiMousePositionCB(float x, float y) {
-        // 当鼠标处于imgui控件内，则截断输入对应的输入事件
-        if (ImGui::IsWindowHovered(1 << 2)) {
-            gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Block();
-        }
-    }
-
-    static void ImGuiMouseButtonCB(int button, int action) {
-        // 当鼠标处于imgui控件内，则截断输入对应的输入事件
-        if (ImGui::IsWindowHovered(1 << 2)) {
-            gear::gEngine.GetInputSystem()->GetOnMouseButtonEvent().Block();
-        }
-    }
-
-    static void ImGuiMouseScrollCB(float offset) {
-        // 当鼠标处于imgui控件内，则截断输入对应的输入事件
-        if (ImGui::IsWindowHovered(1 << 2)) {
-            gear::gEngine.GetInputSystem()->GetOnMouseScrollEvent().Block();
-        }
-    }
-
 private:
     Window* main_window = nullptr;
     gear::Canvas* canvas = nullptr;
@@ -331,11 +300,7 @@ private:
     std::shared_ptr<gear::Material> imgui_ma;
     std::vector<std::shared_ptr<gear::MaterialInstance>> imgui_mis;
     std::shared_ptr<blast::GfxTexture> font_texture;
-    std::vector<std::shared_ptr<EditorWindow>> all_editor_windows;
-    std::vector<std::shared_ptr<EditorWindow>> display_editor_windows;
-    EventHandle mouse_position_cb_handle;
-    EventHandle mouse_button_cb_handle;
-    EventHandle mouse_scroll_cb_handle;
+    std::vector<std::shared_ptr<EditorWindow>> editor_windows;
 };
 
 int main() {

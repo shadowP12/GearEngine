@@ -9,8 +9,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
 add_executable (GearEditor
         Source/main.cpp
         Source/EditorMisc.cpp
-        Source/ContentWindow.cpp
-        Source/SceneWindow.cpp
+        Source/LevelEditor.cpp
+        Source/AssetBrowser.cpp
+        Source/SceneViewer.cpp
+        source/SceneHierarchy.cpp
+        Source/Inspector.cpp
         Source/CameraController.cpp
         Source/TextureImporter.cpp
         Source/GltfImporter.cpp
