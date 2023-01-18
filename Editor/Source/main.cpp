@@ -164,9 +164,6 @@ public:
             .Build();
         font_texture = font_tex_data->LoadTexture();
 
-        std::string imgui_material_path = EditorMisc::GetEditorResourcesDir() + "/Materials/ui.mat";
-        imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile(imgui_material_path, true);
-
         main_window = new Window(1500, 900);
         scene_view = new gear::View();
         canvas = new gear::Canvas();
@@ -240,17 +237,6 @@ protected:
             num_prims += cmds->CmdBuffer.size();
         }
 
-        uint32_t previous_size = imgui_mis.size();
-        if (num_prims > imgui_mis.size()) {
-            imgui_mis.resize(num_prims);
-            for (size_t i = previous_size; i < imgui_mis.size(); i++) {
-                imgui_mis[i] = imgui_ma->CreateInstance();
-                imgui_mis[i]->SetTexture("albedo_texture", font_texture);
-                blast::GfxSamplerDesc sampler_desc;
-                imgui_mis[i]->SetSampler("albedo_sampler", sampler_desc);
-            }
-        }
-
         uint32_t prim_index = 0;
         for (uint32_t cmd_list_index = 0; cmd_list_index < commands->CmdListsCount; cmd_list_index++) {
             const ImDrawList* cmds = commands->CmdLists[cmd_list_index];
@@ -269,9 +255,8 @@ protected:
                     pcmd.UserCallback(cmds, &pcmd);
                 } else {
                     gear::Canvas::Element canvas_element;
-                    std::shared_ptr<gear::MaterialInstance> imgui_mi = imgui_mis[prim_index];
-                    imgui_mi->SetScissor( pcmd.ClipRect.x, pcmd.ClipRect.y, pcmd.ClipRect.z, pcmd.ClipRect.w);
-                    canvas_element.mi = imgui_mi.get();
+                    canvas_element.texture = font_texture.get();
+                    canvas_element.scissor = glm::vec4(pcmd.ClipRect.x, pcmd.ClipRect.y, pcmd.ClipRect.z, pcmd.ClipRect.w);
                     canvas_element.count = pcmd.ElemCount;
                     canvas_element.offset = index_offset;
                     canvas_batch.elements.push_back(canvas_element);
@@ -297,8 +282,6 @@ private:
     Window* main_window = nullptr;
     gear::Canvas* canvas = nullptr;
     gear::View* scene_view = nullptr;
-    std::shared_ptr<gear::Material> imgui_ma;
-    std::vector<std::shared_ptr<gear::MaterialInstance>> imgui_mis;
     std::shared_ptr<blast::GfxTexture> font_texture;
     std::vector<std::shared_ptr<EditorWindow>> editor_windows;
 };

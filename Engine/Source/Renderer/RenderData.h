@@ -140,12 +140,14 @@ namespace gear {
     };
 
     struct UIDrawElement {
+        glm::vec4 scissor;
         uint32_t index_count = 0;
         uint32_t index_offset = 0;
         blast::IndexType index_type;
         blast::GfxBuffer* vb = nullptr;
         blast::GfxBuffer* ib = nullptr;
-        MaterialInstance* mi = nullptr;
+        blast::GfxTexture* texture = nullptr;
+        blast::GfxSampler* sampler = nullptr;
     };
 
     struct RenderPrimitive {

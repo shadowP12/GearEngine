@@ -37,6 +37,8 @@ namespace gear {
 
         BlendStateCache* GetBlendStateCache() { return blend_state_cache; }
 
+        SamplerCache* GetSamplerCache() { return sampler_cache; }
+
         void RenderScene(Scene* scene, View* view);
 
         void RenderWindow(BaseWindow* window, uint32_t view_count, View** views, uint32_t canvas_count, Canvas** canvases);

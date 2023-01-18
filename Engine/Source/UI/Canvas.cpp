@@ -1,6 +1,7 @@
 #include "Canvas.h"
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
+#include "Renderer/RenderCache.h"
 #include "Resource/Texture.h"
 #include "Resource/Material.h"
 #include <GfxDevice.h>
@@ -28,6 +29,8 @@ namespace gear {
     bool Canvas::Prepare(blast::GfxCommandBuffer* cmd) {
         Renderer* renderer = gEngine.GetRenderer();
         blast::GfxDevice* device = renderer->GetDevice();
+        blast::GfxSamplerDesc sampler_desc;
+        blast::GfxSampler* sampler = renderer->GetSamplerCache()->GetSampler(sampler_desc);
 
         draw_elements.clear();
 
@@ -85,10 +88,12 @@ namespace gear {
                 UIDrawElement draw_element = {};
                 draw_element.vb = vertex_bufs[i].get();
                 draw_element.ib = index_bufs[i].get();
-                draw_element.mi = batchs[i].elements[j].mi;
                 draw_element.index_count = batchs[i].elements[j].count;
                 draw_element.index_offset = batchs[i].elements[j].offset;
                 draw_element.index_type = batchs[i].index_type;
+                draw_element.scissor = batchs[i].elements[j].scissor;
+                draw_element.sampler = sampler;
+                draw_element.texture = batchs[i].elements[j].texture;
                 draw_elements.push_back(draw_element);
             }
         }

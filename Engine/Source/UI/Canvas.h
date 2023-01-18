@@ -1,5 +1,6 @@
 #pragma once
 #include "Renderer/RenderData.h"
+#include "View/View.h"
 #include <GfxDefine.h>
 #include <vector>
 #include <memory>
@@ -13,7 +14,9 @@ namespace gear {
         struct Element {
             uint32_t count;
             uint32_t offset;
-            MaterialInstance* mi;
+            glm::vec4 scissor;
+            blast::GfxTexture* texture = nullptr;
+            View* view = nullptr;
         };
 
         struct Batch {

@@ -93,6 +93,18 @@ namespace gear {
             desc.code = ATMOSPHERE_RAY_MARCHING_FS_DATA;
             atmosphere_raymarching_fs = std::make_shared<SimpleShader>(desc);
         }
+
+        // Editor
+        {
+            SimpleShaderDesc desc;
+            desc.stage = blast::SHADER_STAGE_VERT;
+            desc.code = EDITOR_UI_VS_DATA;
+            editor_ui_vs = std::make_shared<SimpleShader>(desc);
+
+            desc.stage = blast::SHADER_STAGE_FRAG;
+            desc.code = EDITOR_UI_FS_DATA;
+            editor_ui_fs = std::make_shared<SimpleShader>(desc);
+        }
     }
 
     void BuiltinResources::CreateQuadBuffer() {
@@ -191,5 +203,13 @@ namespace gear {
 
     std::shared_ptr<blast::GfxShader> BuiltinResources::GetAtmosphereRayMarchingFS(uint32_t var) {
         return atmosphere_raymarching_fs->GetShader(var);
+    }
+
+    std::shared_ptr<blast::GfxShader> BuiltinResources::GetEditorUIVS(uint32_t var) {
+        return editor_ui_vs->GetShader(var);
+    }
+
+    std::shared_ptr<blast::GfxShader> BuiltinResources::GetEditorUIFS(uint32_t var) {
+        return editor_ui_fs->GetShader(var);
     }
 }

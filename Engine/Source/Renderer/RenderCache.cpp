@@ -307,7 +307,7 @@ namespace gear {
         blend_states.clear();
     }
 
-    blast::GfxBlendState * BlendStateCache::GetDepthStencilState(BlendStateType type) {
+    blast::GfxBlendState* BlendStateCache::GetBlendState(BlendStateType type) {
         return blend_states[type].get();
     }
 

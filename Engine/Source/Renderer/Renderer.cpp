@@ -273,7 +273,7 @@ namespace gear {
                 pipeline_state.fs = fs;
                 pipeline_state.il = vertex_layout_cache->GetVertexLayout(VertexLayoutType::VLT_P);
                 pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-                pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+                pipeline_state.bs = blend_state_cache->GetBlendState(BST_OPAQUE);
                 pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
 
                 device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
@@ -344,7 +344,7 @@ namespace gear {
                 pipeline_state.fs = fs;
                 pipeline_state.il = vertex_layout_cache->GetVertexLayout(primitive.vertex_layout);
                 pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-                pipeline_state.bs = blend_state_cache->GetDepthStencilState(primitive.mi->GetMaterial()->GetBlendState());
+                pipeline_state.bs = blend_state_cache->GetBlendState(primitive.mi->GetMaterial()->GetBlendState());
                 // Handle transparent depth
                 if (primitive.mi->GetMaterial()->GetBlendState() == BST_TRANSPARENT) {
                     pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
@@ -424,7 +424,7 @@ namespace gear {
                 pipeline_state.fs = fs;
                 pipeline_state.il = vertex_layout_cache->GetVertexLayout(VertexLayoutType::VLT_P_T0);
                 pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-                pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+                pipeline_state.bs = blend_state_cache->GetBlendState(BST_OPAQUE);
                 pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
 
                 device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
@@ -438,35 +438,25 @@ namespace gear {
         }
 
         for (uint32_t i = 0; i < valid_canvases.size(); ++i) {
+            glm::vec4 canvas_size = glm::vec4(0.0f , 0.0f, window->GetWidth(), window->GetHeight());
             blast::GfxPipelineDesc pipeline_state = {};
             pipeline_state.sc = swapchain;
             for (uint32_t j = 0; j < valid_canvases[i]->draw_elements.size(); ++j) {
                 const UIDrawElement& element = valid_canvases[i]->draw_elements[j];
+                device->PushConstants(current_cmd, &canvas_size, sizeof(glm::vec4));
+                device->BindSampler(current_cmd, element.sampler, 0);
+                device->BindResource(current_cmd, element.texture, 0);
+                device->BindScissor(current_cmd, element.scissor.x, element.scissor.y, element.scissor.z, element.scissor.w);
 
-                device->BindConstantBuffer(current_cmd, window_view_ub, 1, window_view_ub->size, 0);
-                device->BindConstantBuffer(current_cmd, renderable_ub, 2, renderable_ub->size, 0);
-
-                // Material params
-                for (auto& sampler_item : element.mi->GetGfxSamplerGroup()) {
-                    device->BindSampler(current_cmd, sampler_cache->GetSampler(sampler_item.second), sampler_item.first);
-                }
-
-                for (auto& texture_item : element.mi->GetGfxTextureGroup()) {
-                    device->BindResource(current_cmd, texture_item.second.get(), texture_item.first);
-                }
-
-                glm::vec4 scissor = element.mi->GetScissor();
-                device->BindScissor(current_cmd, scissor.x, scissor.y, scissor.z, scissor.w);
-
-                blast::GfxShader* vs = element.mi->GetMaterial()->GetVertShader(0, VertexLayoutType::VLT_UI);
-                blast::GfxShader* fs = element.mi->GetMaterial()->GetFragShader(0, VertexLayoutType::VLT_UI);
+                blast::GfxShader* vs = gEngine.GetBuiltinResources()->GetEditorUIVS().get();
+                blast::GfxShader* fs = gEngine.GetBuiltinResources()->GetEditorUIFS().get();
                 if (vs != nullptr && fs != nullptr) {
                     pipeline_state.vs = vs;
                     pipeline_state.fs = fs;
                     pipeline_state.il = vertex_layout_cache->GetVertexLayout(VertexLayoutType::VLT_UI);
                     pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-                    pipeline_state.bs = blend_state_cache->GetDepthStencilState(element.mi->GetMaterial()->GetBlendState());
-                    pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
+                    pipeline_state.bs = blend_state_cache->GetBlendState(BlendStateType::BST_TRANSPARENT);
+                    pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DepthStencilStateType::DSST_UI);
 
                     device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
 

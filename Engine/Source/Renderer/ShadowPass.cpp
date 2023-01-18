@@ -370,7 +370,7 @@ namespace gear {
                     pipeline_state.fs = fs;
                     pipeline_state.il = vertex_layout_cache->GetVertexLayout(primitive.vertex_layout);
                     pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_BACK);
-                    pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
+                    pipeline_state.bs = blend_state_cache->GetBlendState(BST_OPAQUE);
                     pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_SHADOW);
 
                     device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
