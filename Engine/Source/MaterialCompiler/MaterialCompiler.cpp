@@ -23,7 +23,10 @@ namespace gear {
         blast::GfxShaderCompiler* shader_compiler = gEngine.GetRenderer()->GetShaderCompiler();
         std::string code;
         if (is_file) {
-            code = ReadFileData(str);
+            void* file_data;
+            uint32_t file_size;
+            LoadFile(str, &file_data, file_size);
+            code = std::string((char*)file_data, file_size);
         } else {
             code = str;
         }
@@ -117,11 +120,17 @@ namespace gear {
         if (is_file) {
             std::string dir = filesystem::path(str).parent_path().str();
             if (doc.HasMember("vertex_file")) {
-                vertex_code = ReadFileData(dir + "/" + doc["vertex_file"].GetString());
+                void* file_data;
+                uint32_t file_size;
+                LoadFile(dir + "/" + doc["vertex_file"].GetString(), &file_data, file_size);
+                vertex_code = std::string((char*)file_data, file_size);
             }
 
             if (doc.HasMember("fragment_file")) {
-                fragment_code = ReadFileData(dir + "/" + doc["fragment_file"].GetString());
+                void* file_data;
+                uint32_t file_size;
+                LoadFile(dir + "/" + doc["fragment_file"].GetString(), &file_data, file_size);
+                fragment_code = std::string((char*)file_data, file_size);
             }
 
         } else {
