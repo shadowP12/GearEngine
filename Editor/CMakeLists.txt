@@ -1,4 +1,8 @@
-﻿# Settings
+﻿cmake_minimum_required (VERSION 3.10)
+set(CMAKE_CXX_STANDARD 17)
+project ("GearEditor")
+
+# Settings
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR})
@@ -9,6 +13,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
 add_executable (GearEditor
         Source/main.cpp
         Source/EditorMisc.cpp
+        Source/EditorSettings.cpp
         Source/LevelEditor.cpp
         Source/AssetBrowser.cpp
         Source/SceneViewer.cpp
@@ -23,6 +28,7 @@ add_executable (GearEditor
         Source/TestScene/TransparencyTestScene.cpp
         Source/TestScene/SkyAtmosphereTestScene.cpp)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../Engine EXCLUDE_FROM_ALL GearEngine.out)
 target_link_libraries(GearEditor PRIVATE GearEngine)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/External/glfw EXCLUDE_FROM_ALL glfw.out)

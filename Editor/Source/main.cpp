@@ -28,6 +28,7 @@
 #include <filesystem/path.h>
 #include <map>
 #include "CameraController.h"
+#include <Platform/PlatformMisc.h>
 #include "TestScene/TestScene.h"
 #include "TestScene/AnimationTestScene.h"
 #include "TestScene/ShadowTestScene.h"
@@ -203,28 +204,59 @@ protected:
             io.MouseDown[i] = gear::gEngine.GetInputSystem()->GetMouseButtonDown(i) || gear::gEngine.GetInputSystem()->GetMouseButtonHeld(i);
         }
         ImGui::NewFrame();
-        // Main menu bar
-        if (ImGui::BeginMainMenuBar()) {
-            ImGui::EndMainMenuBar();
-        }
 
-        ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                                 ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
-                                 ImGuiWindowFlags_NoDocking;
-        ImGui::SetNextWindowPos(viewport->WorkPos);
-        ImGui::SetNextWindowSize(viewport->WorkSize);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        ImGui::Begin("MainWindow", nullptr, flags);
-        ImGui::PopStyleVar();
-        ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton;
-        ImGui::DockSpace(ImGui::GetID("MainWindow"), ImVec2(0, 0), dockspace_flags);
-        ImGui::End();
+        if (open_project_selector) {
+            ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings;
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->WorkPos);
+            ImGui::SetNextWindowSize(viewport->WorkSize);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            if (ImGui::Begin("PrijectSelector", nullptr, flags)) {
+                ImGui::Text("Priject Selector");
+                ImVec2 size = ImGui::GetContentRegionAvail();
+                size.x = size.x * 0.5f - ImGui::GetStyle().FramePadding.x;
+                size.y *= 0.5f;
+                auto pos = ImGui::GetCursorPos();
+                pos.x += size.x * 0.5f + ImGui::GetStyle().FramePadding.x;
+                pos.y += size.y * 0.5f;
+                ImGui::SetCursorPos(pos);
+                if (ImGui::BeginChild("Selector", size, true)) {
+                    ImGui::Text("Project Directory");
+                    ImGui::SameLine();
+                    if (ImGui::Button("Open")) {
+                        std::string project_dir;
+                        if (gear::PlatformMisc::OpenDirectoryDialog("", "", project_dir)) {
+                            open_project_selector = false;
+                        }
+                    }
+                }
+                ImGui::EndChild();
+            }
+            ImGui::End();
+        } else {
+            // Main menu bar
+            if (ImGui::BeginMainMenuBar()) {
+                ImGui::EndMainMenuBar();
+            }
 
-        // Window tab bar
-        for (auto editor_window : editor_windows) {
-            editor_window->Draw();
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+                                     ImGuiWindowFlags_NoDocking;
+            ImGui::SetNextWindowPos(viewport->WorkPos);
+            ImGui::SetNextWindowSize(viewport->WorkSize);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+            ImGui::Begin("MainWindow", nullptr, flags);
+            ImGui::PopStyleVar();
+            ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton;
+            ImGui::DockSpace(ImGui::GetID("MainWindow"), ImVec2(0, 0), dockspace_flags);
+            ImGui::End();
+
+            // Window tab bar
+            for (auto editor_window : editor_windows) {
+                editor_window->Draw();
+            }
         }
 
         // Prepare gui draw datas
@@ -284,6 +316,7 @@ private:
     gear::View* scene_view = nullptr;
     std::shared_ptr<blast::GfxTexture> font_texture;
     std::vector<std::shared_ptr<EditorWindow>> editor_windows;
+    bool open_project_selector = true;
 };
 
 int main() {

@@ -4,7 +4,6 @@
 #include "Utility/Log.h"
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
-
 #include <GfxDefine.h>
 #include <GfxDevice.h>
 #include <GfxShaderCompiler.h>

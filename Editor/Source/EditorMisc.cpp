@@ -2,6 +2,15 @@
 #include <filesystem/path.h>
 
 namespace EditorMisc {
+    const std::string GetEditorBinaryDir() {
+        static std::string editor_binary_dir = "";
+        if (editor_binary_dir == "") {
+            filesystem::path root_path = filesystem::path::getcwd();
+            editor_binary_dir = (root_path).str(filesystem::path::path_type::posix_path);
+        }
+        return editor_binary_dir;
+    }
+
     const std::string GetEditorResourcesDir() {
         static std::string editor_resources_dir = "";
         if (editor_resources_dir == "") {
