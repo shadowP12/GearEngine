@@ -8,14 +8,14 @@ Demo project: [GearEngineDemoProject](https://github.com/hipiPan/GearEngineDemoP
 <br>
 
 # Screenshots
-![image](https://github.com/hipiPan/GearEngine/blob/next2.0/Screenshots/3.png)
+![image](https://github.com/hipiPan/GearEngine/blob/master/Screenshots/3.png)
 
 <br>
 
 ## Atmosphere
 Based on this project:
-https://github.com/sebh/UnrealEngineSkyAtmosphere
+[UnrealEngineSkyAtmosphere](https://github.com/sebh/UnrealEngineSkyAtmosphere)
 
-![image](https://github.com/hipiPan/GearEngine/blob/next2.0/Screenshots/Atmosphere1.png)
+![image](https://github.com/hipiPan/GearEngine/blob/master/Screenshots/Atmosphere1.png)
 
-![image](https://github.com/hipiPan/GearEngine/blob/next2.0/Screenshots/Atmosphere2.png)
+![image](https://github.com/hipiPan/GearEngine/blob/master/Screenshots/Atmosphere2.png)
