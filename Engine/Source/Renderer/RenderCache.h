@@ -56,7 +56,7 @@ namespace gear {
 
         ~BlendStateCache();
 
-        blast::GfxBlendState* GetBlendState(BlendStateType type);
+        blast::GfxBlendState* GetDepthStencilState(BlendStateType type);
 
     private:
         blast::GfxDevice* device = nullptr;

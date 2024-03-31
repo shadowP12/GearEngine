@@ -43,10 +43,6 @@ namespace gear {
 
         std::shared_ptr<blast::GfxShader> GetAtmosphereRayMarchingFS(uint32_t var = 0);
 
-        std::shared_ptr<blast::GfxShader> GetEditorUIVS(uint32_t var = 0);
-
-        std::shared_ptr<blast::GfxShader> GetEditorUIFS(uint32_t var = 0);
-
     private:
         void CreateQuadBuffer();
 
@@ -67,7 +63,5 @@ namespace gear {
         std::shared_ptr<SimpleShader> atmosphere_compute_transmittance_fs = nullptr;
         std::shared_ptr<SimpleShader> atmosphere_compute_multi_scatt_cs = nullptr;
         std::shared_ptr<SimpleShader> atmosphere_raymarching_fs = nullptr;
-        std::shared_ptr<SimpleShader> editor_ui_vs = nullptr;
-        std::shared_ptr<SimpleShader> editor_ui_fs = nullptr;
     };
 }

@@ -1,50 +1,29 @@
 #include "FileSystem.h"
 #include "Utility/Log.h"
-#include <stdio.h>
+
+#include <direct.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 namespace gear {
-    int SaveFile(const std::string& path, void* data, uint32_t size) {
-        FILE* file = fopen(path.c_str(), "wt");
-        if (!file) {
-            return -1;
-        }
-
-        fwrite(data, size, 1, file);
-        fclose(file);
-        return 0;
+    std::string GetCurrentPath() {
+        char buffer[1024];
+        getcwd(buffer, 1024);
+        std::string path(buffer);
+        return path;
     }
 
-    int LoadFile(const std::string& path, void** data, uint32_t& size) {
-        FILE* file = fopen(path.c_str(), "rb");
-        if (!file) {
-            return -1;
+    std::string ReadFileData(const std::string& path) {
+        std::istream* stream = &std::cin;
+        std::ifstream file;
+
+        file.open(path, std::ios_base::binary);
+        stream = &file;
+        if (file.fail()) {
+            LOGW("cannot open input file %s \n", path.c_str());
+            return std::string("");
         }
-
-        fseek(file, 0, SEEK_END);
-        long file_size = ftell(file);
-        if (file_size < 0) {
-            fclose(file);
-            return -1;
-        }
-        fseek(file, 0, SEEK_SET);
-
-        void* file_data = malloc(file_size);
-        if (!file_data) {
-            fclose(file);
-            return -1;
-        }
-
-        uint32_t read_size = fread(file_data, 1, file_size, file);
-
-        fclose(file);
-
-        if (read_size != file_size) {
-            free(file_data);
-            return -1;
-        }
-
-        *data = file_data;
-        size = file_size;
-        return 0;
+        return std::string((std::istreambuf_iterator<char>(*stream)), std::istreambuf_iterator<char>());
     }
 }

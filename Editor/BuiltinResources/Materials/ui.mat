@@ -1,0 +1,19 @@
+{
+    "state": {
+        "shading_model": "unlit",
+        "blending_mode": "transparent"
+    },
+    "vertex_layout": [
+        "ui"
+    ],
+    "textures": [
+        {
+            "name": "albedo_texture",
+            "type": "texture_2d"
+        }
+    ],
+    "samplers": [
+        "albedo_sampler"
+    ],
+    "fragment_file": "ui.fs"
+}

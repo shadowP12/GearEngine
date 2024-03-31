@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <imgui.h>
-#include <imgui_internal.h>
 #include <Window/BaseWindow.h>
 #include <Application/BaseApplication.h>
 #include <GearEngine.h>
@@ -28,7 +27,6 @@
 #include <filesystem/path.h>
 #include <map>
 #include "CameraController.h"
-#include <Platform/PlatformMisc.h>
 #include "TestScene/TestScene.h"
 #include "TestScene/AnimationTestScene.h"
 #include "TestScene/ShadowTestScene.h"
@@ -36,8 +34,6 @@
 #include "TestScene/TransparencyTestScene.h"
 #include "TestScene/SkyAtmosphereTestScene.h"
 #include "EditorMisc.h"
-#include "EditorWindow.h"
-#include "LevelEditor.h"
 
 class Window;
 static std::map<GLFWwindow*, Window*> glfw_window_table;
@@ -119,13 +115,9 @@ public:
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        // Editor settings
+        // 初始化ImGui
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
-        //io.IniFilename = nullptr;
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
         io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
         io.BackendPlatformName = "glfw";
@@ -165,18 +157,28 @@ public:
             .Build();
         font_texture = font_tex_data->LoadTexture();
 
-        main_window = new Window(1500, 900);
+        std::string imgui_material_path = EditorMisc::GetEditorResourcesDir() + "/Materials/ui.mat";
+        imgui_ma = gear::gEngine.GetMaterialCompiler()->Compile(imgui_material_path, true);
+
+        mouse_position_cb_handle = gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Bind(ImGuiMousePositionCB, 100);
+        mouse_button_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseButtonEvent().Bind(ImGuiMouseButtonCB, 100);
+        mouse_scroll_cb_handle = gear::gEngine.GetInputSystem()->GetOnMouseScrollEvent().Bind(ImGuiMouseScrollCB, 100);
+
+        main_window = new Window(1440, 810);
         scene_view = new gear::View();
         canvas = new gear::Canvas();
 
-        editor_windows.push_back(std::make_shared<LevelEditor>());
+        test_scene = new SkyAtmosphereTestScene();
+        test_scene->Load();
     }
 
     void Exit() override {
-        editor_windows.clear();
+        test_scene->Clear();
+        SAFE_DELETE(test_scene);
         SAFE_DELETE(main_window);
         SAFE_DELETE(scene_view);
         SAFE_DELETE(canvas);
+
         ImGui::DestroyContext();
         glfwTerminate();
     };
@@ -205,59 +207,7 @@ protected:
         }
         ImGui::NewFrame();
 
-        if (open_project_selector) {
-            ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings;
-            ImGuiViewport* viewport = ImGui::GetMainViewport();
-            ImGui::SetNextWindowPos(viewport->WorkPos);
-            ImGui::SetNextWindowSize(viewport->WorkSize);
-            ImGui::SetNextWindowViewport(viewport->ID);
-            if (ImGui::Begin("PrijectSelector", nullptr, flags)) {
-                ImGui::Text("Priject Selector");
-                ImVec2 size = ImGui::GetContentRegionAvail();
-                size.x = size.x * 0.5f - ImGui::GetStyle().FramePadding.x;
-                size.y *= 0.5f;
-                auto pos = ImGui::GetCursorPos();
-                pos.x += size.x * 0.5f + ImGui::GetStyle().FramePadding.x;
-                pos.y += size.y * 0.5f;
-                ImGui::SetCursorPos(pos);
-                if (ImGui::BeginChild("Selector", size, true)) {
-                    ImGui::Text("Project Directory");
-                    ImGui::SameLine();
-                    if (ImGui::Button("Open")) {
-                        std::string project_dir;
-                        if (gear::PlatformMisc::OpenDirectoryDialog("", "", project_dir)) {
-                            open_project_selector = false;
-                        }
-                    }
-                }
-                ImGui::EndChild();
-            }
-            ImGui::End();
-        } else {
-            // Main menu bar
-            if (ImGui::BeginMainMenuBar()) {
-                ImGui::EndMainMenuBar();
-            }
-
-            ImGuiViewport* viewport = ImGui::GetMainViewport();
-            ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                                     ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
-                                     ImGuiWindowFlags_NoDocking;
-            ImGui::SetNextWindowPos(viewport->WorkPos);
-            ImGui::SetNextWindowSize(viewport->WorkSize);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-            ImGui::Begin("MainWindow", nullptr, flags);
-            ImGui::PopStyleVar();
-            ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton;
-            ImGui::DockSpace(ImGui::GetID("MainWindow"), ImVec2(0, 0), dockspace_flags);
-            ImGui::End();
-
-            // Window tab bar
-            for (auto editor_window : editor_windows) {
-                editor_window->Draw();
-            }
-        }
+        test_scene->DrawUI();
 
         // Prepare gui draw datas
         ImGui::Render();
@@ -267,6 +217,17 @@ protected:
         for (int cmdListIndex = 0; cmdListIndex < commands->CmdListsCount; cmdListIndex++) {
             const ImDrawList* cmds = commands->CmdLists[cmdListIndex];
             num_prims += cmds->CmdBuffer.size();
+        }
+
+        uint32_t previous_size = imgui_mis.size();
+        if (num_prims > imgui_mis.size()) {
+            imgui_mis.resize(num_prims);
+            for (size_t i = previous_size; i < imgui_mis.size(); i++) {
+                imgui_mis[i] = imgui_ma->CreateInstance();
+                imgui_mis[i]->SetTexture("albedo_texture", font_texture);
+                blast::GfxSamplerDesc sampler_desc;
+                imgui_mis[i]->SetSampler("albedo_sampler", sampler_desc);
+            }
         }
 
         uint32_t prim_index = 0;
@@ -287,8 +248,9 @@ protected:
                     pcmd.UserCallback(cmds, &pcmd);
                 } else {
                     gear::Canvas::Element canvas_element;
-                    canvas_element.texture = font_texture.get();
-                    canvas_element.scissor = glm::vec4(pcmd.ClipRect.x, pcmd.ClipRect.y, pcmd.ClipRect.z, pcmd.ClipRect.w);
+                    std::shared_ptr<gear::MaterialInstance> imgui_mi = imgui_mis[prim_index];
+                    imgui_mi->SetScissor( pcmd.ClipRect.x, pcmd.ClipRect.y, pcmd.ClipRect.z, pcmd.ClipRect.w);
+                    canvas_element.mi = imgui_mi.get();
                     canvas_element.count = pcmd.ElemCount;
                     canvas_element.offset = index_offset;
                     canvas_batch.elements.push_back(canvas_element);
@@ -303,6 +265,7 @@ protected:
         // Draw scene
         scene_view->SetSize(main_window->GetWidth(), main_window->GetHeight());
         scene_view->SetViewport(0, 0, main_window->GetWidth(), main_window->GetHeight());
+        gear::gEngine.GetRenderer()->RenderScene(test_scene->GetScene().get(), scene_view);
 
         // Draw to window
         gear::View* views[] = { scene_view };
@@ -310,13 +273,38 @@ protected:
         gear::gEngine.GetRenderer()->RenderWindow(main_window, 1, views, 1, canvases);
     };
 
+    static void ImGuiMousePositionCB(float x, float y) {
+        // 当鼠标处于imgui控件内，则截断输入对应的输入事件
+        if (ImGui::IsWindowHovered(1 << 2)) {
+            gear::gEngine.GetInputSystem()->GetOnMousePositionEvent().Block();
+        }
+    }
+
+    static void ImGuiMouseButtonCB(int button, int action) {
+        // 当鼠标处于imgui控件内，则截断输入对应的输入事件
+        if (ImGui::IsWindowHovered(1 << 2)) {
+            gear::gEngine.GetInputSystem()->GetOnMouseButtonEvent().Block();
+        }
+    }
+
+    static void ImGuiMouseScrollCB(float offset) {
+        // 当鼠标处于imgui控件内，则截断输入对应的输入事件
+        if (ImGui::IsWindowHovered(1 << 2)) {
+            gear::gEngine.GetInputSystem()->GetOnMouseScrollEvent().Block();
+        }
+    }
+
 private:
     Window* main_window = nullptr;
     gear::Canvas* canvas = nullptr;
     gear::View* scene_view = nullptr;
+    std::shared_ptr<gear::Material> imgui_ma;
+    std::vector<std::shared_ptr<gear::MaterialInstance>> imgui_mis;
     std::shared_ptr<blast::GfxTexture> font_texture;
-    std::vector<std::shared_ptr<EditorWindow>> editor_windows;
-    bool open_project_selector = true;
+    TestScene* test_scene = nullptr;
+    EventHandle mouse_position_cb_handle;
+    EventHandle mouse_button_cb_handle;
+    EventHandle mouse_scroll_cb_handle;
 };
 
 int main() {

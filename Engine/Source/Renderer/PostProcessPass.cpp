@@ -48,7 +48,7 @@ namespace gear {
                 pipeline_state.fs = fs;
                 pipeline_state.il = vertex_layout_cache->GetVertexLayout(VertexLayoutType::VLT_P_T0);
                 pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-                pipeline_state.bs = blend_state_cache->GetBlendState(BST_OPAQUE);
+                pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
                 pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
 
                 device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));
@@ -107,7 +107,7 @@ namespace gear {
                 pipeline_state.fs = fs;
                 pipeline_state.il = vertex_layout_cache->GetVertexLayout(VertexLayoutType::VLT_P_T0);
                 pipeline_state.rs = rasterizer_state_cache->GetRasterizerState(RST_DOUBLESIDED);
-                pipeline_state.bs = blend_state_cache->GetBlendState(BST_OPAQUE);
+                pipeline_state.bs = blend_state_cache->GetDepthStencilState(BST_OPAQUE);
                 pipeline_state.dss = depth_stencil_state_cache->GetDepthStencilState(DSST_UI);
 
                 device->BindPipeline(current_cmd, pipeline_cache->GetPipeline(pipeline_state));

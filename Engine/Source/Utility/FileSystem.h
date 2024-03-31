@@ -7,7 +7,7 @@
 #include <string>
 
 namespace gear {
-    int SaveFile(const std::string& path, void* data, uint32_t size);
+    std::string GetCurrentPath();
 
-    int LoadFile(const std::string& path, void** data, uint32_t& size);
+    std::string ReadFileData(const std::string& path);
 }

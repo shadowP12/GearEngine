@@ -58,18 +58,15 @@ public:
     }
 
     void Dispatch(Args... args) {
-        if (_event_datas.size() <= 0) {
-            return;
-        }
+        _block = false;
 
-        // Sort callback
+        // 对回调函数进行排序
         std::sort(&_event_datas[0], &_event_datas[0] + _event_datas.size());
 
-        _block = false;
         for (int i = 0; i < _event_datas.size(); ++i) {
             _event_datas[i].func(std::forward<Args>(args)...);
 
-            // Handle block
+            // 处理截断条件
             if (_block == true) {
                 break;
             }

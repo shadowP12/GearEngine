@@ -4,6 +4,7 @@
 #include "Utility/Log.h"
 #include "GearEngine.h"
 #include "Renderer/Renderer.h"
+
 #include <GfxDefine.h>
 #include <GfxDevice.h>
 #include <GfxShaderCompiler.h>
@@ -22,10 +23,7 @@ namespace gear {
         blast::GfxShaderCompiler* shader_compiler = gEngine.GetRenderer()->GetShaderCompiler();
         std::string code;
         if (is_file) {
-            void* file_data;
-            uint32_t file_size;
-            LoadFile(str, &file_data, file_size);
-            code = std::string((char*)file_data, file_size);
+            code = ReadFileData(str);
         } else {
             code = str;
         }
@@ -119,17 +117,11 @@ namespace gear {
         if (is_file) {
             std::string dir = filesystem::path(str).parent_path().str();
             if (doc.HasMember("vertex_file")) {
-                void* file_data;
-                uint32_t file_size;
-                LoadFile(dir + "/" + doc["vertex_file"].GetString(), &file_data, file_size);
-                vertex_code = std::string((char*)file_data, file_size);
+                vertex_code = ReadFileData(dir + "/" + doc["vertex_file"].GetString());
             }
 
             if (doc.HasMember("fragment_file")) {
-                void* file_data;
-                uint32_t file_size;
-                LoadFile(dir + "/" + doc["fragment_file"].GetString(), &file_data, file_size);
-                fragment_code = std::string((char*)file_data, file_size);
+                fragment_code = ReadFileData(dir + "/" + doc["fragment_file"].GetString());
             }
 
         } else {
